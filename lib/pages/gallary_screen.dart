@@ -185,9 +185,9 @@ class _FullscreenView extends StatelessWidget {
   const _FullscreenView({required this.asset});
 
   ImmichAsset get _primary => switch (asset) {
-        SingleAsset a => a.asset,
-        StackedAssets a => a.primary,
-      };
+    SingleAsset a => a.asset,
+    StackedAssets a => a.primary,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -202,18 +202,71 @@ class _FullscreenView extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      body: Center(
-        child: InteractiveViewer(
-          child: CachedNetworkImage(
-            imageUrl: _primary.thumbnailUrl(size: 'preview'),
-            httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-            fit: BoxFit.contain,
-            placeholder: (_, _) =>
-                const CircularProgressIndicator(color: Colors.white),
-            errorWidget: (_, _, _) =>
-                const Icon(Icons.broken_image, color: Colors.white38, size: 64),
+      body: Stack(
+        children: [
+          Center(
+            child: InteractiveViewer(
+              child: CachedNetworkImage(
+                imageUrl: _primary.thumbnailUrl(size: 'preview'),
+                httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                fit: BoxFit.contain,
+                placeholder: (_, _) =>
+                    const CircularProgressIndicator(color: Colors.white),
+                errorWidget: (_, _, _) =>
+                    const Icon(Icons.broken_image, color: Colors.white38, size: 64),
+              ),
+            ),
           ),
-        ),
+          if (asset is StackedAssets)
+          Positioned(
+            bottom: 15,
+            right: 0,
+            left: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [(asset as StackedAssets).primary, ...(asset as StackedAssets).children].map((a) => Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white.withAlpha((255*0.6).round()), width: 1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: const EdgeInsets.only(right: 8),
+                width: 60,
+                height: 60,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: Opacity(
+                        opacity: 0.8,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: CachedNetworkImage(
+                            imageUrl: a.thumbnailUrl(size: 'preview'),
+                            httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) =>
+                                const CircularProgressIndicator(color: Colors.white),
+                            errorWidget: (_, _, _) =>
+                                const Icon(Icons.broken_image, color: Colors.white38, size: 32),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (a.isDng)
+                    Center(
+                      child: Text(
+                        'RAW', style: TextStyle(
+                          color: Colors.white.withAlpha((255*0.6).round()),
+                          fontSize: 10, 
+                          fontWeight: FontWeight.w400
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
