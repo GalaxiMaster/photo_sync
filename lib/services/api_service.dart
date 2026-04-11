@@ -48,9 +48,10 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
         originalFileName.toLowerCase().endsWith('.jpeg');
     String? get pixelRawPairKey {
       // Match everything up to and including ".RAW"
-      final match = RegExp(r'^(.+\.RAW)-', caseSensitive: false)
-          .firstMatch(originalFileName);
-      return match?.group(1)?.toLowerCase();
+      // final match = RegExp(r'^(.+\.RAW)-', caseSensitive: false)
+      //     .firstMatch(originalFileName);
+      // return match?.group(1)?.toLowerCase();
+      return originalFileName.split('-').first;
     }
     String get baseName {
       final dot = originalFileName.lastIndexOf('.');

@@ -21,7 +21,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _hasMore = true;
     final results = await _service.fetchImages(page: _page);
     _hasMore = results.length == 60;
-    return _stackDngJpgPairs(results);  
+    return _stackPairs(results);  
 }
 
   Future<void> loadMore() async {
@@ -34,15 +34,17 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _hasMore = next.length == 60;
     _loadingMore = false;
 
-    state = AsyncData([...currentList, ..._stackDngJpgPairs(next)]);
+    state = AsyncData([...currentList, ..._stackPairs(next)]);
   }
 
   Future<void> refresh() async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(_fetch);
   }
-  static List<GalleryItem> _stackDngJpgPairs(List<ImmichAsset> assets) {
+  static List<GalleryItem> _stackPairs(List<ImmichAsset> assets) {
     final Map<String, List<ImmichAsset>> groups = {};
+// PXL_20260405_201722973.LONG_EXPOSURE-01.COVER.jpg
+// PXL_20260405_201722973.LONG_EXPOSURE-02.ORIGINAL.jpg
 
     for (final asset in assets) {
       final key = asset.pixelRawPairKey ?? asset.baseName;
@@ -56,12 +58,11 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
         continue;
       }
 
-      final hasDng = group.any((a) => a.isDng);
       final jpg = group.where((a) => a.isJpg).firstOrNull;
 
-      if (hasDng && jpg != null) {
-        final dngs = group.where((a) => a.isDng).toList();
-        result.add(StackedAssets(primary: jpg, children: dngs));
+      if (group.length > 1 && jpg != null) {
+        final other = group.where((a) => a.originalFileName != jpg.originalFileName).toList();
+        result.add(StackedAssets(primary: jpg, children: other));
       } else {
         result.addAll(group.map((a) => SingleAsset(a)));
       }

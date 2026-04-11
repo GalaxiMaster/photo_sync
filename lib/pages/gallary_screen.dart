@@ -180,13 +180,29 @@ class _LoadingTile extends StatelessWidget {
 }
 
 
-class _FullscreenView extends StatelessWidget {
+class _FullscreenView extends StatefulWidget {
   final GalleryItem asset;
   const _FullscreenView({required this.asset});
 
-  ImmichAsset get _primary => switch (asset) {
-    SingleAsset a => a.asset,
-    StackedAssets a => a.primary,
+  @override
+  State<_FullscreenView> createState() => _FullscreenViewState();
+}
+
+class _FullscreenViewState extends State<_FullscreenView> {
+  late ImmichAsset _active;
+
+  @override
+  void initState() {
+    super.initState();
+    _active = switch (widget.asset) {
+      SingleAsset a => a.asset,
+      StackedAssets a => a.primary,
+    };
+  }
+
+  List<ImmichAsset> get _all => switch (widget.asset) {
+    SingleAsset a => [a.asset],
+    StackedAssets a => [a.primary, ...a.children],
   };
 
   @override
@@ -197,7 +213,7 @@ class _FullscreenView extends StatelessWidget {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          _primary.originalFileName,
+          _active.originalFileName,
           style: const TextStyle(color: Colors.white70, fontSize: 13),
           overflow: TextOverflow.ellipsis,
         ),
@@ -207,7 +223,7 @@ class _FullscreenView extends StatelessWidget {
           Center(
             child: InteractiveViewer(
               child: CachedNetworkImage(
-                imageUrl: _primary.thumbnailUrl(size: 'preview'),
+                imageUrl: _active.thumbnailUrl(size: 'preview'),
                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                 fit: BoxFit.contain,
                 placeholder: (_, _) =>
@@ -217,55 +233,72 @@ class _FullscreenView extends StatelessWidget {
               ),
             ),
           ),
-          if (asset is StackedAssets)
-          Positioned(
-            bottom: 15,
-            right: 0,
-            left: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [(asset as StackedAssets).primary, ...(asset as StackedAssets).children].map((a) => Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white.withAlpha((255*0.6).round()), width: 1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                margin: const EdgeInsets.only(right: 8),
-                width: 60,
-                height: 60,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: Opacity(
-                        opacity: 0.8,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: CachedNetworkImage(
-                            imageUrl: a.thumbnailUrl(size: 'preview'),
-                            httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                            fit: BoxFit.cover,
-                            placeholder: (_, _) =>
-                                const CircularProgressIndicator(color: Colors.white),
-                            errorWidget: (_, _, _) =>
-                                const Icon(Icons.broken_image, color: Colors.white38, size: 32),
-                          ),
+          if (widget.asset is StackedAssets)
+            Positioned(
+              bottom: 15,
+              right: 0,
+              left: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: _all.map((a) {
+                  final isActive = a == _active;
+                  return GestureDetector(
+                    onTap: () => setState(() => _active = a),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeInOut,
+                      width: isActive ? 65 : 45,
+                      height: isActive ? 65 : 45,
+                      margin: EdgeInsets.only(
+                        right: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isActive
+                              ? Colors.white
+                              : Colors.white.withAlpha((255 * 0.4).round()),
+                          width: isActive ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(9),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: AnimatedOpacity(
+                                duration: const Duration(milliseconds: 200),
+                                opacity: isActive ? 1.0 : 0.5,
+                                child: CachedNetworkImage(
+                                  imageUrl: a.thumbnailUrl(size: 'preview'),
+                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, _) =>
+                                      const CircularProgressIndicator(color: Colors.white),
+                                  errorWidget: (_, _, _) =>
+                                      const Icon(Icons.broken_image, color: Colors.white38, size: 32),
+                                ),
+                              ),
+                            ),
+                            if (a.isDng)
+                              Center(
+                                child: Text(
+                                  'RAW',
+                                  style: TextStyle(
+                                    color: Colors.white.withAlpha((255 * 0.6).round()),
+                                    fontSize: isActive ? 10 : 6,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),
-                    if (a.isDng)
-                    Center(
-                      child: Text(
-                        'RAW', style: TextStyle(
-                          color: Colors.white.withAlpha((255*0.6).round()),
-                          fontSize: 10, 
-                          fontWeight: FontWeight.w400
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )).toList(),
+                  );
+                }).toList(),
+              ),
             ),
-          ),
         ],
       ),
     );
