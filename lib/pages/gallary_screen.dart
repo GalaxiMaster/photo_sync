@@ -14,6 +14,7 @@ class GalleryScreen extends ConsumerStatefulWidget {
 
 class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _scrollController = ScrollController();
+  final double iconSize = 22;
 
   @override
   void initState() {
@@ -37,41 +38,88 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   @override
   Widget build(BuildContext context) {
     final galleryState = ref.watch(galleryProvider);
+    final inSelectionMode = ref.watch(isSelectionModeProvider);
+    final selection = ref.watch(selectionProvider);
 
     return Scaffold(
       backgroundColor: Colors.black,
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Gallery',
-                  style: TextStyle(
-                    color: Colors.white, 
-                    fontSize: 20, 
-                    fontWeight: FontWeight.w300
-                  ),
-                ),
-                Center(
-                  child: Material(
-                    elevation: 12,
-                    borderRadius: BorderRadius.circular(24),
-                    color: const Color(0xFF1A1A1A),
-                    child: Container(
-                      width: 600,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                      child: Text('Coming soon')
+          SizedBox(
+            height: 65,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Gallery',
+                    style: TextStyle(
+                      color: Colors.white, 
+                      fontSize: 20, 
+                      fontWeight: FontWeight.w300
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: () => ref.read(galleryProvider.notifier).refresh(),
-                ),
-              ],
+                  if (inSelectionMode)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Center(
+                      child: Material(
+                        elevation: 12,
+                        borderRadius: BorderRadius.circular(24),
+                        color: const Color(0xFF1A1A1A),
+                        child: Container(
+                          width: 800,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                onPressed: () => ref.read(selectionProvider.notifier).clear(),
+                                padding: EdgeInsets.zero,
+                                iconSize: iconSize,
+                                icon: const Icon(Icons.clear, color: Colors.white),
+                              ),
+                              Text(
+                                '${selection.length} selected',
+                                style: const TextStyle(color: Colors.white70, fontSize: 14),
+                              ),
+                              const Spacer(),
+                              IconButton(
+                                onPressed: (){},
+                                visualDensity: VisualDensity.compact,
+                                iconSize: iconSize,
+                                icon: Icon(Icons.share_outlined)
+                              ),
+                              IconButton(
+                                onPressed: (){},
+                                visualDensity: VisualDensity.compact,
+                                iconSize: iconSize,
+                                icon: Icon(Icons.photo_album_outlined)
+                              ),
+                              IconButton(
+                                onPressed: (){},
+                                visualDensity: VisualDensity.compact,
+                                iconSize: iconSize,
+                                icon: Icon(Icons.label_outline)
+                              ),
+                              IconButton(
+                                onPressed: (){},
+                                visualDensity: VisualDensity.compact,
+                                iconSize: iconSize,
+                                icon: Icon(Icons.delete_outline)
+                              )
+                            ],
+                          )
+                        ),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    onPressed: () => ref.read(galleryProvider.notifier).refresh(),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -186,7 +234,7 @@ class _Tile extends ConsumerWidget {
                     left: 0,
                     right: 0,
                     bottom: 0,
-                    height: MediaQuery.of(context).size.width / 9, // Assuming square tiles
+                    height: MediaQuery.of(context).size.height / 6,
                     child: Container(
                       decoration: const BoxDecoration(
                         gradient: LinearGradient(
@@ -236,7 +284,6 @@ class _Tile extends ConsumerWidget {
     );
   }
 
-  // Helper methods to keep the build tree clean
   Widget _buildStackIcon() => const Positioned(
     right: 10, bottom: 10, 
     child: Icon(Icons.filter_none, size: 14, color: Colors.white70)
