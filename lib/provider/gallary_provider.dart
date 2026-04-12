@@ -47,7 +47,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 // PXL_20260405_201722973.LONG_EXPOSURE-02.ORIGINAL.jpg
 
     for (final asset in assets) {
-      final key = asset.pixelRawPairKey ?? asset.baseName;
+      final key = asset.pixelPairKey ?? asset.baseName;
       groups.putIfAbsent(key, () => []).add(asset);
     }
 
@@ -58,13 +58,23 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
         continue;
       }
 
-      final jpg = group.where((a) => a.isJpg).firstOrNull;
+      if (group.length > 1) {
+        final ImmichAsset primary = group.firstWhere( // TODO refactor to find the best candidate instead of just the first match, accounting for different naming conventions and not relying on 01 as 02 could be the start
+          (a) => a.originalFileName.split('-').last.contains('01'),
+          orElse: () => group.firstWhere(
+            (a) => a.originalFileName.split('-').last.contains('cover'),
+            orElse: () => group.firstWhere(
+              (a) => a.isJpg,
+              orElse: () => group.first,
+            ),
+          ),
+        );
 
-      if (group.length > 1 && jpg != null) {
-        final other = group.where((a) => a.originalFileName != jpg.originalFileName).toList();
-        result.add(StackedAssets(primary: jpg, children: other));
-      } else {
-        result.addAll(group.map((a) => SingleAsset(a)));
+        final other = group.where((a) => a.originalFileName != primary.originalFileName).toList();
+        result.add(StackedAssets(primary: primary, children: other));
+      }
+      else {
+        result.add(SingleAsset(group.first));
       }
     }
 
