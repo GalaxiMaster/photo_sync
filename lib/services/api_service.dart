@@ -112,5 +112,6 @@ class SingleAsset extends GalleryItem {
 class StackedAssets extends GalleryItem {
   final ImmichAsset primary;
   final List<ImmichAsset> children;
-  const StackedAssets({required this.primary, required this.children});
+  final bool containsRaw;
+  const StackedAssets({required this.primary, this.containsRaw = false, required this.children});
 }

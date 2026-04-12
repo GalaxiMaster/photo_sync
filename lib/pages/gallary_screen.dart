@@ -147,6 +147,20 @@ class _Tile extends StatelessWidget {
               bottom: 10,
               child: Icon(Icons.filter_none, size: 14, color: Colors.white.withAlpha(200),)
             ),
+          if (asset is StackedAssets && (asset as StackedAssets).containsRaw // TODO find a way to clean up logic like this
+          || (asset is SingleAsset && (asset as SingleAsset).asset.isDng))
+            Positioned(
+              top: 10,
+              right: 12.5,
+              child: Text(
+                'RAW',
+                style: TextStyle(
+                  color: Colors.white.withAlpha(200),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            )
         ],
       ),
     );
