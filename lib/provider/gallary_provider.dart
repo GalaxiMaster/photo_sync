@@ -69,7 +69,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
             ),
           ),
         );
-        final containsRaw = group.any((a) => a.isDng);
+        final containsRaw = group.any((a) => a.isRaw);
         final other = group.where((a) => a.originalFileName != primary.originalFileName).toList();
         result.add(StackedAssets(primary: primary, containsRaw: containsRaw, children: other));
       }

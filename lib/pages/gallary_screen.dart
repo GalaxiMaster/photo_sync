@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
+import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _Grid extends StatelessWidget {
       controller: scrollController,
       padding: const EdgeInsets.all(2),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 6,
+        crossAxisCount: 8,
         crossAxisSpacing: 2,
         mainAxisSpacing: 2,
       ),
@@ -116,55 +117,110 @@ class _Grid extends StatelessWidget {
 }
 
 
-class _Tile extends StatelessWidget {
+class _Tile extends ConsumerWidget {
   final GalleryItem asset;
-  const _Tile({required this.asset});
+  final ValueNotifier<bool> _isHovered = ValueNotifier(false);
+
+  _Tile({required this.asset});
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => _showFullscreen(context),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: CachedNetworkImage(
-              imageUrl: asset is SingleAsset
-                  ? (asset as SingleAsset).asset.thumbnailUrl()
-                  : (asset as StackedAssets).primary.thumbnailUrl(),
-              httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-              fit: BoxFit.cover,
-              placeholder: (_, _) => const ColoredBox(color: Color(0xFF1A1A1A)),
-              errorWidget: (_, _, _) => const ColoredBox(
-                color: Color(0xFF1A1A1A),
-                child: Icon(Icons.broken_image, color: Colors.white24),
-              ),
-            ),
-          ),
-          if (asset is StackedAssets)
-            Positioned(
-              right: 10,
-              bottom: 10,
-              child: Icon(Icons.filter_none, size: 14, color: Colors.white.withAlpha(200),)
-            ),
-          if (asset is StackedAssets && (asset as StackedAssets).containsRaw // TODO find a way to clean up logic like this
-          || (asset is SingleAsset && (asset as SingleAsset).asset.isDng))
-            Positioned(
-              top: 10,
-              right: 12.5,
-              child: Text(
-                'RAW',
-                style: TextStyle(
-                  color: Colors.white.withAlpha(200),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isSelected = ref.watch(
+      selectionProvider.select((set) => set.contains(asset.id)),
+    );
+
+    final inSelectionMode = ref.watch(isSelectionModeProvider);
+
+    return MouseRegion(
+      onEnter: (_) => _isHovered.value = true,
+      onExit: (_) => _isHovered.value = false,
+      child: GestureDetector(
+        onTap: () => inSelectionMode 
+            ? ref.read(selectionProvider.notifier).toggle(asset.id) 
+            : _showFullscreen(context),
+        onLongPress: () => ref.read(selectionProvider.notifier).toggle(asset.id),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Positioned.fill(
+              child: RepaintBoundary(
+                child: CachedNetworkImage(
+                  imageUrl: asset.thumbnailUrl(),
+                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                  fit: BoxFit.cover,
+                  placeholder: (_, _) => const ColoredBox(color: Color(0xFF1A1A1A)),
                 ),
               ),
-            )
-        ],
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: _isHovered,
+              builder: (context, hovered, child) {
+                if (hovered) {
+                  return Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: MediaQuery.of(context).size.width / 9, // Assuming square tiles
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: [0.0, 0.6, 1.0], 
+                          colors: [
+                            Colors.transparent,
+                            Colors.transparent,
+                            Color(0x99212121),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }       
+                return const SizedBox.shrink();
+              }  
+            ),
+
+            if (asset is StackedAssets) _buildStackIcon(),
+            if (asset.isRaw) _buildRawLabel(),
+            
+            ValueListenableBuilder<bool>(
+              valueListenable: _isHovered,
+              builder: (context, hovered, child) {
+                if (hovered || inSelectionMode) {
+                  return Positioned(
+                    top: 10,
+                    left: 10,
+                    child: GestureDetector(
+                      onTap: () => ref.read(selectionProvider.notifier).toggle(asset.id),
+                      child: Icon(
+                        Icons.check_circle,
+                        color: isSelected ? Colors.blueAccent : Colors.white38,
+                        size: 20,
+                      ),
+                    ),
+                  );
+                }       
+                return const SizedBox.shrink();
+              }  
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // Helper methods to keep the build tree clean
+  Widget _buildStackIcon() => const Positioned(
+    right: 10, bottom: 10, 
+    child: Icon(Icons.filter_none, size: 14, color: Colors.white70)
+  );
+
+  Widget _buildRawLabel() => const Positioned(
+    top: 10, right: 12.5,
+    child: Text('RAW', style: TextStyle(color: Colors.white70, fontSize: 10))
+  );
+
   void _showFullscreen(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => _FullscreenView(asset: asset),
@@ -294,7 +350,7 @@ class _FullscreenViewState extends State<_FullscreenView> {
                                 ),
                               ),
                             ),
-                            if (a.isDng)
+                            if (a.isRaw)
                               Center(
                                 child: Text(
                                   'RAW',
