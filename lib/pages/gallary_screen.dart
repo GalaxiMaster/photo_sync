@@ -40,44 +40,70 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text(
-          'Gallery',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w300),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: () => ref.read(galleryProvider.notifier).refresh(),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Gallery',
+                  style: TextStyle(
+                    color: Colors.white, 
+                    fontSize: 20, 
+                    fontWeight: FontWeight.w300
+                  ),
+                ),
+                Center(
+                  child: Material(
+                    elevation: 12,
+                    borderRadius: BorderRadius.circular(24),
+                    color: const Color(0xFF1A1A1A),
+                    child: Container(
+                      width: 600,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                      child: Text('Coming soon')
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: () => ref.read(galleryProvider.notifier).refresh(),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: galleryState.when(
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              ),
+              error: (err, _) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.cloud_off, color: Colors.white54, size: 48),
+                    const SizedBox(height: 12),
+                    Text(err.toString(),
+                        style: const TextStyle(color: Colors.white54)),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.read(galleryProvider.notifier).refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (assets) => _Grid(
+                assets: assets,
+                scrollController: _scrollController,
+                hasMore: ref.read(galleryProvider.notifier).hasMore,
+              ),
+            ),
           ),
         ],
-      ),
-      body: galleryState.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.cloud_off, color: Colors.white54, size: 48),
-              const SizedBox(height: 12),
-              Text(err.toString(),
-                  style: const TextStyle(color: Colors.white54)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => ref.read(galleryProvider.notifier).refresh(),
-                child: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-        data: (assets) => _Grid(
-          assets: assets,
-          scrollController: _scrollController,
-          hasMore: ref.read(galleryProvider.notifier).hasMore,
-        ),
       ),
     );
   }

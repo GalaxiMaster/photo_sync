@@ -20,9 +20,9 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _page = 1;
     _hasMore = true;
     final results = await _service.fetchImages(page: _page);
-    _hasMore = results.length == 60;
+    _hasMore = results.length == 80;
     return _stackPairs(results);  
-}
+  }
 
   Future<void> loadMore() async {
     if (_loadingMore || !_hasMore) return;

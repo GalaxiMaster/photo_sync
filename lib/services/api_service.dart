@@ -67,7 +67,7 @@ class ImmichService {
 
   Future<List<ImmichAsset>> fetchImages({
     int page = 1,
-    int pageSize = 60,
+    int pageSize = 80,
   }) async {
     final uri = Uri.parse('${ImmichConfig.baseUrl}/api/search/metadata');
 
