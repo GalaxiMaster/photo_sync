@@ -61,68 +61,101 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       fontWeight: FontWeight.w300
                     ),
                   ),
-                  if (inSelectionMode)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
-                    child: Center(
-                      child: Material(
-                        elevation: 12,
-                        borderRadius: BorderRadius.circular(24),
-                        color: const Color(0xFF1A1A1A),
-                        child: Container(
-                          width: 800,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                onPressed: () => ref.read(selectionProvider.notifier).clear(),
-                                padding: EdgeInsets.zero,
-                                iconSize: iconSize,
-                                icon: const Icon(Icons.clear, color: Colors.white),
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 350),
+                        curve: Curves.easeOutCubic,
+                        width: inSelectionMode ? 800 : 400,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: inSelectionMode ? 1.0 : 0.0,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Material(
+                              elevation: 12,
+                              borderRadius: BorderRadius.circular(24),
+                              color: const Color(0xFF1A1A1A),
+                              child: Container(
+                                width: 800,
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                                child: Row(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () => ref.read(selectionProvider.notifier).clear(),
+                                      padding: EdgeInsets.zero,
+                                      iconSize: iconSize,
+                                      icon: const Icon(Icons.clear, color: Colors.white),
+                                    ),
+                                    Text(
+                                      '${selection.length} selected',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
+                                    ),
+                                    const Spacer(),
+                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.share_outlined, color: Colors.white)),
+                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.photo_album_outlined, color: Colors.white)),
+                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.label_outline, color: Colors.white)),
+                                    IconButton(
+                                      onPressed: () async {
+                                        try {
+                                          ref.read(galleryProvider.notifier).deleteAssets(selection.toList());
+                                          if (context.mounted) {
+                                            showSuccessSnackbar(context, 'Selected assets deleted successfully');
+                                          }
+                                        } catch (e) {
+                                          showErrorSnackbar(context, 'Failed to delete selected assets. Please try again:\n$e');
+                                        }
+                                      },
+                                      visualDensity: VisualDensity.compact,
+                                      iconSize: iconSize,
+                                      icon: const Icon(Icons.delete_outline, color: Colors.white),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              Text(
-                                '${selection.length} selected',
-                                style: const TextStyle(color: Colors.white70, fontSize: 14),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                onPressed: (){},
-                                visualDensity: VisualDensity.compact,
-                                iconSize: iconSize,
-                                icon: Icon(Icons.share_outlined)
-                              ),
-                              IconButton(
-                                onPressed: (){},
-                                visualDensity: VisualDensity.compact,
-                                iconSize: iconSize,
-                                icon: Icon(Icons.photo_album_outlined)
-                              ),
-                              IconButton(
-                                onPressed: (){},
-                                visualDensity: VisualDensity.compact,
-                                iconSize: iconSize,
-                                icon: Icon(Icons.label_outline)
-                              ),
-                              IconButton(
-                                onPressed: () async {
-                                  try {
-                                    ref.read(galleryProvider.notifier).deleteAssets(selection.toList());
-                                    if (context.mounted) {
-                                      showSuccessSnackbar(context, 'Selected assets deleted successfully');
-                                    }
-                                  } catch (e) {
-                                    showErrorSnackbar(context, 'Failed to delete selected assets. Please try again:\n$e');
-                                  }
-                                },
-                                visualDensity: VisualDensity.compact,
-                                iconSize: iconSize,
-                                icon: Icon(Icons.delete_outline)
-                              )
-                            ],
-                          )
+                            ),
+                          ),
+                        )
+                      ),
+                      Align(
+                        alignment: Alignment.center,
+                        child: Material(
+                          elevation: 12,
+                          borderRadius: BorderRadius.circular(24),
+                          color: const Color.fromARGB(255, 43, 43, 43),
+                          child: Container(
+                            width: 400,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.search, color: Colors.white),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: TextFormField(
+                                    style: const TextStyle(color: Colors.white),
+                                    decoration: const InputDecoration(
+                                      hintText: 'Search...',
+                                      hintStyle: TextStyle(color: Colors.white70),
+                                      border: InputBorder.none,
+                                      contentPadding: EdgeInsets.zero,
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () {},
+                                  visualDensity: VisualDensity.compact,
+                                  iconSize: iconSize,
+                                  icon: const Icon(Icons.filter_list, color: Colors.white),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                   IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
