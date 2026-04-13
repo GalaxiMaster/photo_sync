@@ -234,18 +234,22 @@ class _Grid extends StatelessWidget {
 }
 
 
-class _Tile extends ConsumerWidget {
+class _Tile extends ConsumerStatefulWidget {
   final GalleryItem asset;
-  final ValueNotifier<bool> _isHovered = ValueNotifier(false);
-
-  _Tile({required this.asset});
+  const _Tile({required this.asset});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isSelected = ref.watch(
-      selectionProvider.select((set) => set.contains(asset.id)),
-    );
+  ConsumerState<_Tile> createState() => _TileState();
+}
 
+class _TileState extends ConsumerState<_Tile> {
+  final ValueNotifier<bool> _isHovered = ValueNotifier(false);
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = ref.watch(
+      selectionProvider.select((set) => set.contains(widget.asset.id)),
+    );
     final inSelectionMode = ref.watch(isSelectionModeProvider);
 
     return MouseRegion(
@@ -253,16 +257,16 @@ class _Tile extends ConsumerWidget {
       onExit: (_) => _isHovered.value = false,
       child: GestureDetector(
         onTap: () => inSelectionMode 
-            ? ref.read(selectionProvider.notifier).toggle(asset.id) 
+            ? ref.read(selectionProvider.notifier).toggle(widget.asset.id) 
             : _showFullscreen(context),
-        onLongPress: () => ref.read(selectionProvider.notifier).toggle(asset.id),
+        onLongPress: () => ref.read(selectionProvider.notifier).toggle(widget.asset.id),
         child: Stack(
           fit: StackFit.expand,
           children: [
             Positioned.fill(
               child: RepaintBoundary(
                 child: CachedNetworkImage(
-                  imageUrl: asset.thumbnailUrl(),
+                  imageUrl: widget.asset.thumbnailUrl(),
                   httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                   fit: BoxFit.cover,
                   placeholder: (_, _) => const ColoredBox(color: Color(0xFF1A1A1A)),
@@ -298,8 +302,8 @@ class _Tile extends ConsumerWidget {
               }  
             ),
 
-            if (asset is StackedAssets) _buildStackIcon(),
-            if (asset.isRaw) _buildRawLabel(),
+            if (widget.asset is StackedAssets) _buildStackIcon(),
+            if (widget.asset.isRaw) _buildRawLabel(),
             
             ValueListenableBuilder<bool>(
               valueListenable: _isHovered,
@@ -309,7 +313,7 @@ class _Tile extends ConsumerWidget {
                     top: 10,
                     left: 10,
                     child: GestureDetector(
-                      onTap: () => ref.read(selectionProvider.notifier).toggle(asset.id),
+                      onTap: () => ref.read(selectionProvider.notifier).toggle(widget.asset.id),
                       child: Icon(
                         Icons.check_circle,
                         color: isSelected ? Colors.blueAccent : Colors.white38,
@@ -317,9 +321,9 @@ class _Tile extends ConsumerWidget {
                       ),
                     ),
                   );
-                }       
+                }
                 return const SizedBox.shrink();
-              }  
+              },
             ),
           ],
         ),
@@ -339,7 +343,7 @@ class _Tile extends ConsumerWidget {
 
   void _showFullscreen(BuildContext context) {
     Navigator.of(context).push(MaterialPageRoute(
-      builder: (_) => _FullscreenView(asset: asset),
+      builder: (_) => _FullscreenView(asset: widget.asset),
     ));
   }
 }
