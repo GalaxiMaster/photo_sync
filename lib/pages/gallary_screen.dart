@@ -388,6 +388,8 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
   late ImmichAsset _active;
   final _focusNode = FocusNode();
   late int _index;
+  bool _hoverLeft = false;
+  bool _hoverRight = false;
 
   @override
   void initState() {
@@ -470,6 +472,58 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
                       const Icon(Icons.broken_image, color: Colors.white38, size: 64),
                 ),
               ),
+            ),
+            Positioned(
+              top: 0,
+              bottom: 0,
+              right: 10,
+              child: _index < (ref.read(galleryProvider).value?.length ?? 0) - 1
+                ? MouseRegion(
+                  onEnter: (_) => setState(() => _hoverRight = true),
+                  onExit: (_) => setState(() => _hoverRight = false),
+                  child: GestureDetector(
+                    onTap: () => switchPhoto(1),
+                    behavior: HitTestBehavior.opaque,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * (1 / 5),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _hoverRight ? 1.0 : 0.0,
+                          child: const Icon(Icons.arrow_forward_ios, size: 32, color: Colors.white70),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                : const SizedBox.shrink(),
+            ),
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: 10,
+              child: _index > 0
+                ? MouseRegion(
+                  onEnter: (_) => setState(() => _hoverLeft = true),
+                  onExit: (_) => setState(() => _hoverLeft = false),
+                  child: GestureDetector(
+                    onTap: () => switchPhoto(-1),
+                    behavior: HitTestBehavior.opaque,
+                    child: SizedBox(
+                      width: MediaQuery.of(context).size.width * (1 / 5),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _hoverLeft ? 1.0 : 0.0,
+                          child: const Icon(Icons.arrow_back_ios_new, size: 32, color: Colors.white70),
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+                : const SizedBox.shrink(),
             ),
             if (widget.asset is StackedAssets)
               Positioned(
