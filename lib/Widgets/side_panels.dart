@@ -48,98 +48,111 @@ class InfoPanel extends ConsumerWidget {
           metadata.when(
             loading: () => const CircularProgressIndicator(color: Colors.white),
             error: (e, _) => Text('Error: $e'),
-            data: (data) => Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextFormField(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('People'),
-                      IconButton(onPressed: (){}, icon: Icon(Icons.add))
-                    ],
-                  ),
-                  Text('Details'),
-                  infoBox(
-                    leadingIcon: Icons.calendar_month_outlined, 
-                    centerContent: Text(
-                      formatAssetDate(data['fileCreatedAt']),
-                    ), 
-                    trailingIcon: Icons.edit,
-                    data: data, 
-                  ),
-                  infoBox(
-                    leadingIcon: Icons.image_outlined, 
-                    centerContent: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+            data: (data) {
+              final exif = data['exifInfo'];
+              final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
+              final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
+                        Text('People'),
+                        IconButton(onPressed: (){}, icon: Icon(Icons.add))
+                      ],
+                    ),
+                    Text('Details'),
+                    infoBox(
+                      leadingIcon: Icons.calendar_month_outlined,
+                      centerContent: SelectableText(formatAssetDate(data['fileCreatedAt'])),
+                      trailingIcon: Icons.edit,
+                    ),
+                    infoBox(
+                      leadingIcon: Icons.image_outlined,
+                      centerContent: _infoColumn(
+                        context,
+                        [
                           data['originalFileName'],
-                        ),
-                        Text('${(data['exifInfo']['exifImageWidth'] * data['exifInfo']['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1)} MP  ${data['exifInfo']['exifImageWidth']} x ${data['exifInfo']['exifImageHeight']}  ${(data['exifInfo']['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2)} MiB')
-                      ],
+                          '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
+                        ]
+                      ),
                     ),
-                    data: data, 
-                  ),
-                  infoBox(
-                    leadingIcon: Icons.camera_alt, 
-                    centerContent: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${data['exifInfo']['make']} ${data['exifInfo']['model']}'),
-                        Text('${data['exifInfo']['exposureTime']} s  𝑓/${data['exifInfo']['fNumber']}  ISO ${data['exifInfo']['iso']}')
-                      ],
+                    infoBox(
+                      leadingIcon: Icons.camera_alt,
+                      centerContent: _infoColumn(
+                        context,
+                        [
+                          '${exif['make']} ${exif['model']}',
+                          '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
+                        ]
+                      ),
                     ),
-                    data: data, 
-                  ),
-                  infoBox(
-                    leadingIcon: Icons.camera, 
-                    centerContent: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${data['exifInfo']['lensModel']}'),
-                        Text('${data['exifInfo']['focalLength']} mm')
-                      ],
+                    infoBox(
+                      leadingIcon: Icons.camera,
+                      centerContent: _infoColumn(
+                        context,
+                        [
+                          '${exif['lensModel']}',
+                          '${exif['focalLength']} mm',
+                        ]
+                      ),
                     ),
-                    data: data, 
-                  ),
-                  infoBox(
-                    leadingIcon: Icons.location_on, 
-                    centerContent: data['exifInfo']['latitude'] != null? Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('${data['exifInfo']['latitude']} \n ${data['exifInfo']['longitude']}'),
-                      ],
-                    ) : Text('Add a location'),
-                    trailingIcon: Icons.edit,
-                    data: data, 
-                  ),
-                ],
-              ),
-            )
+                    infoBox(
+                      leadingIcon: Icons.location_on,
+                      centerContent: exif['latitude'] != null
+                          ? _infoColumn(
+                            context,
+                            ['${exif['latitude']}', '${exif['longitude']}']
+                          )
+                          : const Text('Add a location'),
+                      trailingIcon: Icons.edit,
+                    ),
+                  ],
+                ),
+              );
+            }
           )
         ],
       ),
     );
   }
 
-  Widget infoBox({required IconData leadingIcon, required Widget centerContent, IconData? trailingIcon, required Map<String, dynamic> data}) {
+  Widget infoBox({
+    required IconData leadingIcon,
+    required Widget centerContent,
+    IconData? trailingIcon,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 10,
         children: [
-          Icon(leadingIcon, color: Color.fromARGB(255, 196, 199, 197),),
-          centerContent,
-          const Spacer(),
+          Icon(leadingIcon, color: const Color.fromARGB(255, 196, 199, 197)),
+          Expanded(child: centerContent),
           if (trailingIcon != null)
-          Icon(trailingIcon, color: Color.fromARGB(255, 196, 199, 197), size: 20,),
+            Icon(trailingIcon, color: const Color.fromARGB(255, 196, 199, 197), size: 20),
         ],
       ),
+    );
+  }
+
+  Widget _infoColumn(BuildContext context, List<String> lines) {
+    final baseStyle = DefaultTextStyle.of(context).style;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: lines.indexed.map((entry) => SelectableText(
+        entry.$2,
+        style: entry.$1 == 0 
+            ? baseStyle.copyWith(fontSize: (baseStyle.fontSize ?? 14) + 2)
+            : baseStyle,
+      )).toList(),
     );
   }
 }
