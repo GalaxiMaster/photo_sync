@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -103,7 +104,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 icon: Icon(Icons.label_outline)
                               ),
                               IconButton(
-                                onPressed: (){},
+                                onPressed: () async {
+                                  try {
+                                    ref.read(galleryProvider.notifier).deleteAssets(selection.toList());
+                                    if (context.mounted) {
+                                      showSuccessSnackbar(context, 'Selected assets deleted successfully');
+                                    }
+                                  } catch (e) {
+                                    showErrorSnackbar(context, 'Failed to delete selected assets. Please try again:\n$e');
+                                  }
+                                },
                                 visualDensity: VisualDensity.compact,
                                 iconSize: iconSize,
                                 icon: Icon(Icons.delete_outline)

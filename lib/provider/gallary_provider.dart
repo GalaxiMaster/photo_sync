@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
 final immichServiceProvider = Provider<ImmichService>(
@@ -41,6 +42,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     state = const AsyncLoading();
     state = await AsyncValue.guard(_fetch);
   }
+  
   static List<GalleryItem> _stackPairs(List<ImmichAsset> assets) {
     final Map<String, List<ImmichAsset>> groups = {};
 // PXL_20260405_201722973.LONG_EXPOSURE-01.COVER.jpg
@@ -81,10 +83,31 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   return result;
 } 
 
+  Future<void> deleteAssets(List<String> assetIds) async {
+    try {
+      // Delete from server first, should cancel out if there's an issue and not delete locally
+      await _service.deleteAssets(assetIds);
+
+      // Delete Locally
+      state = AsyncData(state.value?.where((item) {
+        if (item is SingleAsset) {
+          return !assetIds.contains(item.asset.id);
+        } else if (item is StackedAssets) {
+          return !assetIds.contains(item.primary.id) && !item.children.any((child) => assetIds.contains(child.id));
+        }
+        return true;
+      }).toList() ?? []);
+
+      // clear selection after deletion
+      ref.read(selectionProvider.notifier).clear();
+    } catch (e) {
+      throw Exception('Failed to delete assets: $e');
+    }
+  }
+
   bool get hasMore => _hasMore;
 }
 
-final galleryProvider =
-    AsyncNotifierProvider<GalleryNotifier, List<GalleryItem>>(
+final galleryProvider = AsyncNotifierProvider<GalleryNotifier, List<GalleryItem>>(
   GalleryNotifier.new,
 );

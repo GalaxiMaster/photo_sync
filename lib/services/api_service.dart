@@ -93,6 +93,34 @@ class ImmichService {
         .map((e) => ImmichAsset.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+  
+  Future<void> deleteAssets(List<String> assetIds) async {
+    try {
+      final futures = assetIds.map((id) => deleteAsset(id));
+      await Future.wait(futures);
+    } catch (e) {
+      throw Exception('Failed to delete assets: $e');
+    }
+  }
+
+  Future<void> deleteAsset(String assetId) async {
+    final url = Uri.parse('${ImmichConfig.baseUrl}/api/assets');
+    final response = await http.delete(
+      url,
+      headers: {
+        'x-api-key': ImmichConfig.apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'ids': [assetId],
+        'force': true,
+      }),
+    );
+
+    if (response.statusCode != 204) {
+      throw Exception('Failed to delete asset: ${response.statusCode} ${response.body}');
+    }
+  }
 }
 
 
