@@ -46,9 +46,9 @@ class ImmichAsset {
 
   String get originalUrl => '${ImmichConfig.baseUrl}/api/assets/$id/original';
 
-  bool get isRaw =>
-      (mimeType?.toLowerCase() == 'image/dng') ||
-      originalFileName.toLowerCase().endsWith('.dng');
+  bool get isRaw => 
+      (['image/dng', 'image/arw', 'image/cr2'].contains(mimeType?.toLowerCase())) ||
+      ['.dng', '.arw', '.cr2'].contains(originalFileName.toLowerCase().split('.').last);
 
   bool get isJpg =>
       (mimeType?.toLowerCase() == 'image/jpeg') ||
