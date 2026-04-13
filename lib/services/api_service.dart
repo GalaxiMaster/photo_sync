@@ -95,6 +95,17 @@ class ImmichService {
       'force': true,
     });
   }
+  Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
+    final response = await _dio.post('/search/smart', data: {
+      'query': query,
+      'type': 'IMAGE',
+      'page': page,
+      'size': pageSize,
+    });
+
+    final items = response.data['assets']['items'] as List;
+    return items.map((e) => ImmichAsset.fromJson(e)).toList();
+  }
 }
 
 

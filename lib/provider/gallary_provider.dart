@@ -105,6 +105,13 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     }
   }
 
+  Future<void> smartSearch(String query) async {
+    state = const AsyncLoading();
+    final results = await _service.smartSearch(query);
+    _hasMore = results.length == 80;
+    state = AsyncData(_stackPairs(results));
+  }
+
   bool get hasMore => _hasMore;
 }
 

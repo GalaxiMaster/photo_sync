@@ -142,6 +142,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                       contentPadding: EdgeInsets.zero,
                                       isDense: true,
                                     ),
+                                    onFieldSubmitted: (value) {
+                                      if (value.trim().isEmpty) return;
+                                      ref.read(galleryProvider.notifier).smartSearch(value.trim());
+                                    },
                                   ),
                                 ),
                                 IconButton(
