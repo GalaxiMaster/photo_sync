@@ -1,6 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:dio/dio.dart';
 
 class ImmichConfig {
   static String baseUrl = dotenv.env['immich_url'] ?? '';
@@ -59,67 +58,42 @@ class ImmichAsset {
 
 
 class ImmichService {
-  static final _headers = {
-    'x-api-key': ImmichConfig.apiKey,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+  late final Dio _dio;
 
-  Future<List<ImmichAsset>> fetchImages({
-    int page = 1,
-    int pageSize = 80,
-  }) async {
-    final uri = Uri.parse('${ImmichConfig.baseUrl}/api/search/metadata');
-
-    final response = await http.post(
-      uri,
-      headers: _headers,
-      body: jsonEncode({
-        'type': 'IMAGE',
-        'page': page,
-        'size': pageSize,
-        'withArchived': false,
-        'withStacked': false,
-      }),
-    );
-
-    if (response.statusCode != 200) {
-      throw Exception('Immich error ${response.statusCode}: ${response.body}');
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final items = (data['assets']['items'] as List<dynamic>);
-    return items
-        .map((e) => ImmichAsset.fromJson(e as Map<String, dynamic>))
-        .toList();
-  }
-  
-  Future<void> deleteAssets(List<String> assetIds) async {
-    try {
-      final futures = assetIds.map((id) => deleteAsset(id));
-      await Future.wait(futures);
-    } catch (e) {
-      throw Exception('Failed to delete assets: $e');
-    }
-  }
-
-  Future<void> deleteAsset(String assetId) async {
-    final url = Uri.parse('${ImmichConfig.baseUrl}/api/assets');
-    final response = await http.delete(
-      url,
+  ImmichService() {
+    _dio = Dio(BaseOptions(
+      baseUrl: '${ImmichConfig.baseUrl}/api',
       headers: {
         'x-api-key': ImmichConfig.apiKey,
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
-      body: jsonEncode({
-        'ids': [assetId],
-        'force': true,
-      }),
-    );
+    ));
+  }
 
-    if (response.statusCode != 204) {
-      throw Exception('Failed to delete asset: ${response.statusCode} ${response.body}');
-    }
+  Future<List<ImmichAsset>> fetchImages({int page = 1, int pageSize = 80}) async {
+    final response = await _dio.post('/search/metadata', data: {
+      'type': 'IMAGE',
+      'page': page,
+      'size': pageSize,
+      'withArchived': false,
+      'withStacked': false,
+    });
+
+    final items = response.data['assets']['items'] as List;
+    return items.map((e) => ImmichAsset.fromJson(e)).toList();
+  }
+
+  Future<void> deleteAssets(List<String> assetIds) async {
+    final futures = assetIds.map((id) => deleteAsset(id));
+    await Future.wait(futures);
+  }
+
+  Future<void> deleteAsset(String assetId) async {
+    await _dio.delete('/assets', data: {
+      'ids': [assetId],
+      'force': true,
+    });
   }
 }
 
