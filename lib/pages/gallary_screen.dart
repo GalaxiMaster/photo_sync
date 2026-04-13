@@ -385,7 +385,8 @@ class _FullscreenView extends ConsumerStatefulWidget {
 }
 
 class _FullscreenViewState extends ConsumerState<_FullscreenView> {
-  late ImmichAsset _active;
+  late GalleryItem _active;
+  late ImmichAsset _currentImage;
   final _focusNode = FocusNode();
   late int _index;
   bool _hoverLeft = false;
@@ -396,10 +397,8 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
     super.initState();
     final assets = ref.read(galleryProvider).value ?? [];
     _index = assets.indexOf(widget.asset);
-    _active = switch (widget.asset) {
-      SingleAsset a => a.asset,
-      StackedAssets a => a.primary,
-    };
+    _active = widget.asset;
+    _currentImage = _active.leadAsset;
   }
 
   @override
@@ -414,18 +413,12 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
     if (next < 0 || next >= assets.length) return;
     setState(() {
       _index = next;
-      _setActive(assets);
+      _active = assets[_index];
+      _currentImage = _active.leadAsset;
     });
   }
-
-  void _setActive(List<GalleryItem> assets) {
-    _active = switch (assets[_index]) {
-      SingleAsset a => a.asset,
-      StackedAssets a => a.primary,
-    };
-  }
-
-  List<ImmichAsset> get _all => switch (widget.asset) {
+  
+  List<ImmichAsset> get _all => switch (_active) {
     SingleAsset a => [a.asset],
     StackedAssets a => [a.primary, ...a.children],
   };
@@ -463,7 +456,7 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
             Center(
               child: InteractiveViewer(
                 child: CachedNetworkImage(
-                  imageUrl: _active.thumbnailUrl(size: 'preview'),
+                  imageUrl: _currentImage.thumbnailUrl(size: 'preview'),
                   httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                   fit: BoxFit.contain,
                   placeholder: (_, _) =>
@@ -525,6 +518,8 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
                 )
                 : const SizedBox.shrink(),
             ),
+
+            // Bottom Stack thumbnails
             if (widget.asset is StackedAssets)
               Positioned(
                 bottom: 15,
@@ -533,9 +528,9 @@ class _FullscreenViewState extends ConsumerState<_FullscreenView> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: _all.map((a) {
-                    final isActive = a == _active;
+                    final isActive = a == _currentImage;
                     return GestureDetector(
-                      onTap: () => setState(() => _active = a),
+                      onTap: () => setState(() => _currentImage = a),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         curve: Curves.easeInOut,

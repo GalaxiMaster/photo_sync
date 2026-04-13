@@ -131,9 +131,11 @@ extension GalleryItemX on GalleryItem {
     SingleAsset(asset: var a) => a.isRaw,
     StackedAssets(containsRaw: var raw) => raw,
   };
-  String thumbnailUrl() => leadAsset.thumbnailUrl();
+  String thumbnailUrl({String size = 'thumbnail'}) => leadAsset.thumbnailUrl(size: size);
+  String get originalFileName => leadAsset.originalFileName;
   String get id => leadAsset.id;
 }
+
 
 class SingleAsset extends GalleryItem {
   final ImmichAsset asset;
