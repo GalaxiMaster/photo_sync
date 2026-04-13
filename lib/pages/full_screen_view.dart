@@ -260,7 +260,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
-              width: _showInfo ? 320.0 : 0.0,
+              width: _showInfo ? 400 : 0.0,
               clipBehavior: Clip.hardEdge,
               decoration: const BoxDecoration(),
               child: InfoPanel(asset: _currentImage, close: (){setState(() {

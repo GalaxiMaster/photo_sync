@@ -115,6 +115,11 @@ class ImmichService {
     final items = response.data['assets']['items'] as List;
     return items.map((e) => ImmichAsset.fromJson(e)).toList();
   }
+
+  Future<Map<String, dynamic>> getAssetMetadata(String assetId) async {
+    final response = await _dio.get('/assets/$assetId');
+    return response.data as Map<String, dynamic>;
+  }
 }
 
 
