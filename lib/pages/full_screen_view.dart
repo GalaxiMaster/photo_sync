@@ -77,32 +77,10 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
         child: Row(
           children: [
             Expanded(
-              child: Column(
+              child: Stack(
                 children: [
                   SizedBox(
-                    height: 55,
-                    child: Row(
-                      children: [
-                        Text(
-                          _active.originalFileName,
-                          style: const TextStyle(color: Colors.white70, fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const Spacer(),
-                        IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.share, color: Colors.white)),
-                        IconButton(onPressed: () {
-                          setState(() {
-                            _showInfo = !_showInfo;
-                          });
-                        }, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.info_outline, color: Colors.white)),
-                        IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.tune, color: Colors.white)),
-                        IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.favorite_border, color: Colors.white)),
-                        IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height-55,
+                    height: MediaQuery.of(context).size.height,
                     child: Stack(
                       children: [
                         Center(
@@ -246,6 +224,36 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                       ],
                     ),
                   ),
+                  Positioned(
+                    top: 0,
+                    right: 0,
+                    left: 0,
+                    child: SizedBox(
+                      height: 55,
+                      width: MediaQuery.of(context).size.width,
+                      child: Row(
+                        children: [
+                          SizedBox(width: 5),
+                          IconButton(onPressed: () => Navigator.pop(context), mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.arrow_back, color: Colors.white)),
+                          Text(
+                            _active.originalFileName,
+                            style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const Spacer(),
+                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.share, color: Colors.white)),
+                          IconButton(onPressed: () {
+                            setState(() {
+                              _showInfo = !_showInfo;
+                            });
+                          }, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.info_outline, color: Colors.white)),
+                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.tune, color: Colors.white)),
+                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.favorite_border, color: Colors.white)),
+                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -255,7 +263,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
               width: _showInfo ? 320.0 : 0.0,
               clipBehavior: Clip.hardEdge,
               decoration: const BoxDecoration(),
-              child: InfoPanel(asset: _currentImage, close: (){_showInfo = false;}),
+              child: InfoPanel(asset: _currentImage, close: (){setState(() {
+                _showInfo = false;
+              });}),
             ),
           ],
         ),

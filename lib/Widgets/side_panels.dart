@@ -3,7 +3,7 @@ import 'package:photo_sync/services/api_service.dart';
 
 class InfoPanel extends StatelessWidget {
   final ImmichAsset asset;
-  final Function close;
+  final VoidCallback close;
   const InfoPanel({super.key, required this.asset, required this.close});
 
   @override
@@ -20,7 +20,7 @@ class InfoPanel extends StatelessWidget {
             spacing: 10,
             children: [
               IconButton(
-                onPressed: (){},
+                onPressed: close,
                 mouseCursor: SystemMouseCursors.click, 
                 icon: Icon(Icons.close)
               ),
