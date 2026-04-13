@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
@@ -374,21 +375,49 @@ class _LoadingTile extends StatelessWidget {
 }
 
 
-class _FullscreenView extends StatefulWidget {
+class _FullscreenView extends ConsumerStatefulWidget {
   final GalleryItem asset;
+  
   const _FullscreenView({required this.asset});
 
   @override
-  State<_FullscreenView> createState() => _FullscreenViewState();
+  ConsumerState<_FullscreenView> createState() => _FullscreenViewState();
 }
 
-class _FullscreenViewState extends State<_FullscreenView> {
+class _FullscreenViewState extends ConsumerState<_FullscreenView> {
   late ImmichAsset _active;
+  final _focusNode = FocusNode();
+  late int _index;
 
   @override
   void initState() {
     super.initState();
+    final assets = ref.read(galleryProvider).value ?? [];
+    _index = assets.indexOf(widget.asset);
     _active = switch (widget.asset) {
+      SingleAsset a => a.asset,
+      StackedAssets a => a.primary,
+    };
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void switchPhoto(int delta) {
+    final assets = ref.read(galleryProvider).value ?? [];
+    final next = _index + delta;
+    if (next < 0 || next >= assets.length) return;
+    setState(() {
+      _index = next;
+      _setActive(assets);
+    });
+  }
+
+  void _setActive(List<GalleryItem> assets) {
+    _active = switch (assets[_index]) {
       SingleAsset a => a.asset,
       StackedAssets a => a.primary,
     };
@@ -412,89 +441,105 @@ class _FullscreenViewState extends State<_FullscreenView> {
           overflow: TextOverflow.ellipsis,
         ),
       ),
-      body: Stack(
-        children: [
-          Center(
-            child: InteractiveViewer(
-              child: CachedNetworkImage(
-                imageUrl: _active.thumbnailUrl(size: 'preview'),
-                httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                fit: BoxFit.contain,
-                placeholder: (_, _) =>
-                    const CircularProgressIndicator(color: Colors.white),
-                errorWidget: (_, _, _) =>
-                    const Icon(Icons.broken_image, color: Colors.white38, size: 64),
+      body: KeyboardListener(
+        focusNode: _focusNode,
+        autofocus: true,
+        onKeyEvent: (KeyEvent event) {
+          if (event is! KeyDownEvent) return;
+
+          switch (event.logicalKey) {
+            case LogicalKeyboardKey.arrowLeft:
+              switchPhoto(-1);
+            case LogicalKeyboardKey.arrowRight:
+              switchPhoto(1);
+            case LogicalKeyboardKey.escape:
+              Navigator.of(context).pop();
+          }
+        },
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                child: CachedNetworkImage(
+                  imageUrl: _active.thumbnailUrl(size: 'preview'),
+                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                  fit: BoxFit.contain,
+                  placeholder: (_, _) =>
+                      const CircularProgressIndicator(color: Colors.white),
+                  errorWidget: (_, _, _) =>
+                      const Icon(Icons.broken_image, color: Colors.white38, size: 64),
+                ),
               ),
             ),
-          ),
-          if (widget.asset is StackedAssets)
-            Positioned(
-              bottom: 15,
-              right: 0,
-              left: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: _all.map((a) {
-                  final isActive = a == _active;
-                  return GestureDetector(
-                    onTap: () => setState(() => _active = a),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      width: isActive ? 65 : 45,
-                      height: isActive ? 65 : 45,
-                      margin: EdgeInsets.only(
-                        right: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: isActive
-                              ? Colors.white
-                              : Colors.white.withAlpha((255 * 0.4).round()),
-                          width: isActive ? 2 : 1,
+            if (widget.asset is StackedAssets)
+              Positioned(
+                bottom: 15,
+                right: 0,
+                left: 0,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: _all.map((a) {
+                    final isActive = a == _active;
+                    return GestureDetector(
+                      onTap: () => setState(() => _active = a),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        width: isActive ? 65 : 45,
+                        height: isActive ? 65 : 45,
+                        margin: EdgeInsets.only(
+                          right: 8,
                         ),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(9),
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: AnimatedOpacity(
-                                duration: const Duration(milliseconds: 200),
-                                opacity: isActive ? 1.0 : 0.5,
-                                child: CachedNetworkImage(
-                                  imageUrl: a.thumbnailUrl(size: 'preview'),
-                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                  fit: BoxFit.cover,
-                                  placeholder: (_, _) =>
-                                      const CircularProgressIndicator(color: Colors.white),
-                                  errorWidget: (_, _, _) =>
-                                      const Icon(Icons.broken_image, color: Colors.white38, size: 32),
-                                ),
-                              ),
-                            ),
-                            if (a.isRaw)
-                              Center(
-                                child: Text(
-                                  'RAW',
-                                  style: TextStyle(
-                                    color: Colors.white.withAlpha((255 * 0.6).round()),
-                                    fontSize: isActive ? 10 : 6,
-                                    fontWeight: FontWeight.w400,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withAlpha((255 * 0.4).round()),
+                            width: isActive ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(9),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: AnimatedOpacity(
+                                  duration: const Duration(milliseconds: 200),
+                                  opacity: isActive ? 1.0 : 0.5,
+                                  child: CachedNetworkImage(
+                                    imageUrl: a.thumbnailUrl(size: 'preview'),
+                                    httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                    fit: BoxFit.cover,
+                                    placeholder: (_, _) =>
+                                        const CircularProgressIndicator(color: Colors.white),
+                                    errorWidget: (_, _, _) =>
+                                        const Icon(Icons.broken_image, color: Colors.white38, size: 32),
                                   ),
                                 ),
                               ),
-                          ],
+                              if (a.isRaw)
+                                Center(
+                                  child: Text(
+                                    'RAW',
+                                    style: TextStyle(
+                                      color: Colors.white.withAlpha((255 * 0.6).round()),
+                                      fontSize: isActive ? 10 : 6,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
-            ),
-        ],
-      ),
+          ],
+        ),
+      )
     );
   }
 }

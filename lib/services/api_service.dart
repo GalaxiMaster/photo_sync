@@ -32,7 +32,16 @@ class ImmichAsset {
       mimeType: json['originalMimeType'] as String?,
     );
   }
+  // Map metadata = {
+  //   'deviceId': '',
+  //   'ownerId'
+  //   'createdAt'
+  //   "fileModifiedAt"
+  //   'isFavorite'
+  //   'people'
+  //   'hasMetadata'
 
+  // }
   String thumbnailUrl({String size = 'thumbnail'}) => '${ImmichConfig.baseUrl}/api/assets/$id/thumbnail?size=$size';
 
   String get originalUrl => '${ImmichConfig.baseUrl}/api/assets/$id/original';
@@ -77,7 +86,7 @@ class ImmichService {
       'page': page,
       'size': pageSize,
       'withArchived': false,
-      'withStacked': false,
+      // 'withStacked': false,
     });
 
     final items = response.data['assets']['items'] as List;
