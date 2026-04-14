@@ -253,6 +253,10 @@ class _TileState extends ConsumerState<_Tile> {
 
   @override
   Widget build(BuildContext context) {
+    final all = switch (widget.asset) {
+      SingleAsset a => [a.asset],
+      StackedAssets a => [a.primary, ...a.children],
+    };
     final isSelected = ref.watch(
       selectionProvider.select((set) => set.contains(widget.asset.id)),
     );
@@ -319,7 +323,11 @@ class _TileState extends ConsumerState<_Tile> {
                     top: 10,
                     left: 10,
                     child: GestureDetector(
-                      onTap: () => ref.read(selectionProvider.notifier).toggle(widget.asset.id),
+                      onTap: () {
+                        for (final ImmichAsset el in all) {
+                          ref.read(selectionProvider.notifier).toggle(el.id);
+                        }
+                      },
                       child: Icon(
                         Icons.check_circle,
                         color: isSelected ? Colors.blueAccent : Colors.white38,
