@@ -93,8 +93,14 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 imageUrl: _currentImage.thumbnailUrl(size: 'preview'),
                                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                 fit: BoxFit.contain,
-                                placeholder: (_, _) =>
-                                    const CircularProgressIndicator(color: Colors.white),
+                                placeholder: (_, _) => CachedNetworkImage(
+                                  imageUrl: _currentImage.thumbnailUrl(size: 'preview'),
+                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                  fit: BoxFit.cover,
+
+                                  errorWidget: (_, _, _) =>
+                                      const Icon(Icons.broken_image, color: Colors.white38, size: 32),
+                                ),
                                 errorWidget: (_, _, _) =>
                                     const Icon(Icons.broken_image, color: Colors.white38, size: 64),
                               ),
@@ -155,7 +161,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                         ),
                     
                         // Bottom Stack thumbnails
-                        if (widget.asset is StackedAssets)
+                        if (_active is StackedAssets)
                           Positioned(
                             bottom: 15,
                             right: 0,
@@ -179,7 +185,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                         color: isActive
                                             ? Colors.white
                                             : Colors.white.withAlpha((255 * 0.4).round()),
-                                        width: isActive ? 2 : 1,
+                                        width: isActive ? 2 : 0,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
                                     ),
@@ -195,8 +201,8 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                                 imageUrl: a.thumbnailUrl(size: 'preview'),
                                                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                                 fit: BoxFit.cover,
-                                                placeholder: (_, _) =>
-                                                    const CircularProgressIndicator(color: Colors.white),
+                                                // placeholder: (_, _) =>
+                                                //     const CircularProgressIndicator(color: Colors.white),
                                                 errorWidget: (_, _, _) =>
                                                     const Icon(Icons.broken_image, color: Colors.white38, size: 32),
                                               ),
