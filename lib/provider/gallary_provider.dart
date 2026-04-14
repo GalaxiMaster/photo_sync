@@ -153,8 +153,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
       originalContent = null;
       return;
     }
-
-    originalContent = state.value;
+    originalContent ??= state.value;
     state = const AsyncLoading();
     final results = await _service.smartSearch(query);
     _hasMore = results.length == pulledItems;
