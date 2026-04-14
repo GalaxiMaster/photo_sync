@@ -33,7 +33,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
   void _onScroll() {
     final pos = _scrollController.position;
-    if (pos.pixels >= pos.maxScrollExtent - 400) {
+    if (pos.pixels >= pos.maxScrollExtent - 500) {
       ref.read(galleryProvider.notifier).loadMore();
     }
   }
@@ -145,7 +145,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                       isDense: true,
                                     ),
                                     onFieldSubmitted: (value) {
-                                      if (value.trim().isEmpty) return;
+                                      // if (value.trim().isEmpty) return;
                                       ref.read(galleryProvider.notifier).smartSearch(value.trim());
                                     },
                                   ),

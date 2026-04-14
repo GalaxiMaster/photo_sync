@@ -11,8 +11,10 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   int _page = 1;
   bool _hasMore = true;
   bool _loadingMore = false;
-
+  int pulledItems = 80;
   ImmichService get _service => ref.read(immichServiceProvider);
+
+  List<GalleryItem>? originalContent;
 
   @override
   Future<List<GalleryItem>> build() => _fetch();
@@ -21,7 +23,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _page = 1;
     _hasMore = true;
     final results = await _service.fetchImages(page: _page);
-    _hasMore = results.length == 80;
+    _hasMore = results.length == pulledItems;
     return _stackPairs(results);  
   }
 
@@ -32,7 +34,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     final currentList = state.value ?? [];
     final next = await _service.fetchImages(page: ++_page);
 
-    _hasMore = next.length == 60;
+    _hasMore = next.length == pulledItems;
     _loadingMore = false;
 
     state = AsyncData([...currentList, ..._stackPairs(next)]);
@@ -145,9 +147,17 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   }
 
   Future<void> smartSearch(String query) async {
+    if (query.isEmpty) { // smart search doesnt have support for blank query so just exit out early
+      if (originalContent == null) return;
+      state = AsyncData(originalContent!);
+      originalContent = null;
+      return;
+    }
+
+    originalContent = state.value;
     state = const AsyncLoading();
     final results = await _service.smartSearch(query);
-    _hasMore = results.length == 80;
+    _hasMore = results.length == pulledItems;
     state = AsyncData(_stackPairs(results));
   }
 
