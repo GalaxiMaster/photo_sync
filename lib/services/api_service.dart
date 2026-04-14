@@ -21,7 +21,7 @@ class ImmichAsset {
     required this.fileCreatedAt,
     required this.mimeType,
   });
-
+  
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
     return ImmichAsset(
       id: json['id'] as String,
@@ -32,6 +32,23 @@ class ImmichAsset {
       mimeType: json['originalMimeType'] as String?,
     );
   }
+
+  ImmichAsset copyWith({
+    String? id,
+    String? type,
+    String? originalFileName,
+    DateTime? fileCreatedAt,
+    String? mimeType,
+  }) {
+    return ImmichAsset(
+      id: id ?? this.id,
+      type: type ?? this.type,
+      originalFileName: originalFileName ?? this.originalFileName,
+      fileCreatedAt: fileCreatedAt ?? this.fileCreatedAt,
+      mimeType: mimeType ?? this.mimeType,
+    );
+  }
+
   // Map metadata = {
   //   'deviceId': '',
   //   'ownerId'
@@ -40,7 +57,6 @@ class ImmichAsset {
   //   'isFavorite'
   //   'people'
   //   'hasMetadata'
-
   // }
   String thumbnailUrl({String size = 'thumbnail'}) => '${ImmichConfig.baseUrl}/api/assets/$id/thumbnail?size=$size';
 
@@ -120,6 +136,14 @@ class ImmichService {
     final response = await _dio.get('/assets/$assetId');
     return response.data as Map<String, dynamic>;
   }
+  Future<Map<String, dynamic>> changeAssetDate(String assetId, String dateString) async {
+    final response = await _dio.put('/assets/$assetId', data: {
+      "dateTimeOriginal": dateString,
+      "fileCreatedAt": dateString,
+      "fileModifiedAt": dateString
+    });
+    return response.data as Map<String, dynamic>;
+  }
 }
 
 
@@ -139,6 +163,7 @@ extension GalleryItemX on GalleryItem {
   String thumbnailUrl({String size = 'thumbnail'}) => leadAsset.thumbnailUrl(size: size);
   String get originalFileName => leadAsset.originalFileName;
   String get id => leadAsset.id;
+  DateTime get fileCreatedAt => leadAsset.fileCreatedAt;
 }
 
 

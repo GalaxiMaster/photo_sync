@@ -70,12 +70,13 @@ class InfoPanel extends ConsumerWidget {
                     Text('Details'),
                     infoBox(
                       leadingIcon: Icons.calendar_month_outlined,
-                      centerContent: _infoColumn(context, formatAssetDate(data['fileCreatedAt'])),
+                      centerContent: _infoColumn(context, formatAssetDate(asset.fileCreatedAt.toLocal())),
                       trailingIcon: Icons.edit,
                       onClick: () async {
-                        final picked = await showEditDateTimeDialog(context, DateTime.parse(data['fileCreatedAt']).toLocal());
+                        final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
                         if (picked != null) {
-                          debugPrint(picked.toString());
+                          await ref.read(galleryProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
+                          ref.invalidate(assetMetadataProvider(asset.id));
                         }
                       },
                     ),
@@ -180,17 +181,14 @@ class InfoPanel extends ConsumerWidget {
     );
   }
 }
-List<String> formatAssetDate(String isoString) {
-  final utc = DateTime.parse(isoString);
-  final local = utc.toLocal();
-
-  final offset = local.timeZoneOffset;
+List<String> formatAssetDate(DateTime date) {
+  final offset = date.timeZoneOffset;
   final sign = offset.isNegative ? '-' : '+';
   final hours = offset.inHours.abs().toString().padLeft(2, '0');
   final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
 
-  final dateLine = DateFormat('MMM d, y').format(local);
-  final timeLine = DateFormat('EEE, h:mm:ss a').format(local);
+  final dateLine = DateFormat('MMM d, y').format(date);
+  final timeLine = DateFormat('EEE, h:mm:ss a').format(date);
 
   return [dateLine, '$timeLine GMT$sign$hours:$minutes'];
 }

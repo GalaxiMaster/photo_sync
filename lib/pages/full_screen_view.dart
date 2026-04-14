@@ -16,21 +16,20 @@ class FullscreenView extends ConsumerStatefulWidget {
 }
 
 class _FullscreenViewState extends ConsumerState<FullscreenView> {
-  late GalleryItem _active;
-  late ImmichAsset _currentImage;
   final _focusNode = FocusNode();
   late int _index;
+  String? _currentImageId;
   bool _hoverLeft = false;
   bool _hoverRight = false;
   final double iconSize = 24;
   bool _showInfo = false;
+
   @override
   void initState() {
     super.initState();
     final assets = ref.read(galleryProvider).value ?? [];
     _index = assets.indexOf(widget.asset);
-    _active = widget.asset;
-    _currentImage = _active.leadAsset;
+    if (_index < 0) _index = 0;
   }
 
   @override
@@ -39,37 +38,46 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
     super.dispose();
   }
 
-  void switchPhoto(int delta) {
-    final assets = ref.read(galleryProvider).value ?? [];
+  void switchPhoto(int delta, List<GalleryItem> assets) {
     final next = _index + delta;
     if (next < 0 || next >= assets.length) return;
     setState(() {
       _index = next;
-      _active = assets[_index];
-      _currentImage = _active.leadAsset;
+      _currentImageId = null;
     });
   }
-  
-  List<ImmichAsset> get _all => switch (_active) {
-    SingleAsset a => [a.asset],
-    StackedAssets a => [a.primary, ...a.children],
-  };
 
   @override
   Widget build(BuildContext context) {
+    final assets = ref.watch(galleryProvider).value ?? [];
+
+    if (assets.isEmpty) return const Scaffold(backgroundColor: Colors.black);
+    if (_index >= assets.length) _index = assets.length - 1;
+
+    final active = assets[_index];
+
+    final all = switch (active) {
+      SingleAsset a => [a.asset],
+      StackedAssets a => [a.primary, ...a.children],
+    };
+
+    final currentImage = _currentImageId != null
+        ? all.firstWhere((a) => a.id == _currentImageId,
+            orElse: () => active.leadAsset)
+        : active.leadAsset;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: KeyboardListener(
         focusNode: _focusNode,
         autofocus: true,
-        onKeyEvent: (KeyEvent event) {
+        onKeyEvent: (event) {
           if (event is! KeyDownEvent) return;
-
           switch (event.logicalKey) {
             case LogicalKeyboardKey.arrowLeft:
-              switchPhoto(-1);
+              switchPhoto(-1, assets);
             case LogicalKeyboardKey.arrowRight:
-              switchPhoto(1);
+              switchPhoto(1, assets);
             case LogicalKeyboardKey.escape:
               Navigator.of(context).pop();
           }
@@ -87,17 +95,16 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           child: InteractiveViewer(
                             child: ConstrainedBox(
                               constraints: BoxConstraints(
-                                maxWidth: MediaQuery.of(context).size.width*0.85
+                                maxWidth: MediaQuery.of(context).size.width * 0.85,
                               ),
                               child: CachedNetworkImage(
-                                imageUrl: _currentImage.thumbnailUrl(size: 'preview'),
+                                imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                 fit: BoxFit.contain,
                                 placeholder: (_, _) => CachedNetworkImage(
-                                  imageUrl: _currentImage.thumbnailUrl(size: 'preview'),
+                                  imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                   httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                   fit: BoxFit.cover,
-
                                   errorWidget: (_, _, _) =>
                                       const Icon(Icons.broken_image, color: Colors.white38, size: 32),
                                 ),
@@ -108,78 +115,69 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           ),
                         ),
                         Positioned(
-                          top: 0,
-                          bottom: 0,
-                          right: 10,
-                          child: _index < (ref.read(galleryProvider).value?.length ?? 0) - 1
+                          top: 0, bottom: 0, right: 10,
+                          child: _index < assets.length - 1
                             ? MouseRegion(
-                              onEnter: (_) => setState(() => _hoverRight = true),
-                              onExit: (_) => setState(() => _hoverRight = false),
-                              child: GestureDetector(
-                                onTap: () => switchPhoto(1),
-                                behavior: HitTestBehavior.opaque,
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width * (1 / 5),
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: AnimatedOpacity(
-                                      duration: const Duration(milliseconds: 200),
-                                      opacity: _hoverRight ? 1.0 : 0.0,
-                                      child: const Icon(Icons.arrow_forward_ios, size: 32, color: Colors.white70),
+                                onEnter: (_) => setState(() => _hoverRight = true),
+                                onExit: (_) => setState(() => _hoverRight = false),
+                                child: GestureDetector(
+                                  onTap: () => switchPhoto(1, assets),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width * (1 / 5),
+                                    child: Align(
+                                      alignment: Alignment.centerRight,
+                                      child: AnimatedOpacity(
+                                        duration: const Duration(milliseconds: 200),
+                                        opacity: _hoverRight ? 1.0 : 0.0,
+                                        child: const Icon(Icons.arrow_forward_ios, size: 32, color: Colors.white70),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            )
+                              )
                             : const SizedBox.shrink(),
                         ),
                         Positioned(
-                          top: 0,
-                          bottom: 0,
-                          left: 10,
+                          top: 0, bottom: 0, left: 10,
                           child: _index > 0
                             ? MouseRegion(
-                              onEnter: (_) => setState(() => _hoverLeft = true),
-                              onExit: (_) => setState(() => _hoverLeft = false),
-                              child: GestureDetector(
-                                onTap: () => switchPhoto(-1),
-                                behavior: HitTestBehavior.opaque,
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width * (1 / 5),
-                                  child: Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: AnimatedOpacity(
-                                      duration: const Duration(milliseconds: 200),
-                                      opacity: _hoverLeft ? 1.0 : 0.0,
-                                      child: const Icon(Icons.arrow_back_ios_new, size: 32, color: Colors.white70),
+                                onEnter: (_) => setState(() => _hoverLeft = true),
+                                onExit: (_) => setState(() => _hoverLeft = false),
+                                child: GestureDetector(
+                                  onTap: () => switchPhoto(-1, assets),
+                                  behavior: HitTestBehavior.opaque,
+                                  child: SizedBox(
+                                    width: MediaQuery.of(context).size.width * (1 / 5),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: AnimatedOpacity(
+                                        duration: const Duration(milliseconds: 200),
+                                        opacity: _hoverLeft ? 1.0 : 0.0,
+                                        child: const Icon(Icons.arrow_back_ios_new, size: 32, color: Colors.white70),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            )
+                              )
                             : const SizedBox.shrink(),
                         ),
-                    
-                        // Bottom Stack thumbnails
-                        if (_active is StackedAssets)
+
+                        if (active is StackedAssets)
                           Positioned(
-                            bottom: 15,
-                            right: 0,
-                            left: 0,
+                            bottom: 15, right: 0, left: 0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: _all.map((a) {
-                                final isActive = a == _currentImage;
+                              children: all.map((a) {
+                                final isActive = a.id == currentImage.id;
                                 return GestureDetector(
-                                  onTap: () => setState(() => _currentImage = a),
+                                  onTap: () => setState(() => _currentImageId = a.id),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 200),
                                     curve: Curves.easeInOut,
                                     width: isActive ? 65 : 45,
                                     height: isActive ? 65 : 45,
-                                    margin: EdgeInsets.only(
-                                      right: 8,
-                                    ),
+                                    margin: const EdgeInsets.only(right: 8),
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isActive
@@ -201,8 +199,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                                 imageUrl: a.thumbnailUrl(size: 'preview'),
                                                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                                 fit: BoxFit.cover,
-                                                // placeholder: (_, _) =>
-                                                //     const CircularProgressIndicator(color: Colors.white),
                                                 errorWidget: (_, _, _) =>
                                                     const Icon(Icons.broken_image, color: Colors.white38, size: 32),
                                               ),
@@ -239,20 +235,21 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                       width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
-                          SizedBox(width: 5),
-                          IconButton(onPressed: () => Navigator.pop(context), mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.arrow_back, color: Colors.white)),
-                          Text(
-                            _active.originalFileName,
-                            style: const TextStyle(color: Colors.white70, fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 5),
+                          IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.arrow_back, color: Colors.white),
                           ),
                           const Spacer(),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.share, color: Colors.white)),
-                          IconButton(onPressed: () {
-                            setState(() {
-                              _showInfo = !_showInfo;
-                            });
-                          }, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.info_outline, color: Colors.white)),
+                          IconButton(
+                            onPressed: () => setState(() => _showInfo = !_showInfo),
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.info_outline, color: Colors.white),
+                          ),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.tune, color: Colors.white)),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.favorite_border, color: Colors.white)),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
@@ -269,13 +266,14 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
               width: _showInfo ? 400 : 0.0,
               clipBehavior: Clip.hardEdge,
               decoration: const BoxDecoration(),
-              child: InfoPanel(asset: _currentImage, close: (){setState(() {
-                _showInfo = false;
-              });}),
+              child: InfoPanel(
+                asset: currentImage,
+                close: () => setState(() => _showInfo = false),
+              ),
             ),
           ],
         ),
-      )
+      ),
     );
   }
 }

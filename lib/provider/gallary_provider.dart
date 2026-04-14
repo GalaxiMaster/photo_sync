@@ -104,6 +104,45 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
       throw Exception('Failed to delete assets: $e');
     }
   }
+  Future<void> changeAssetDate(ImmichAsset asset, String dateString) async {
+    final oldState = state.value ?? [];
+    ImmichAsset newAsset = asset.copyWith(fileCreatedAt: DateTime.parse(dateString));
+    state = AsyncData(updateAssetInList(oldState, asset.id, newAsset));
+    await _service.changeAssetDate(asset.id, dateString);
+  }
+
+  ImmichAsset? findAssetById(List<GalleryItem> assets, String targetId) {
+    for (final item in assets) {
+      final asset = switch (item) {
+        SingleAsset(:final asset) => asset,
+        StackedAssets(:final primary) => primary,
+      };
+      if (asset.id == targetId) return asset;
+    }
+    return null;
+  }
+
+  List<GalleryItem> updateAssetInList(List<GalleryItem> assets, String targetId, ImmichAsset updated) {
+    return assets.map<GalleryItem>((item) => switch (item) {
+      SingleAsset(:final asset) when asset.id == targetId =>
+          SingleAsset(updated),
+
+      StackedAssets(:final primary) when primary.id == targetId =>
+        StackedAssets(
+          primary: updated,
+          children: item.children,
+          containsRaw: item.containsRaw,
+        ),
+
+      StackedAssets() when item.children.any((c) => c.id == targetId) =>
+        StackedAssets(
+          primary: item.primary,
+          children: item.children.map((c) => c.id == targetId ? updated : c).toList(),
+          containsRaw: item.containsRaw,
+        ),
+      _ => item,
+    }).toList();
+  }
 
   Future<void> smartSearch(String query) async {
     state = const AsyncLoading();
