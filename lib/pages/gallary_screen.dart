@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
+import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/full_screen_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
@@ -164,7 +165,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                   ),
                                 ),
                                 IconButton(
-                                  onPressed: () {},
+                                  onPressed: () async {
+                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context);
+
+                                    debugPrint(searchOptions.toString());
+                                  },
                                   visualDensity: VisualDensity.compact,
                                   iconSize: iconSize,
                                   icon: const Icon(Icons.filter_list, color: Colors.white),
