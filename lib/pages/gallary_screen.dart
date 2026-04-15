@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/full_screen_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
@@ -18,6 +21,7 @@ class GalleryScreen extends ConsumerStatefulWidget {
 class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _scrollController = ScrollController();
   final double iconSize = 22;
+  final deleteKey = GlobalKey();
 
   @override
   void initState() {
@@ -99,13 +103,23 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                     IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.photo_album_outlined, color: Colors.white)),
                                     IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.label_outline, color: Colors.white)),
                                     IconButton(
+                                      key: deleteKey,
                                       onPressed: () async {
+                                        
                                         try {
-                                          ref.read(galleryProvider.notifier).deleteAssets(selection.toList());
-                                          if (context.mounted) {
-                                            showSuccessSnackbar(context, 'Selected assets deleted successfully');
+                                          final int totalBytes = selection.fold(0, (sum, asset) {
+                                            final size = asset.exifInfo['fileSizeInByte'] ?? 0;
+                                            return sum + (size as int);
+                                          });
+                                          final bool? confirm = await showDeleteConfirmationPopup(selection.length, totalBytes/pow(1024, 2),context, deleteKey);
+                                          if (confirm ?? false) {
+                                            ref.read(galleryProvider.notifier).deleteAssets(selection.map((element) => element.id).toList());
+                                            if (context.mounted) {
+                                              showSuccessSnackbar(context, 'Selected assets deleted successfully');
+                                            }
                                           }
                                         } catch (e) {
+                                          if (!context.mounted) return;
                                           showErrorSnackbar(context, 'Failed to delete selected assets. Please try again:\n$e');
                                         }
                                       },
@@ -258,7 +272,7 @@ class _TileState extends ConsumerState<_Tile> {
       StackedAssets a => [a.primary, ...a.children],
     };
     final isSelected = ref.watch(
-      selectionProvider.select((set) => set.contains(widget.asset.id)),
+      selectionProvider.select((set) => set.contains(widget.asset.leadAsset)),
     );
     final inSelectionMode = ref.watch(isSelectionModeProvider);
 
@@ -267,9 +281,9 @@ class _TileState extends ConsumerState<_Tile> {
       onExit: (_) => _isHovered.value = false,
       child: GestureDetector(
         onTap: () => inSelectionMode 
-            ? ref.read(selectionProvider.notifier).toggle(widget.asset.id) 
+            ? toggleElementSelection(all) 
             : _showFullscreen(context),
-        onLongPress: () => ref.read(selectionProvider.notifier).toggle(widget.asset.id),
+        onLongPress: () => toggleElementSelection(all),
         child: Stack(
           fit: StackFit.expand,
           children: [
@@ -323,11 +337,7 @@ class _TileState extends ConsumerState<_Tile> {
                     top: 10,
                     left: 10,
                     child: GestureDetector(
-                      onTap: () {
-                        for (final ImmichAsset el in all) {
-                          ref.read(selectionProvider.notifier).toggle(el.id);
-                        }
-                      },
+                      onTap: () => toggleElementSelection(all),
                       child: Icon(
                         Icons.check_circle,
                         color: isSelected ? Colors.blueAccent : Colors.white38,
@@ -344,7 +354,11 @@ class _TileState extends ConsumerState<_Tile> {
       ),
     );
   }
-
+  void toggleElementSelection(List<ImmichAsset> all) { 
+    for (final ImmichAsset el in all) {
+      ref.read(selectionProvider.notifier).toggle(el);
+    }
+  }
   Widget _buildStackIcon() => const Positioned(
     right: 10, bottom: 10, 
     child: Icon(Icons.filter_none, size: 14, color: Colors.white70)

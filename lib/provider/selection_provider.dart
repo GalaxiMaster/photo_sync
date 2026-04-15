@@ -1,21 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/services/api_service.dart';
 
-class SelectionNotifier extends Notifier<Set<String>> {
+class SelectionNotifier extends Notifier<Set<ImmichAsset>> {
   @override
-  Set<String> build() => {};
+  Set<ImmichAsset> build() => {};
 
-  void toggle(String id) {
-    if (state.contains(id)) {
-      state = { ...state }..remove(id);
+  void toggle(ImmichAsset asset) {
+    if (state.contains(asset)) {
+      state = { ...state }..remove(asset);
     } else {
-      state = { ...state, id };
+      state = { ...state, asset };
     }
   }
 
   void clear() => state = {};
 }
 
-final selectionProvider = NotifierProvider<SelectionNotifier, Set<String>>(
+final selectionProvider = NotifierProvider<SelectionNotifier, Set<ImmichAsset>>(
   SelectionNotifier.new,
 );
 
