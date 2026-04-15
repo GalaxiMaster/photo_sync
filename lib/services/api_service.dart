@@ -147,6 +147,26 @@ class ImmichService {
     });
     return response.data as Map<String, dynamic>;
   }
+  
+  Future<SearchSuggestions> getSearchSuggestions() async {
+    final results = await Future.wait([
+      _dio.get('/search/suggestions', queryParameters: {'type': 'country'}),
+      _dio.get('/search/suggestions', queryParameters: {'type': 'state'}),
+      _dio.get('/search/suggestions', queryParameters: {'type': 'city'}),
+      _dio.get('/search/suggestions', queryParameters: {'type': 'camera-make'}),
+      _dio.get('/search/suggestions', queryParameters: {'type': 'camera-model'}),
+      _dio.get('/search/suggestions', queryParameters: {'type': 'camera-lens-model'}),
+    ]);
+
+    return SearchSuggestions(
+      countries: List<String>.from(results[0].data),
+      states: List<String>.from(results[1].data),
+      cities: List<String>.from(results[2].data),
+      cameraMakes: List<String>.from(results[3].data),
+      cameraModels: List<String>.from(results[4].data),
+      lensModels: List<String>.from(results[5].data),
+    );
+  }
 }
 
 
@@ -180,4 +200,22 @@ class StackedAssets extends GalleryItem {
   final List<ImmichAsset> children;
   final bool containsRaw;
   const StackedAssets({required this.primary, this.containsRaw = false, required this.children});
+}
+
+class SearchSuggestions {
+  final List<String> countries;
+  final List<String> states;
+  final List<String> cities;
+  final List<String> cameraMakes;
+  final List<String> cameraModels;
+  final List<String> lensModels;
+
+  const SearchSuggestions({
+    required this.countries,
+    required this.states,
+    required this.cities,
+    required this.cameraMakes,
+    required this.cameraModels, 
+    required this.lensModels,
+  });
 }

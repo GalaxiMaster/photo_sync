@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/provider/gallary_provider.dart';
+import 'package:photo_sync/services/api_service.dart';
 
 enum SearchType {
   context('Context'),
@@ -70,6 +73,15 @@ class SearchOptions {
   });
 }
 
+
+
+final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((ref) async {
+  final repo = ref.read(immichServiceProvider);
+  return repo.getSearchSuggestions();
+});
+
+
+
 Future<SearchOptions?> showSearchOptionsDialog(BuildContext context) async {
   final SearchOptions? searchOptions = await showDialog(
     context: context,
@@ -79,14 +91,14 @@ Future<SearchOptions?> showSearchOptionsDialog(BuildContext context) async {
 }
 
 
-class SearchOptionsDialog extends StatefulWidget {
+class SearchOptionsDialog extends ConsumerStatefulWidget {
   const SearchOptionsDialog({super.key});
 
   @override
-  State<SearchOptionsDialog> createState() => _SearchOptionsDialogState();
+  ConsumerState<SearchOptionsDialog> createState() => _SearchOptionsDialogState();
 }
 
-class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
+class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   SearchType _searchType = SearchType.context;
   MediaType _mediaType = MediaType.all;
   bool _untagged = false;
@@ -274,6 +286,9 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
   }
 
   Widget _buildPlaceSection() {
+    final suggestionsAsync = ref.watch(
+      searchSuggestionsProvider.select((value) => value.whenData((s) => [s.countries, s.states, s.cities])),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -285,11 +300,11 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildDropdown('Search country...')),
+            Expanded(child: _buildDropdown('Search country...', items: suggestionsAsync.value?[0])),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search state...')),
+            Expanded(child: _buildDropdown('Search state...', items: suggestionsAsync.value?[1])),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search city...')),
+            Expanded(child: _buildDropdown('Search city...', items: suggestionsAsync.value?[2])),
           ],
         ),
         const SizedBox(height: 16),
@@ -298,6 +313,9 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
   }
 
   Widget _buildCameraSection() {
+    final suggestionsAsync = ref.watch(
+      searchSuggestionsProvider.select((value) => value.whenData((s) => [s.cameraMakes, s.cameraModels, s.lensModels])),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -309,11 +327,11 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildDropdown('Search camera make...')),
+            Expanded(child: _buildDropdown('Search camera make...', items: suggestionsAsync.value?[0])),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search camera model...')),
+            Expanded(child: _buildDropdown('Search camera model...', items: suggestionsAsync.value?[1])),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search lens model...')),
+            Expanded(child: _buildDropdown('Search lens model...', items: suggestionsAsync.value?[2])),
           ],
         ),
         const SizedBox(height: 16),
@@ -542,7 +560,7 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
     );
   }
 
-  Widget _buildDropdown(String hint) {
+  Widget _buildDropdown(String hint, {List? items}) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
       decoration: InputDecoration(
@@ -558,7 +576,16 @@ class _SearchOptionsDialogState extends State<SearchOptionsDialog> {
       ),
       dropdownColor: const Color(0xFF2C2F33),
       style: const TextStyle(color: Colors.white),
-      items: const [],
+      items: items != null ? [
+        const DropdownMenuItem(value: null, child: Text('Any')), // optional clear option
+        ...items.map(
+          (country) => DropdownMenuItem(
+            value: country,
+            child: Text(country),
+          ),
+        ),
+        const DropdownMenuItem(value: 'unknown', child: Text('Unknown')),
+      ] : [],
       onChanged: (_) {},
     );
   }
