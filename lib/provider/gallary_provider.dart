@@ -91,13 +91,39 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
       await _service.deleteAssets(assetIds);
 
       // Delete Locally
-      state = AsyncData(state.value?.where((item) {
+      state = AsyncData(state.value?.expand<GalleryItem>((item) {
         if (item is SingleAsset) {
-          return !assetIds.contains(item.asset.id);
-        } else if (item is StackedAssets) {
-          return !assetIds.contains(item.primary.id) && !item.children.any((child) => assetIds.contains(child.id));
+          return assetIds.contains(item.asset.id) ? [] : [item];
+        } 
+        
+        if (item is StackedAssets) {
+          final remainingChildren = item.children
+              .where((child) => !assetIds.contains(child.id))
+              .toList();
+
+          final bool primaryDeleted = assetIds.contains(item.primary.id);
+
+          if (primaryDeleted) {
+            if (remainingChildren.isEmpty) {
+              return [];
+            }
+            
+            final newPrimary = remainingChildren.first;
+            final newChildren = remainingChildren.sublist(1);
+
+            if (newChildren.isEmpty) {
+              return [SingleAsset(newPrimary)];
+            }
+            return [StackedAssets(primary: newPrimary, children: newChildren)];
+          } else {
+            if (remainingChildren.isEmpty) {
+              return [SingleAsset(item.primary)];
+            }
+            return [StackedAssets(primary: item.primary, children: remainingChildren)];
+          }
         }
-        return true;
+        
+        return [item];
       }).toList() ?? []);
 
       // clear selection after deletion

@@ -105,17 +105,16 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                     IconButton(
                                       key: deleteKey,
                                       onPressed: () async {
-                                        
                                         try {
                                           final int totalBytes = selection.fold(0, (sum, asset) {
                                             final size = asset.exifInfo['fileSizeInByte'] ?? 0;
                                             return sum + (size as int);
                                           });
-                                          final bool? confirm = await showDeleteConfirmationPopup(selection.length, totalBytes/pow(1024, 2),context, deleteKey);
+                                          final bool? confirm = await ImmichPopup.delete(itemCount: selection.length, spaceSaved: totalBytes/pow(1024, 2),context: context, anchorKey: deleteKey);
                                           if (confirm ?? false) {
                                             ref.read(galleryProvider.notifier).deleteAssets(selection.map((element) => element.id).toList());
                                             if (context.mounted) {
-                                              showSuccessSnackbar(context, 'Selected assets deleted successfully');
+                                              showSuccessSnackbar(context, 'Successfully sent selected assets to the trash');
                                             }
                                           }
                                         } catch (e) {

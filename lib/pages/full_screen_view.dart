@@ -2,7 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/side_panels.dart';
+import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
@@ -23,6 +25,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   bool _hoverRight = false;
   final double iconSize = 24;
   bool _showInfo = false;
+  final GlobalKey deleteKey = GlobalKey();
 
   @override
   void initState() {
@@ -252,6 +255,23 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           ),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.tune, color: Colors.white)),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.favorite_border, color: Colors.white)),
+                          IconButton(
+                            key: deleteKey,
+                            onPressed: () async {
+                              final int? option = await ImmichPopup.deleteStack(stackSize: all.length,context: context, anchorKey: deleteKey);
+                              if ((option ?? 0) > 0) {
+                                if (option == 1) { // Delete Stack
+                                  ref.read(galleryProvider.notifier).deleteAssets(all.map((element) => element.id).toList());
+                                } else if (option == 2) { // delete single
+                                  ref.read(galleryProvider.notifier).deleteAssets([currentImage.id]);
+                                }
+                                if (context.mounted) {
+                                  showSuccessSnackbar(context, 'Successfully sent selected asset(s) to the trash');
+                                }
+                              }
+                            }, 
+                            mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.delete_outline, color: Colors.white)
+                          ),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
                         ],
                       ),
