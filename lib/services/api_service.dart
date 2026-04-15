@@ -13,13 +13,15 @@ class ImmichAsset {
   final String originalFileName;
   final DateTime fileCreatedAt;
   final String? mimeType;
+  final Map exifInfo;
 
   const ImmichAsset({
     required this.id,
     required this.type,
     required this.originalFileName,
     required this.fileCreatedAt,
-    required this.mimeType,
+    required this.mimeType, 
+    required this.exifInfo,
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -29,7 +31,8 @@ class ImmichAsset {
       originalFileName: json['originalFileName'] as String? ?? '',
       fileCreatedAt: DateTime.tryParse(json['fileCreatedAt'] as String? ?? '') ??
           DateTime.now(),
-      mimeType: json['originalMimeType'] as String?,
+      mimeType: json['originalMimeType'] as String?, 
+      exifInfo: json['exifInfo'],
     );
   }
 
@@ -39,13 +42,15 @@ class ImmichAsset {
     String? originalFileName,
     DateTime? fileCreatedAt,
     String? mimeType,
+    Map? exifInfo,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
       type: type ?? this.type,
       originalFileName: originalFileName ?? this.originalFileName,
       fileCreatedAt: fileCreatedAt ?? this.fileCreatedAt,
-      mimeType: mimeType ?? this.mimeType,
+      mimeType: mimeType ?? this.mimeType, 
+      exifInfo: exifInfo ?? this.exifInfo,
     );
   }
 
@@ -102,6 +107,7 @@ class ImmichService {
       'page': page,
       'size': pageSize,
       'withArchived': false,
+      'withExif': true,
       // 'withStacked': false,
     });
 
@@ -110,22 +116,19 @@ class ImmichService {
   }
 
   Future<void> deleteAssets(List<String> assetIds) async {
-    final futures = assetIds.map((id) => deleteAsset(id));
-    await Future.wait(futures);
-  }
-
-  Future<void> deleteAsset(String assetId) async {
     await _dio.delete('/assets', data: {
-      'ids': [assetId],
-      'force': true,
+      'ids': assetIds,
+      // 'force': true, // skip trash
     });
   }
+
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,
       'type': 'IMAGE',
       'page': page,
       'size': pageSize,
+      'withExif': true,
     });
 
     final items = response.data['assets']['items'] as List;
