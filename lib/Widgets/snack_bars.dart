@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:photo_sync/main.dart';
 
-void showErrorSnackbar(BuildContext context, String errorMessage) {
-  ScaffoldMessenger.of(context).clearSnackBars();
+void showErrorSnackbar(String errorMessage) {
+  final messenger = scaffoldMessengerKey.currentState;
+  if (messenger == null) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
+  messenger.clearSnackBars();
+
+  final controller = messenger.showSnackBar(
     SnackBar(
       content: Row(
         children: [
@@ -28,7 +32,7 @@ void showErrorSnackbar(BuildContext context, String errorMessage) {
         label: 'DISMISS',
         textColor: Colors.white,
         onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          messenger.hideCurrentSnackBar();
         },
       ),
     ),
@@ -36,16 +40,17 @@ void showErrorSnackbar(BuildContext context, String errorMessage) {
 
   // Manually dismiss after 2s to work around Flutter desktop bug
   Future.delayed(const Duration(seconds: 3), () {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    }
+    controller.close();
   });
 }
 
-void showSuccessSnackbar(BuildContext context, String errorMessage) {
-  ScaffoldMessenger.of(context).clearSnackBars();
+void showSuccessSnackbar(String errorMessage) {
+  final messenger = scaffoldMessengerKey.currentState;
+  if (messenger == null) return;
 
-  ScaffoldMessenger.of(context).showSnackBar(
+  messenger.clearSnackBars();
+
+  final controller = messenger.showSnackBar(
     SnackBar(
       content: Row(
         children: [
@@ -70,7 +75,7 @@ void showSuccessSnackbar(BuildContext context, String errorMessage) {
         label: 'DISMISS',
         textColor: Colors.white,
         onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          messenger.hideCurrentSnackBar();
         },
       ),
     ),
@@ -78,9 +83,7 @@ void showSuccessSnackbar(BuildContext context, String errorMessage) {
 
   // Manually dismiss after 2s to work around Flutter desktop bug
   Future.delayed(const Duration(seconds: 3), () {
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    }
+    controller.close();
   });
 }
 

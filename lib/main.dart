@@ -13,6 +13,8 @@ void main() async {
   );
 }
 
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey();
+
 class App extends StatelessWidget {
   const App({super.key});
 
@@ -25,6 +27,7 @@ class App extends StatelessWidget {
         scaffoldBackgroundColor: Colors.black,
         colorScheme: const ColorScheme.dark(),
       ),
+      scaffoldMessengerKey: scaffoldMessengerKey,
       home: const GalleryScreen(),
     );
   }

@@ -114,12 +114,12 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                           if (confirm ?? false) {
                                             ref.read(galleryProvider.notifier).deleteAssets(selection.map((element) => element.id).toList());
                                             if (context.mounted) {
-                                              showSuccessSnackbar(context, 'Successfully sent selected assets to the trash');
+                                              showSuccessSnackbar('Successfully sent selected assets to the trash');
                                             }
                                           }
                                         } catch (e) {
                                           if (!context.mounted) return;
-                                          showErrorSnackbar(context, 'Failed to delete selected assets. Please try again:\n$e');
+                                          showErrorSnackbar('Failed to delete selected assets. Please try again:\n$e');
                                         }
                                       },
                                       visualDensity: VisualDensity.compact,

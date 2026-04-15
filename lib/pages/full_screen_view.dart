@@ -266,7 +266,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                   ref.read(galleryProvider.notifier).deleteAssets([currentImage.id]);
                                 }
                                 if (context.mounted) {
-                                  showSuccessSnackbar(context, 'Successfully sent selected asset(s) to the trash');
+                                  showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
                                 }
                               }
                             }, 
