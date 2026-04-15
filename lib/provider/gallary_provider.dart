@@ -6,14 +6,15 @@ final immichServiceProvider = Provider<ImmichService>(
   (_) => ImmichService(),
 );
 
-
 class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   int _page = 1;
   bool _hasMore = true;
   bool _loadingMore = false;
   int pulledItems = 80;
-  ImmichService get _service => ref.read(immichServiceProvider);
 
+  final Map<String, List<ImmichAsset>> _groupedAssets = {};
+
+  ImmichService get _service => ref.read(immichServiceProvider);
   List<GalleryItem>? originalContent;
 
   @override
@@ -22,34 +23,147 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   Future<List<GalleryItem>> _fetch() async {
     _page = 1;
     _hasMore = true;
+    _groupedAssets.clear();
+
     final results = await _service.fetchImages(page: _page);
     _hasMore = results.length == pulledItems;
-    return _stackPairs(results);  
+
+    _updateGroupedMap(results);
+    return _buildGalleryItems();
   }
 
   Future<void> loadMore() async {
     if (_loadingMore || !_hasMore) return;
     _loadingMore = true;
 
-    final currentList = state.value ?? [];
-    final next = await _service.fetchImages(page: ++_page);
+    try {
+      final next = await _service.fetchImages(page: ++_page);
+      _hasMore = next.length == pulledItems;
 
-    _hasMore = next.length == pulledItems;
-    _loadingMore = false;
-
-    state = AsyncData([...currentList, ..._stackPairs(next)]);
+      _updateGroupedMap(next);
+      state = AsyncData(_buildGalleryItems());
+    } catch (e, st) {
+      state = AsyncError(e, st);
+    } finally {
+      _loadingMore = false;
+    }
   }
 
   Future<void> refresh() async {
+    _page = 0;
+    _hasMore = true;
+    _groupedAssets.clear();
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_fetch);
+    await loadMore();
   }
-  
+
+  void _updateGroupedMap(List<ImmichAsset> assets) {
+    for (final asset in assets) {
+      final key = asset.pixelPairKey ?? asset.baseName;
+      _groupedAssets.putIfAbsent(key, () => []).add(asset);
+    }
+  }
+
+  /// Reconstructs the GalleryItem list from the map
+  List<GalleryItem> _buildGalleryItems() {
+    final List<GalleryItem> result = [];
+
+    for (final group in _groupedAssets.values) {
+      if (group.isEmpty) continue;
+
+      if (group.length == 1) {
+        result.add(SingleAsset(group.first));
+      } else {
+        final ImmichAsset primary = group.firstWhere(
+          (a) {
+            final name = a.originalFileName.toLowerCase().split('-').last;
+            return name.contains('01') || name.contains('cover');
+          },
+          orElse: () => group.firstWhere(
+            (a) => a.isJpg,
+            orElse: () => group.first,
+          ),
+        );
+
+        final containsRaw = group.any((a) => a.isRaw);
+        final other = group.where((a) => a.id != primary.id).toList();
+
+        result.add(StackedAssets(
+          primary: primary,
+          containsRaw: containsRaw,
+          children: other,
+        ));
+      }
+    }
+
+    // Sort by createdAt descending
+    // ..sort((a, b) {
+    //   final dateA = a is SingleAsset ? a.asset.createdAt : (a as StackedAssets).primary.createdAt;
+    //   final dateB = b is SingleAsset ? b.asset.createdAt : (b as StackedAssets).primary.createdAt;
+    //   return dateB.compareTo(dateA);
+    // });
+    return result;
+  }
+
+  Future<void> deleteAssets(List<String> assetIds) async {
+    try {
+      await _service.deleteAssets(assetIds);
+
+      final idSet = assetIds.toSet();
+
+      // Update the map by removing targeted IDs
+      final keysToRemove = <String>[];
+      _groupedAssets.forEach((key, list) {
+        list.removeWhere((asset) => idSet.contains(asset.id));
+        if (list.isEmpty) keysToRemove.add(key);
+      });
+
+      // Cleanup empty groups
+      for (final key in keysToRemove) {
+        _groupedAssets.remove(key);
+      }
+
+      state = AsyncData(_buildGalleryItems());
+      ref.read(selectionProvider.notifier).clear();
+    } catch (e) {
+      throw Exception('Failed to delete assets: $e');
+    }
+  }
+
+  Future<void> changeAssetDate(ImmichAsset asset, String dateString) async {
+    final newAsset = asset.copyWith(fileCreatedAt: DateTime.parse(dateString));
+    final key = asset.pixelPairKey ?? asset.baseName;
+
+    // Update map directly
+    if (_groupedAssets.containsKey(key)) {
+      final index = _groupedAssets[key]!.indexWhere((a) => a.id == asset.id);
+      if (index != -1) {
+        _groupedAssets[key]![index] = newAsset;
+      }
+    }
+
+    state = AsyncData(_buildGalleryItems());
+    await _service.changeAssetDate(asset.id, dateString);
+  }
+
+  Future<void> smartSearch(String query) async {
+    if (query.isEmpty) {
+      if (originalContent == null) return;
+      state = AsyncData(originalContent!);
+      originalContent = null;
+      return;
+    }
+    
+    originalContent ??= state.value;
+    state = const AsyncLoading();
+    
+    // Search is treated as a transient state and does not modify the persistent map
+    final results = await _service.smartSearch(query);
+    state = AsyncData(_stackPairs(results));
+  }
+
   static List<GalleryItem> _stackPairs(List<ImmichAsset> assets) {
     final Map<String, List<ImmichAsset>> groups = {};
-// PXL_20260405_201722973.LONG_EXPOSURE-01.COVER.jpg
-// PXL_20260405_201722973.LONG_EXPOSURE-02.ORIGINAL.jpg
-
     for (final asset in assets) {
       final key = asset.pixelPairKey ?? asset.baseName;
       groups.putIfAbsent(key, () => []).add(asset);
@@ -59,131 +173,20 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     for (final group in groups.values) {
       if (group.length == 1) {
         result.add(SingleAsset(group.first));
-        continue;
-      }
-
-      if (group.length > 1) {
-        final ImmichAsset primary = group.firstWhere( // TODO refactor to find the best candidate instead of just the first match, accounting for different naming conventions and not relying on 01 as 02 could be the start
-          (a) => a.originalFileName.split('-').last.contains('01'),
-          orElse: () => group.firstWhere(
-            (a) => a.originalFileName.split('-').last.contains('cover'),
-            orElse: () => group.firstWhere(
-              (a) => a.isJpg,
-              orElse: () => group.first,
-            ),
-          ),
+      } else {
+        final ImmichAsset primary = group.firstWhere(
+          (a) => a.originalFileName.toLowerCase().contains('01') || a.originalFileName.toLowerCase().contains('cover'),
+          orElse: () => group.firstWhere((a) => a.isJpg, orElse: () => group.first),
         );
-        final containsRaw = group.any((a) => a.isRaw);
-        final other = group.where((a) => a.originalFileName != primary.originalFileName).toList();
-        result.add(StackedAssets(primary: primary, containsRaw: containsRaw, children: other));
+        final other = group.where((a) => a.id != primary.id).toList();
+        result.add(StackedAssets(
+          primary: primary, 
+          containsRaw: group.any((a) => a.isRaw), 
+          children: other
+        ));
       }
-      else {
-        result.add(SingleAsset(group.first));
-      }
     }
-
-  return result;
-} 
-
-  Future<void> deleteAssets(List<String> assetIds) async {
-    try {
-      // Delete from server first, should cancel out if there's an issue and not delete locally
-      await _service.deleteAssets(assetIds);
-
-      // Delete Locally
-      state = AsyncData(state.value?.expand<GalleryItem>((item) {
-        if (item is SingleAsset) {
-          return assetIds.contains(item.asset.id) ? [] : [item];
-        } 
-        
-        if (item is StackedAssets) {
-          final remainingChildren = item.children
-              .where((child) => !assetIds.contains(child.id))
-              .toList();
-
-          final bool primaryDeleted = assetIds.contains(item.primary.id);
-
-          if (primaryDeleted) {
-            if (remainingChildren.isEmpty) {
-              return [];
-            }
-            
-            final newPrimary = remainingChildren.first;
-            final newChildren = remainingChildren.sublist(1);
-
-            if (newChildren.isEmpty) {
-              return [SingleAsset(newPrimary)];
-            }
-            return [StackedAssets(primary: newPrimary, children: newChildren)];
-          } else {
-            if (remainingChildren.isEmpty) {
-              return [SingleAsset(item.primary)];
-            }
-            return [StackedAssets(primary: item.primary, children: remainingChildren)];
-          }
-        }
-        
-        return [item];
-      }).toList() ?? []);
-
-      // clear selection after deletion
-      ref.read(selectionProvider.notifier).clear();
-    } catch (e) {
-      throw Exception('Failed to delete assets: $e');
-    }
-  }
-  Future<void> changeAssetDate(ImmichAsset asset, String dateString) async {
-    final oldState = state.value ?? [];
-    ImmichAsset newAsset = asset.copyWith(fileCreatedAt: DateTime.parse(dateString));
-    state = AsyncData(updateAssetInList(oldState, asset.id, newAsset));
-    await _service.changeAssetDate(asset.id, dateString);
-  }
-
-  ImmichAsset? findAssetById(List<GalleryItem> assets, String targetId) {
-    for (final item in assets) {
-      final asset = switch (item) {
-        SingleAsset(:final asset) => asset,
-        StackedAssets(:final primary) => primary,
-      };
-      if (asset.id == targetId) return asset;
-    }
-    return null;
-  }
-
-  List<GalleryItem> updateAssetInList(List<GalleryItem> assets, String targetId, ImmichAsset updated) {
-    return assets.map<GalleryItem>((item) => switch (item) {
-      SingleAsset(:final asset) when asset.id == targetId =>
-          SingleAsset(updated),
-
-      StackedAssets(:final primary) when primary.id == targetId =>
-        StackedAssets(
-          primary: updated,
-          children: item.children,
-          containsRaw: item.containsRaw,
-        ),
-
-      StackedAssets() when item.children.any((c) => c.id == targetId) =>
-        StackedAssets(
-          primary: item.primary,
-          children: item.children.map((c) => c.id == targetId ? updated : c).toList(),
-          containsRaw: item.containsRaw,
-        ),
-      _ => item,
-    }).toList();
-  }
-
-  Future<void> smartSearch(String query) async {
-    if (query.isEmpty) { // smart search doesnt have support for blank query so just exit out early
-      if (originalContent == null) return;
-      state = AsyncData(originalContent!);
-      originalContent = null;
-      return;
-    }
-    originalContent ??= state.value;
-    state = const AsyncLoading();
-    final results = await _service.smartSearch(query);
-    _hasMore = results.length == pulledItems;
-    state = AsyncData(_stackPairs(results));
+    return result;
   }
 
   bool get hasMore => _hasMore;
