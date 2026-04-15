@@ -7,10 +7,6 @@ import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
 
-final assetMetadataProvider = FutureProvider.family<Map<String, dynamic>, String>(
-  (ref, assetId) => ref.read(immichServiceProvider).getAssetMetadata(assetId),
-);
-
 class InfoPanel extends ConsumerWidget {
   final ImmichAsset asset;
   final VoidCallback close;
@@ -18,7 +14,10 @@ class InfoPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final metadata = ref.watch(assetMetadataProvider(asset.id));
+    final exif = asset.exifInfo;
+    final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
+    final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
+
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
       padding: const EdgeInsets.all(8),
@@ -46,84 +45,73 @@ class InfoPanel extends ConsumerWidget {
               ),
             ],
           ),
-          metadata.when(
-            loading: () => const CircularProgressIndicator(color: Colors.white),
-            error: (e, _) => Text('Error: $e'),
-            data: (data) {
-              final exif = data['exifInfo'];
-              final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
-              final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextFormField(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    TextFormField(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('People'),
-                        IconButton(onPressed: (){}, icon: Icon(Icons.add))
-                      ],
-                    ),
-                    Text('Details'),
-                    infoBox(
-                      leadingIcon: Icons.calendar_month_outlined,
-                      centerContent: _infoColumn(context, formatAssetDate(asset.fileCreatedAt.toLocal())),
-                      trailingIcon: Icons.edit,
-                      onClick: () async {
-                        final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
-                        if (picked != null) {
-                          await ref.read(galleryProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
-                          ref.invalidate(assetMetadataProvider(asset.id));
-                        }
-                      },
-                    ),
-                    infoBox(
-                      leadingIcon: Icons.image_outlined,
-                      centerContent: _infoColumn(
-                        context,
-                        [
-                          data['originalFileName'],
-                          '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
-                        ]
-                      ),
-                    ),
-                    infoBox(
-                      leadingIcon: Icons.camera_alt,
-                      centerContent: _infoColumn(
-                        context,
-                        [
-                          '${exif['make']} ${exif['model']}',
-                          '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
-                        ]
-                      ),
-                    ),
-                    infoBox(
-                      leadingIcon: Icons.camera,
-                      centerContent: _infoColumn(
-                        context,
-                        [
-                          '${exif['lensModel']}',
-                          '${exif['focalLength']} mm',
-                        ]
-                      ),
-                    ),
-                    infoBox(
-                      leadingIcon: Icons.location_on,
-                      centerContent: exif['latitude'] != null
-                          ? _infoColumn(
-                            context,
-                            ['${exif['latitude']}', '${exif['longitude']}']
-                          )
-                          : const Text('Add a location'),
-                      trailingIcon: Icons.edit,
-                    ),
+                    Text('People'),
+                    IconButton(onPressed: (){}, icon: Icon(Icons.add))
                   ],
                 ),
-              );
-            }
+                Text('Details'),
+                infoBox(
+                  leadingIcon: Icons.calendar_month_outlined,
+                  centerContent: _infoColumn(context, formatAssetDate(asset.fileCreatedAt.toLocal())),
+                  trailingIcon: Icons.edit,
+                  onClick: () async {
+                    final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
+                    if (picked != null) {
+                      await ref.read(galleryProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
+                    }
+                  },
+                ),
+                infoBox(
+                  leadingIcon: Icons.image_outlined,
+                  centerContent: _infoColumn(
+                    context,
+                    [
+                      asset.originalFileName,
+                      '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
+                    ]
+                  ),
+                ),
+                infoBox(
+                  leadingIcon: Icons.camera_alt,
+                  centerContent: _infoColumn(
+                    context,
+                    [
+                      '${exif['make']} ${exif['model']}',
+                      '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
+                    ]
+                  ),
+                ),
+                infoBox(
+                  leadingIcon: Icons.camera,
+                  centerContent: _infoColumn(
+                    context,
+                    [
+                      '${exif['lensModel']}',
+                      '${exif['focalLength']} mm',
+                    ]
+                  ),
+                ),
+                infoBox(
+                  leadingIcon: Icons.location_on,
+                  centerContent: exif['latitude'] != null
+                      ? _infoColumn(
+                        context,
+                        ['${exif['latitude']}', '${exif['longitude']}']
+                      )
+                      : const Text('Add a location'),
+                  trailingIcon: Icons.edit,
+                ),
+              ],
+            ),
           )
         ],
       ),
