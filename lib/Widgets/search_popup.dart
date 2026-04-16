@@ -36,7 +36,21 @@ class PlaceFilter {
   final String? state;
   final String? city;
 
-  PlaceFilter({this.country, this.state, this.city});
+  const PlaceFilter({this.country, this.state, this.city});
+
+  PlaceFilter copyWith({
+    String? country,
+    String? state,
+    String? city,
+  }) => PlaceFilter(
+    country: country ?? this.country,
+    state: state ?? this.state,
+    city: city ?? this.city,
+  );
+
+  PlaceFilter clearCountry() => PlaceFilter(state: state, city: city);
+  PlaceFilter clearState() => PlaceFilter(country: country, city: city);
+  PlaceFilter clearCity() => PlaceFilter(country: country, state: state);
 }
 
 class CameraFilter {
@@ -44,7 +58,21 @@ class CameraFilter {
   final String? model;
   final String? lens;
 
-  CameraFilter({this.make, this.model, this.lens});
+  const CameraFilter({this.make, this.model, this.lens});
+
+  CameraFilter copyWith({
+    String? make,
+    String? model,
+    String? lens,
+  }) => CameraFilter(
+    make: make ?? this.make,
+    model: model ?? this.model,
+    lens: lens ?? this.lens,
+  );
+
+  CameraFilter clearMake() => CameraFilter(model: model, lens: lens);
+  CameraFilter clearModel() => CameraFilter(make: make, lens: lens);
+  CameraFilter clearLens() => CameraFilter(make: make, model: model);
 }
 
 class SearchOptions {
@@ -103,6 +131,8 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   MediaType _mediaType = MediaType.all;
   bool _untagged = false;
   final Set<DisplayOption> _displayOptions = {};
+  PlaceFilter _placeFilter = const PlaceFilter();
+  CameraFilter _cameraFilter = const CameraFilter();
 
   // Date controllers
   final TextEditingController _startDateController = TextEditingController();
@@ -300,11 +330,31 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildDropdown('Search country...', items: suggestionsAsync.value?[0])),
+            Expanded(
+              child: _buildDropdown(
+                'Search country...', 
+                items: suggestionsAsync.value?[0],
+                intialValue: _placeFilter.country,
+                onChange: (value) => _placeFilter = _placeFilter.copyWith(country: value)
+              )
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search state...', items: suggestionsAsync.value?[1])),
+            Expanded(
+              child: _buildDropdown(
+                'Search state...', 
+                items: suggestionsAsync.value?[1],
+                intialValue: _placeFilter.state,
+                onChange: (value) => _placeFilter = _placeFilter.copyWith(state: value)
+              )
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search city...', items: suggestionsAsync.value?[2])),
+            Expanded(
+              child: _buildDropdown(
+                'Search city...', items: suggestionsAsync.value?[2],
+                intialValue: _placeFilter.city,
+                onChange: (value) => _placeFilter = _placeFilter.copyWith(city: value)
+              )
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -327,11 +377,32 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _buildDropdown('Search camera make...', items: suggestionsAsync.value?[0])),
+            Expanded(
+              child: _buildDropdown(
+                'Search camera make...', 
+                items: suggestionsAsync.value?[0],
+                intialValue: _cameraFilter.make,
+                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(make: value),
+              )
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search camera model...', items: suggestionsAsync.value?[1])),
+            Expanded(
+              child: _buildDropdown(
+                'Search camera model...', 
+                items: suggestionsAsync.value?[1],
+                intialValue: _cameraFilter.model,
+                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(model: value)
+              )
+            ),
             const SizedBox(width: 8),
-            Expanded(child: _buildDropdown('Search lens model...', items: suggestionsAsync.value?[2])),
+            Expanded(
+              child: _buildDropdown(
+                'Search lens model...', 
+                items: suggestionsAsync.value?[2],
+                intialValue: _cameraFilter.model,
+                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(model: value)
+              )
+            ),
           ],
         ),
         const SizedBox(height: 16),
@@ -512,6 +583,8 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 display: _displayOptions,
                 startDate: parseDate(_startDateController.text.replaceAll(' ', '')),
                 endDate: parseDate(_endDateController.text.replaceAll(' ', '')),
+                placeFilter: _placeFilter,
+                cameraFilter: _cameraFilter
               ));
               },
               style: FilledButton.styleFrom(
@@ -560,7 +633,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
     );
   }
 
-  Widget _buildDropdown(String hint, {List? items}) {
+  Widget _buildDropdown(String hint, {List? items, String? intialValue, Function(String? value)? onChange}) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
       decoration: InputDecoration(
@@ -586,7 +659,10 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         ),
         const DropdownMenuItem(value: 'unknown', child: Text('Unknown')),
       ] : [],
-      onChanged: (_) {},
+      initialValue: intialValue,
+      onChanged: (newValue) {
+        onChange?.call(newValue);
+      },
     );
   }
 

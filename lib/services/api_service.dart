@@ -1,5 +1,6 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
+import 'package:photo_sync/Widgets/search_popup.dart';
 
 class ImmichConfig {
   static String baseUrl = dotenv.env['immich_url'] ?? '';
@@ -167,8 +168,63 @@ class ImmichService {
       lensModels: List<String>.from(results[5].data),
     );
   }
-}
+  Future<List<ImmichAsset>> search({
+    required SearchOptions searchOptions,
+    int page = 1,
+    int size = 100,
+  }) async {
+    final body = <String, dynamic>{
+      'page': page,
+      'size': size,
+      if (searchOptions.startDate != null) 'takenAfter': searchOptions.startDate!.toUtc().toIso8601String(),
+      if (searchOptions.endDate != null) 'takenBefore': searchOptions.endDate!.toUtc().toIso8601String(),
+      if (searchOptions.mediaType != null && searchOptions.mediaType != MediaType.all) 'type': switch (searchOptions.mediaType) {
+        MediaType.image => 'IMAGE',
+        MediaType.video => 'VIDEO',
+        _ => null
+      },
+      if (searchOptions.tags != null && searchOptions.tags!.isNotEmpty) 'tagIds': searchOptions.tags!.toList(),
+      if (searchOptions.untagged != null) 'isNotInAlbum': searchOptions.untagged, // closest equivalent
+      // Display options
+      if (searchOptions.display != null) ...{
+        // if (display.contains(DisplayOption. notInAlbum)) 'withArchived': true,
+        if (!searchOptions.display!.contains(DisplayOption.archive)) 'isArchived': true,
+        if (searchOptions.display!.contains(DisplayOption.favorites)) 'isFavorite': true,
+      },
+      // Place filters
+      if (searchOptions.placeFilter != null) ...{
+        if (searchOptions.placeFilter?.country != null) 'country': searchOptions.placeFilter?.country,
+        if (searchOptions.placeFilter?.state != null) 'state': searchOptions.placeFilter?.state,
+        if (searchOptions.placeFilter?.city != null) 'city': searchOptions.placeFilter?.city,
+      },
+      // Camera filters
+      if (searchOptions.cameraFilter != null) ...{
+        if (searchOptions.cameraFilter?.make != null) 'make': searchOptions.cameraFilter?.make,
+        if (searchOptions.cameraFilter?.model != null) 'model': searchOptions.cameraFilter?.model,
+        if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
+      },
+      'withExif': true,
+    };
 
+    final String endpoint = switch (searchOptions.searchType) {
+      SearchType.context => '/search/smart',
+      _ => '/search/metadata',
+    };
+
+    // Smart search requires a query string, metadata search doesn't
+    if (searchOptions.searchType == SearchType.context) {
+      body['query'] = searchOptions.query.isNotEmpty ? searchOptions.query : '*';
+    } else if (searchOptions.query.isNotEmpty) {
+      body['originalFileName'] = searchOptions.query;
+    }
+
+    final response = await _dio.post(endpoint, data: body);
+    final assets = response.data['assets'] as Map<String, dynamic>;
+    return (assets['items'] as List)
+        .map((a) => ImmichAsset.fromJson(a))
+        .toList();
+  }
+}
 
 sealed class GalleryItem {
   const GalleryItem();

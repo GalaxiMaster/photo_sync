@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
@@ -146,8 +147,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     await _service.changeAssetDate(asset.id, dateString);
   }
 
-  Future<void> smartSearch(String query) async {
-    if (query.isEmpty) {
+  Future<void> smartSearch(SearchOptions options) async {
+    if (options.query.isEmpty && options.searchType == SearchType.context) {
       if (originalContent == null) return;
       state = AsyncData(originalContent!);
       originalContent = null;
@@ -158,7 +159,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     state = const AsyncLoading();
     
     // Search is treated as a transient state and does not modify the persistent map
-    final results = await _service.smartSearch(query);
+    final results = await _service.search(searchOptions: options);
     state = AsyncData(_stackPairs(results));
   }
 

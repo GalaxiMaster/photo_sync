@@ -1,8 +1,6 @@
 import 'dart:math';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
@@ -23,6 +21,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _scrollController = ScrollController();
   final double iconSize = 22;
   final deleteKey = GlobalKey();
+
+  final TextEditingController queryController = TextEditingController();
 
   @override
   void initState() {
@@ -150,6 +150,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 SizedBox(width: 10),
                                 Expanded(
                                   child: TextFormField(
+                                    controller: queryController,
                                     style: const TextStyle(color: Colors.white),
                                     decoration: const InputDecoration(
                                       hintText: 'Search...',
@@ -160,15 +161,17 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                     ),
                                     onFieldSubmitted: (value) {
                                       // if (value.trim().isEmpty) return;
-                                      ref.read(galleryProvider.notifier).smartSearch(value.trim());
+                                      ref.read(galleryProvider.notifier).smartSearch(SearchOptions(query: value.trim(), searchType: SearchType.context));
                                     },
                                   ),
                                 ),
                                 IconButton(
                                   onPressed: () async {
                                     final SearchOptions? searchOptions = await showSearchOptionsDialog(context);
-
-                                    debugPrint(searchOptions.toString());
+                                    if (searchOptions != null) {
+                                      ref.read(galleryProvider.notifier).smartSearch(searchOptions);
+                                      queryController.text = searchOptions.query;
+                                    }
                                   },
                                   visualDensity: VisualDensity.compact,
                                   iconSize: iconSize,
