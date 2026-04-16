@@ -24,6 +24,8 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
 
   final TextEditingController queryController = TextEditingController();
 
+  SearchOptions? currentSearch;
+
   @override
   void initState() {
     super.initState();
@@ -160,17 +162,20 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                       isDense: true,
                                     ),
                                     onFieldSubmitted: (value) {
-                                      // if (value.trim().isEmpty) return;
-                                      ref.read(galleryProvider.notifier).smartSearch(SearchOptions(query: value.trim(), searchType: SearchType.context));
+                                      final SearchOptions searchOptions = SearchOptions(query: value.trim(), searchType: SearchType.context);
+                                      
+                                      ref.read(galleryProvider.notifier).smartSearch(searchOptions);
+                                      currentSearch = searchOptions;
                                     },
                                   ),
                                 ),
                                 IconButton(
                                   onPressed: () async {
-                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context);
+                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch);
                                     if (searchOptions != null) {
                                       ref.read(galleryProvider.notifier).smartSearch(searchOptions);
                                       queryController.text = searchOptions.query;
+                                      currentSearch = searchOptions;
                                     }
                                   },
                                   visualDensity: VisualDensity.compact,

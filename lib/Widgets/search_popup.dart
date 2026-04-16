@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
@@ -99,6 +100,29 @@ class SearchOptions {
     this.placeFilter,
     this.cameraFilter,
   });
+  SearchOptions copyWith({
+    String? query,
+    SearchType? searchType,
+    MediaType? mediaType,
+    bool? untagged,
+    Set<DisplayOption>? display,
+    DateTime? startDate,
+    DateTime? endDate,
+    Set<String>? tags,
+    PlaceFilter? placeFilter,
+    CameraFilter? cameraFilter,
+  }) => SearchOptions(
+    query: query ?? this.query,
+    searchType: searchType ?? this.searchType,
+    mediaType: mediaType ?? this.mediaType,
+    untagged: untagged ?? this.untagged,
+    display: display ?? this.display,
+    startDate: startDate ?? this.startDate,
+    endDate: endDate ?? this.endDate,
+    tags: tags ?? this.tags,
+    placeFilter: placeFilter ?? this.placeFilter,
+    cameraFilter: cameraFilter ?? this.cameraFilter,
+  );
 }
 
 
@@ -110,17 +134,18 @@ final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((ref) async 
 
 
 
-Future<SearchOptions?> showSearchOptionsDialog(BuildContext context) async {
+Future<SearchOptions?> showSearchOptionsDialog(BuildContext context, {SearchOptions? initialSettings}) async {
   final SearchOptions? searchOptions = await showDialog(
     context: context,
-    builder: (context) => const SearchOptionsDialog(),
+    builder: (context) => SearchOptionsDialog(initialSettings: initialSettings,),
   );
   return searchOptions;
 }
 
 
 class SearchOptionsDialog extends ConsumerStatefulWidget {
-  const SearchOptionsDialog({super.key});
+  final SearchOptions? initialSettings;
+  const SearchOptionsDialog({super.key, this.initialSettings});
 
   @override
   ConsumerState<SearchOptionsDialog> createState() => _SearchOptionsDialogState();
@@ -130,7 +155,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   SearchType _searchType = SearchType.context;
   MediaType _mediaType = MediaType.all;
   bool _untagged = false;
-  final Set<DisplayOption> _displayOptions = {};
+  Set<DisplayOption> _displayOptions = {};
   PlaceFilter _placeFilter = const PlaceFilter();
   CameraFilter _cameraFilter = const CameraFilter();
 
@@ -139,6 +164,24 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   final TextEditingController _endDateController = TextEditingController();
   final TextEditingController _queryController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    _searchType = widget.initialSettings?.searchType ?? _searchType;
+    _mediaType = widget.initialSettings?.mediaType ?? _mediaType;
+    _untagged = widget.initialSettings?.untagged ?? _untagged;
+    _displayOptions = widget.initialSettings?.display ?? _displayOptions;
+    _placeFilter = widget.initialSettings?.placeFilter ?? _placeFilter;
+    _cameraFilter = widget.initialSettings?.cameraFilter ?? _cameraFilter;
+
+    if (widget.initialSettings?.startDate != null) {
+      _startDateController.text = DateFormat("dd / mm / yyyy").format(widget.initialSettings!.startDate!);
+    }
+    if (widget.initialSettings?.endDate != null) {
+      _endDateController.text = DateFormat("dd / mm / yyyy").format(widget.initialSettings!.endDate!);
+    }
+    _queryController.text = widget.initialSettings?.query ?? '';
+  }
   @override
   void dispose() {
     _startDateController.dispose();
