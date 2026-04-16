@@ -316,15 +316,21 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             );
           }).toList(),
         ),
-        if (_searchType == SearchType.context) ...[
-          const SizedBox(height: 8),
-          const Text(
-            'Search by context',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 8),
-          _buildTextField(_queryController, 'Sunrise on the beach'),
-        ],
+        const SizedBox(height: 8),
+        const Text(
+          'Search by context',
+          style: TextStyle(color: Colors.white70, fontSize: 13),
+        ),
+        const SizedBox(height: 8),
+        _buildTextField(
+          _queryController, 
+          switch (_searchType) {
+            SearchType.context => 'Sunrise on the beach',
+            SearchType.fileName => 'i.e. IMG_1234.JPG or PNG',
+            SearchType.description => 'Hiking day to chinamans cave',
+            SearchType.ocr => 'Burger',
+          }
+        ),
         const SizedBox(height: 16),
       ],
     );
