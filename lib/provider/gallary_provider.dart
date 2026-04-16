@@ -17,6 +17,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
   ImmichService get _service => ref.read(immichServiceProvider);
   List<GalleryItem>? originalContent;
+  SearchOptions searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
 
   @override
   Future<List<GalleryItem>> build() => _fetch();
@@ -38,11 +39,11 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _loadingMore = true;
 
     try {
-      final next = await _service.fetchImages(page: ++_page);
-      _hasMore = next.length == pulledItems;
+      await smartSearch(searchOptions, fetchMore: true);
+      // _hasMore = next.length == pulledItems;
 
-      _updateGroupedMap(next);
-      state = AsyncData(_buildGalleryItems());
+      // _updateGroupedMap(next);
+      // state = AsyncData(_buildGalleryItems());
     } catch (e, st) {
       state = AsyncError(e, st);
     } finally {
@@ -147,47 +148,32 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     await _service.changeAssetDate(asset.id, dateString);
   }
 
-  Future<void> smartSearch(SearchOptions options) async {
+  Future<void> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
+    searchOptions = options;
+
     if (options.query.isEmpty && options.searchType == SearchType.context) {
       if (originalContent == null) return;
       state = AsyncData(originalContent!);
+      _hasMore = originalContent!.length >= pulledItems;
       originalContent = null;
       return;
     }
     
     originalContent ??= state.value;
-    state = const AsyncLoading();
-    
-    // Search is treated as a transient state and does not modify the persistent map
-    final results = await _service.search(searchOptions: options);
-    state = AsyncData(_stackPairs(results));
-  }
-
-  static List<GalleryItem> _stackPairs(List<ImmichAsset> assets) {
-    final Map<String, List<ImmichAsset>> groups = {};
-    for (final asset in assets) {
-      final key = asset.pixelPairKey ?? asset.baseName;
-      groups.putIfAbsent(key, () => []).add(asset);
+    if (fetchMore) {
+      ++_page;
+    } else{
+      _page = 1;
+      _groupedAssets.clear();
+      state = const AsyncLoading();
     }
 
-    final List<GalleryItem> result = [];
-    for (final group in groups.values) {
-      if (group.length == 1) {
-        result.add(SingleAsset(group.first));
-      } else {
-        final ImmichAsset primary = group.firstWhere(
-          (a) => a.originalFileName.toLowerCase().contains('01') || a.originalFileName.toLowerCase().contains('cover'),
-          orElse: () => group.firstWhere((a) => a.isJpg, orElse: () => group.first),
-        );
-        final other = group.where((a) => a.id != primary.id).toList();
-        result.add(StackedAssets(
-          primary: primary, 
-          containsRaw: group.any((a) => a.isRaw), 
-          children: other
-        ));
-      }
-    }
-    return result;
+    final results = await _service.search(searchOptions: options, page: _page);
+
+    _hasMore = results.length >= pulledItems;
+
+    _updateGroupedMap(results);
+    state = AsyncData(_buildGalleryItems());
   }
 
   bool get hasMore => _hasMore;
