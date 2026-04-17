@@ -198,3 +198,105 @@ List<String> formatAssetDate(DateTime date) {
 
   return [dateLine, '$timeLine GMT$sign$hours:$minutes'];
 }
+
+// ------ Gallery screen sidebar
+
+class SidebarOverlay {
+  OverlayEntry? _entry;
+
+  void show(BuildContext context, Widget content) {
+    _entry = OverlayEntry(
+      builder: (context) => _SidebarSheet(
+        onDismiss: hide,
+        child: content,
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+  }
+
+  void hide() {
+    _entry?.remove();
+    _entry = null;
+  }
+}
+
+class _SidebarSheet extends StatefulWidget {
+  final VoidCallback onDismiss;
+  final Widget child;
+  const _SidebarSheet({required this.onDismiss, required this.child});
+
+  @override
+  State<_SidebarSheet> createState() => _SidebarSheetState();
+}
+
+class _SidebarSheetState extends State<_SidebarSheet>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 250),
+  )..forward();
+
+  late final _slide = Tween<Offset>(
+    begin: const Offset(-1, 0),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+  late final _fade = Tween<double>(begin: 0, end: 0.4)
+      .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+  Future<void> _dismiss() async {
+    await _controller.reverse();
+    widget.onDismiss();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // greyed barrier
+        FadeTransition(
+          opacity: _fade,
+          child: GestureDetector(
+            onTap: _dismiss,
+            child: Container(color: Colors.black),
+          ),
+        ),
+        // sidebar panel
+        Align(
+          alignment: Alignment.centerLeft,
+          child: SlideTransition(
+            position: _slide,
+            child: Container(
+              width: 320,
+              height: double.infinity,
+              color: Theme.of(context).colorScheme.surface,
+              child: widget.child,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class SideBarContent extends StatefulWidget {
+  SideBarContent({super.key});
+  @override
+  // ignore: library_private_types_in_public_api
+  _SideBarContentState createState() => _SideBarContentState();
+}
+
+class _SideBarContentState extends State<SideBarContent> {
+  @override
+  Widget build(BuildContext context) {
+    // TODO: implement build
+    throw UnimplementedError();
+  }
+
+}

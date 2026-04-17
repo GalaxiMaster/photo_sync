@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
+import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/full_screen_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
@@ -21,6 +22,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _scrollController = ScrollController();
   final double iconSize = 22;
   final deleteKey = GlobalKey();
+  final sidebar = SidebarOverlay();
 
   final TextEditingController queryController = TextEditingController();
 
@@ -60,8 +62,19 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  IconButton(
+                    onPressed: (){
+                      // open
+                      sidebar.show(context, Scaffold(
+                        body: Column(
+                          children: [Text('Menu')],
+                        ),
+                      ));
+
+                    }, 
+                    icon: Icon(Icons.menu)
+                  ),
                   const Text(
                     'Gallery',
                     style: TextStyle(
@@ -70,6 +83,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       fontWeight: FontWeight.w300
                     ),
                   ),
+                  const Spacer(),
                   Stack(
                     alignment: Alignment.center,
                     children: [
@@ -136,6 +150,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                           ),
                         )
                       ),
+                      
                       Align(
                         alignment: Alignment.center,
                         child: Material(
@@ -189,6 +204,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                       ),
                     ],
                   ),
+                  const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
                     onPressed: () => ref.read(galleryProvider.notifier).refresh(),
