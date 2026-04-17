@@ -3,9 +3,15 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
+import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
+
+final placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
+  final (lat, lng) = coords;
+  return getPlaceName(lat, lng);
+});
 
 class InfoPanel extends ConsumerWidget {
   final ImmichAsset asset;
@@ -17,6 +23,7 @@ class InfoPanel extends ConsumerWidget {
     final exif = asset.exifInfo;
     final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
+    final placeName = ref.watch(placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
 
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
@@ -48,7 +55,7 @@ class InfoPanel extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(),
                 Row(
@@ -103,16 +110,27 @@ class InfoPanel extends ConsumerWidget {
                 infoBox(
                   leadingIcon: Icons.location_on,
                   centerContent: exif['latitude'] != null
-                      ? _infoColumn(
-                        context,
-                        ['${exif['latitude']}', '${exif['longitude']}']
+                      ? placeName.when(
+                        data: (name) => Text(name ?? 'Unknown location'),
+                        loading: () => const Text('Loading...'),
+                        error: (e, _) => const Text('Unknown location'),
                       )
                       : const Text('Add a location'),
                   trailingIcon: Icons.edit,
                 ),
               ],
             ),
-          )
+          ),
+          if (exif['latitude'] != null) 
+            AspectRatio(
+              aspectRatio: 1, 
+              child: ClipRRect(
+                borderRadius: BorderRadiusGeometry.circular(20),
+                child: PhotoMapView(
+                  lat: exif['latitude'], lng: exif['longitude'],
+                ),
+              )
+            )
         ],
       ),
     );
