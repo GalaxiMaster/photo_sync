@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
+import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
@@ -100,7 +101,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               constraints: BoxConstraints(
                                 maxWidth: MediaQuery.of(context).size.width * 0.85,
                               ),
-                              child: CachedNetworkImage(
+                              child: !widget.asset.isLocal ? CachedNetworkImage(
                                 imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                 httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                 fit: BoxFit.contain,
@@ -113,7 +114,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 ),
                                 errorWidget: (_, _, _) =>
                                     const Icon(Icons.broken_image, color: Colors.white38, size: 64),
-                              ),
+                              ) : LocalAssetTile(asset: widget.asset.leadAsset, preview: false,),
                             ),
                           ),
                         ),

@@ -1,4 +1,7 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,6 +13,7 @@ import 'package:photo_sync/pages/full_screen_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
+import 'package:photo_sync/services/exiftool.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
@@ -66,11 +70,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                   IconButton(
                     onPressed: (){
                       // open
-                      sidebar.show(context, Scaffold(
-                        body: Column(
-                          children: [Text('Menu')],
-                        ),
-                      ));
+                      sidebar.show(context, SideBarContent());
 
                     }, 
                     icon: Icon(Icons.menu)
@@ -317,12 +317,12 @@ class _TileState extends ConsumerState<_Tile> {
           children: [
             Positioned.fill(
               child: RepaintBoundary(
-                child: CachedNetworkImage(
+                child: !widget.asset.isLocal ? CachedNetworkImage(
                   imageUrl: widget.asset.thumbnailUrl(),
                   httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                   fit: BoxFit.cover,
                   placeholder: (_, _) => const ColoredBox(color: Color(0xFF1A1A1A)),
-                ),
+                ) : LocalAssetTile(asset: widget.asset.leadAsset),
               ),
             ),
             ValueListenableBuilder<bool>(
@@ -420,6 +420,174 @@ class _LoadingTile extends StatelessWidget {
             color: Colors.white24,
           ),
         ),
+      ),
+    );
+  }
+}
+
+
+
+class LocalAssetTile extends StatelessWidget {
+  final ImmichAsset asset;
+  final bool preview;
+  final void Function(ImmichAsset asset)? onTap;
+
+  const LocalAssetTile({super.key, required this.asset, this.onTap, this.preview = true});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onTap?.call(asset),
+      child: asset.isVideo
+          ? _VideoTile(asset: asset)
+          : LocalImage(asset: asset, preview: preview),
+    );
+  }
+}
+
+class LocalImage extends ConsumerStatefulWidget {
+  final ImmichAsset asset;
+  final bool preview;
+  const LocalImage({super.key, required this.asset, this.preview = true});
+
+  @override
+  ConsumerState<LocalImage> createState() => _ImageTileState();
+}
+
+class _ImageTileState extends ConsumerState<LocalImage> {
+  late final Future<Uint8List?> future;
+  @override
+  void initState() {
+    super.initState();
+    future = widget.asset.isRaw
+      ? getEmbeddedJpeg(widget.asset.localPath!)
+      : Future.value(null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.asset.isRaw) {
+      return FutureBuilder<Uint8List?>(
+        future: future,
+        key: ValueKey(widget.asset.originalUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+            debugPrint('Image decode failed: ${snapshot.error}');
+            return const Icon(Icons.broken_image);
+          }
+
+          return RotatedBox(
+            quarterTurns: _exifRotation(widget.asset.exifInfo),
+            child: Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              cacheWidth: widget.preview ? 400 : 1920,
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Image decode failed: $error');
+                return const Icon(Icons.warning_amber_rounded);
+              },
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (frame == null) return const ColoredBox(color: Colors.black12);
+                return child;
+              },
+            ),
+          );
+        },
+      );
+    }
+
+    return RotatedBox(
+      quarterTurns: _exifRotation(widget.asset.exifInfo),
+      child: Image.file(
+        File(widget.asset.localPath!),
+        fit: BoxFit.cover,
+        cacheWidth: widget.preview ? 200 : null,
+        frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+          if (wasSynchronouslyLoaded || frame != null) return child;
+          return const ColoredBox(color: Color(0xFF1A1A1A));
+        },
+        errorBuilder: (context, _, _) => const _ErrorTile(),
+      ),
+    );
+  }
+}
+int _exifRotation(Map exifInfo) {
+  final orientation = exifInfo['Orientation']?.toString().toLowerCase() ?? '';
+  if (orientation.contains('rotate 90') || orientation.contains('90 cw')) return 1;
+  if (orientation.contains('rotate 180') || orientation.contains('180'))   return 2;
+  if (orientation.contains('rotate 270') || orientation.contains('90 ccw')) return 3;
+  return 0;
+}
+
+
+class _VideoTile extends ConsumerStatefulWidget {
+  final ImmichAsset asset;
+  const _VideoTile({required this.asset});
+
+  @override
+  ConsumerState<_VideoTile> createState() => _VideoTileState();
+}
+
+class _VideoTileState extends ConsumerState<_VideoTile> {
+  late final Future<Uint8List?> future;
+
+  @override
+  void initState() {
+    super.initState();
+    future = getEmbeddedJpeg(widget.asset.localPath!);
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: FutureBuilder<Uint8List?>(
+            future: future,
+            key: ValueKey(widget.asset.originalUrl),
+            builder: (context, snapshot) {
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                debugPrint('Image decode failed: ${snapshot.error}');
+                return const Icon(Icons.broken_image);
+              }
+          
+              return RotatedBox(
+                quarterTurns: _exifRotation(widget.asset.exifInfo),
+                child: Image.memory(
+                  snapshot.data!,
+                  fit: BoxFit.cover,
+                  cacheWidth: 400,
+                  errorBuilder: (context, error, stackTrace) {
+                    debugPrint('Image decode failed: $error');
+                    return const Icon(Icons.warning_amber_rounded);
+                  },
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (frame == null) return const ColoredBox(color: Colors.black12);
+                    return child;
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+        Center(child: Icon(Icons.play_circle, color: Colors.white70, size: 30)),
+      ],
+    );
+  }
+}
+
+class _ErrorTile extends StatelessWidget {
+  final String error;
+  const _ErrorTile() : error = 'broken';
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Color(0xFF2A2A2A),
+      child: Column(
+        children: [
+          Icon(Icons.broken_image, color: Colors.white38),
+          Text(error),
+        ],
       ),
     );
   }

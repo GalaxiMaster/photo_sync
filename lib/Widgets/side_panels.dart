@@ -7,6 +7,7 @@ import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:photo_sync/services/win_drives.dart';
 
 final placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
@@ -21,7 +22,7 @@ class InfoPanel extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exif = asset.exifInfo;
-    final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
+    final mp = (exif['width'] * exif['height'] / pow(1000, 2)).toStringAsFixed(1);
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
 
@@ -83,7 +84,7 @@ class InfoPanel extends ConsumerWidget {
                     context,
                     [
                       asset.originalFileName,
-                      '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
+                      '$mp MP  ${exif['width']} x ${exif['height']}  $sizeMiB MiB',
                     ]
                   ),
                 ),
@@ -285,18 +286,96 @@ class _SidebarSheetState extends State<_SidebarSheet>
   }
 }
 
-class SideBarContent extends StatefulWidget {
-  SideBarContent({super.key});
+class SideBarContent extends ConsumerStatefulWidget {
+  const SideBarContent({super.key});
   @override
   // ignore: library_private_types_in_public_api
   _SideBarContentState createState() => _SideBarContentState();
 }
 
-class _SideBarContentState extends State<SideBarContent> {
+class _SideBarContentState extends ConsumerState<SideBarContent> {
+  final drives = getRemovableDrives();
+  List<ImmichAsset> _localAssets = [];
+  bool _isScanning = false;
+  String _scanStatus = '';
+
+  Future<void> scanDrive(String driveLetter) async {
+    setState(() => _isScanning = true);
+
+    final assets = await scanDriveAssets( // todo make this cancellable
+      '$driveLetter\\',
+      onProgress: (path, found) {
+        setState(() => _scanStatus = 'Found $found files... $path');
+      },
+    );
+
+    setState(() {
+      _localAssets = assets;
+      _isScanning = false;
+      _scanStatus = 'Done — ${assets.length} files found';
+    });
+    ref.read(galleryProvider.notifier).loadLocal(_localAssets);
+  }
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.only(right: 50, top: 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            menuItem('Photos', Icons.photo_library_rounded, true),
+            menuItem('Explore', Icons.search, false),
+            menuItem('Map', Icons.map, false),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('Library'),
+            ),
+            menuItem('Favorites', Icons.favorite_outline, false),
+            menuItem('Albums', Icons.photo_album_rounded, false),
+            menuItem('Tags', Icons.label, false),
+            menuItem('Trash', Icons.delete_outline, false),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text('Computer'),
+                  Text(_scanStatus)
+                ],
+              ),
+            ),
+            for (final drive in drives)
+                ListTile(
+                  leading: const Icon(Icons.usb),
+                  title: Text(drive['label']!),
+                  onTap: () => scanDrive(drive['letter']!)
+                ),
+          ]
+        ),
+      )
+    );
   }
-
+  Widget menuItem(String label, IconData icon, bool selected) {
+    return ClipRRect(
+      borderRadius: BorderRadius.only(topRight: Radius.circular(30), bottomRight: Radius.circular(30)),
+      child: Material(
+        color: selected ? Color.fromARGB(200, 17, 20, 25) : Colors.transparent,
+        child: InkWell(
+          onTap: (){},
+          hoverColor: Colors.white.withValues(alpha: 0.05),
+          mouseCursor: SystemMouseCursors.click,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            child: Row(
+              spacing: 15,
+              children: [
+                Icon(icon, color: selected ? Color.fromARGB(255, 169, 204, 248) : Color.fromARGB(200, 218, 219, 219),),
+                Text(label)
+              ],
+            ),
+          )
+        ),
+      ),
+    );
+  }
 }

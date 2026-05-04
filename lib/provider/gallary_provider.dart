@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
@@ -12,9 +14,9 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   bool _hasMore = true;
   bool _loadingMore = false;
   int pulledItems = 80;
-
+  bool isLocal = true;
   final Map<String, List<ImmichAsset>> _groupedAssets = {};
-
+  List<ImmichAsset> fullLocal = [];
   ImmichService get _service => ref.read(immichServiceProvider);
   List<GalleryItem>? originalContent;
   SearchOptions searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
@@ -39,11 +41,20 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     _loadingMore = true;
 
     try {
-      await smartSearch(searchOptions, fetchMore: true);
-      // _hasMore = next.length == pulledItems;
+      late List<ImmichAsset>? results;
+      if (isLocal) {
+        results = fullLocal.sublist(_page * pulledItems, min(++_page * pulledItems, fullLocal.length));
+      } else {
+        results = await smartSearch(searchOptions, fetchMore: true);
+      }
 
-      // _updateGroupedMap(next);
-      // state = AsyncData(_buildGalleryItems());
+      if (results == null) return;
+
+      _hasMore = results.length >= pulledItems;
+
+      _updateGroupedMap(results);
+      state = AsyncData(_buildGalleryItems());
+      
     } catch (e, st) {
       state = AsyncError(e, st);
     } finally {
@@ -148,15 +159,28 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     await _service.changeAssetDate(asset.id, dateString);
   }
 
-  Future<void> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
+  Future<void> loadLocal(List<ImmichAsset> assets) async {
+    originalContent ??= state.value;
+    fullLocal = assets;
+
+    _hasMore = fullLocal.length > pulledItems;
+    _page = 1;
+
+    _groupedAssets.clear();
+
+    _updateGroupedMap(assets.sublist(0, pulledItems + 1));
+    state = AsyncData(_buildGalleryItems());
+  }
+
+  Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
     searchOptions = options;
 
     if (options.query.isEmpty && options.searchType == SearchType.context) {
-      if (originalContent == null) return;
+      if (originalContent == null) return null;
       state = AsyncData(originalContent!);
       _hasMore = originalContent!.length >= pulledItems;
       originalContent = null;
-      return;
+      return null;
     }
     
     originalContent ??= state.value;
@@ -169,11 +193,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     }
 
     final results = await _service.search(searchOptions: options, page: _page);
-
-    _hasMore = results.length >= pulledItems;
-
-    _updateGroupedMap(results);
-    state = AsyncData(_buildGalleryItems());
+    return results;
   }
 
   bool get hasMore => _hasMore;

@@ -15,6 +15,7 @@ class ImmichAsset {
   final DateTime fileCreatedAt;
   final String? mimeType;
   final Map exifInfo;
+  final String? localPath;
 
   const ImmichAsset({
     required this.id,
@@ -22,7 +23,8 @@ class ImmichAsset {
     required this.originalFileName,
     required this.fileCreatedAt,
     required this.mimeType, 
-    required this.exifInfo,
+    required this.exifInfo, 
+    this.localPath,
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class ImmichAsset {
     DateTime? fileCreatedAt,
     String? mimeType,
     Map? exifInfo,
+    String? localPath,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -52,6 +55,7 @@ class ImmichAsset {
       fileCreatedAt: fileCreatedAt ?? this.fileCreatedAt,
       mimeType: mimeType ?? this.mimeType, 
       exifInfo: exifInfo ?? this.exifInfo,
+      localPath: localPath ?? this.localPath,
     );
   }
 
@@ -66,16 +70,21 @@ class ImmichAsset {
   // }
   String thumbnailUrl({String size = 'thumbnail'}) => '${ImmichConfig.baseUrl}/api/assets/$id/thumbnail?size=$size';
 
-  String get originalUrl => '${ImmichConfig.baseUrl}/api/assets/$id/original';
+  String get originalUrl => localPath == null 
+    ? '${ImmichConfig.baseUrl}/api/assets/$id/original' 
+    : localPath!;
 
   bool get isRaw => 
       (['image/dng', 'image/arw', 'image/cr2'].contains(mimeType?.toLowerCase())) ||
       ['.dng', '.arw', '.cr2'].contains(originalFileName.toLowerCase().split('.').last);
+      
+  bool get isVideo => (mimeType?.toLowerCase().startsWith('video/')) == true || originalFileName.toLowerCase().split('.').last == 'mp4';
 
   bool get isJpg =>
       (mimeType?.toLowerCase() == 'image/jpeg') ||
       originalFileName.toLowerCase().endsWith('.jpg') ||
       originalFileName.toLowerCase().endsWith('.jpeg');
+
   String? get pixelPairKey { // TODO fix to not break with other naming conventions
     return originalFileName.split('-').first;
   }
@@ -243,6 +252,7 @@ extension GalleryItemX on GalleryItem {
   String get originalFileName => leadAsset.originalFileName;
   String get id => leadAsset.id;
   DateTime get fileCreatedAt => leadAsset.fileCreatedAt;
+  bool get isLocal => leadAsset.localPath != null;
 }
 
 
