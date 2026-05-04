@@ -155,7 +155,7 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
     final width = _exifInt(exif['Image ImageWidth'] ?? exif['EXIF ExifImageWidth']);
     final height = _exifInt(exif['Image ImageLength'] ?? exif['EXIF ExifImageLength']);
 
-    exifInfo.addAll({
+    exifInfo.addAll({ // todo note 'JPEGThumbnail' does exist here if i want to bundle it in
       'width': ?width,
       'height': ?height,
       if (exif['EXIF FocalLength'] != null) 'focalLength': exif['EXIF FocalLength'].toString(),
@@ -169,6 +169,9 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
       if (exif['Image Artist'] != null) 'artist': exif['Image Artist'].toString(),
       if (exif['Image ImageDescription'] != null) 'description': exif['Image ImageDescription'].toString(),
       if (exif['Image Orientation'] != null) 'Orientation': exif['Image Orientation'].toString(),
+      if (exif['EXIF FocalLength'] != null) 'focalLength': exif['EXIF FocalLength'].toString(),
+      if (exif['EXIF LensModel'] != null) 'lensModel': exif['EXIF LensModel'].toString(), // sony arw
+      if (exif['MakerNote LensModel'] != null) 'lensModel': exif['MakerNote LensModel'].toString(), // cannon cr2
     });
 
     // Dates
