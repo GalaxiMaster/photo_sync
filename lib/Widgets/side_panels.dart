@@ -84,7 +84,7 @@ class InfoPanel extends ConsumerWidget {
                     context,
                     [
                       asset.originalFileName,
-                      '$mp MP  ${exif['width']} x ${exif['height']}  $sizeMiB MiB',
+                      '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
                     ]
                   ),
                 ),

@@ -467,32 +467,38 @@ class _ImageTileState extends ConsumerState<LocalImage> {
   @override
   Widget build(BuildContext context) {
     if (widget.asset.isRaw) {
-      return FutureBuilder<Uint8List?>(
-        future: future,
-        key: ValueKey(widget.asset.originalUrl),
-        builder: (context, snapshot) {
-          if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-            debugPrint('Image decode failed: ${snapshot.error}');
-            return const Icon(Icons.broken_image);
-          }
-
-          return RotatedBox(
-            quarterTurns: _exifRotation(widget.asset.exifInfo),
-            child: Image.memory(
-              snapshot.data!,
-              fit: BoxFit.cover,
-              cacheWidth: widget.preview ? 400 : 1920,
-              errorBuilder: (context, error, stackTrace) {
-                debugPrint('Image decode failed: $error');
-                return const Icon(Icons.warning_amber_rounded);
-              },
-              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                if (frame == null) return const ColoredBox(color: Colors.black12);
-                return child;
-              },
-            ),
-          );
-        },
+      return SizedBox.expand(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          clipBehavior: Clip.hardEdge,
+          child: FutureBuilder<Uint8List?>(
+            future: future,
+            key: ValueKey(widget.asset.originalUrl),
+            builder: (context, snapshot) {
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+                debugPrint('Image decode failed: ${snapshot.error}');
+                return const Icon(Icons.broken_image);
+              }
+          
+              return RotatedBox(
+                quarterTurns: _exifRotation(widget.asset.exifInfo),
+                child: Image.memory(
+                  snapshot.data!,
+                  fit: BoxFit.cover,
+                  cacheWidth: widget.preview ? 400 : 1920,
+                  errorBuilder: (context, error, stackTrace) {
+                    debugPrint('Image decode failed: $error');
+                    return const Icon(Icons.warning_amber_rounded);
+                  },
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (frame == null) return const ColoredBox(color: Colors.black12);
+                    return child;
+                  },
+                ),
+              );
+            },
+          ),
+        ),
       );
     }
 

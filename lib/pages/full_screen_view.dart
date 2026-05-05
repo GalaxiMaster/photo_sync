@@ -114,7 +114,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 ),
                                 errorWidget: (_, _, _) =>
                                     const Icon(Icons.broken_image, color: Colors.white38, size: 64),
-                              ) : LocalAssetTile(asset: widget.asset.leadAsset, preview: false,),
+                              ) : LocalAssetTile(
+                                key: ValueKey(currentImage.id),
+                                asset: currentImage, 
+                                preview: false,
+                              ),
                             ),
                           ),
                         ),
