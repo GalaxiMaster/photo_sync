@@ -26,7 +26,10 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   final _scrollController = ScrollController();
   final double iconSize = 22;
   final deleteKey = GlobalKey();
+  final sideBarKey = GlobalKey();
+
   final sidebar = SidebarOverlay();
+  late final SideBarContent sideBarContent;
 
   final TextEditingController queryController = TextEditingController();
 
@@ -36,6 +39,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+    sideBarContent = SideBarContent(key: sideBarKey, overlayController: sidebar);
   }
 
   @override
@@ -69,9 +73,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                 children: [
                   IconButton(
                     onPressed: (){
-                      // open
-                      sidebar.show(context, SideBarContent());
-
+                      sidebar.show(context, sideBarContent);
                     }, 
                     icon: Icon(Icons.menu)
                   ),

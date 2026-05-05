@@ -154,7 +154,7 @@ class InfoPanel extends ConsumerWidget {
           child: InkWell(
             onTap: onClick,
             borderRadius: BorderRadius.circular(8),
-            hoverColor: Colors.white.withOpacity(0.05),
+            hoverColor: Colors.white.withValues(alpha: 0.05),
             mouseCursor: cursor,
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
@@ -204,27 +204,41 @@ List<String> formatAssetDate(DateTime date) {
 
 class SidebarOverlay {
   OverlayEntry? _entry;
+  final _key = GlobalKey<_SidebarSheetState>();
+  final _offstage = ValueNotifier<bool>(true);
 
   void show(BuildContext context, Widget content) {
-    _entry = OverlayEntry(
-      builder: (context) => _SidebarSheet(
-        onDismiss: hide,
-        child: content,
-      ),
-    );
-    Overlay.of(context).insert(_entry!);
+    if (_entry == null) {
+      _entry = OverlayEntry(
+        builder: (_) => ValueListenableBuilder(
+          valueListenable: _offstage,
+          builder: (_, hidden, child) => Offstage(offstage: hidden, child: child),
+          child: _SidebarSheet(
+            key: _key,
+            onDismiss: _removeEntry,
+            child: content,
+          ),
+        ),
+      );
+      Overlay.of(context).insert(_entry!);
+    }
+    _offstage.value = false;
+    _key.currentState?.animateIn();
   }
 
-  void hide() {
-    _entry?.remove();
-    _entry = null;
+  Future<void> hide() async {
+    await _key.currentState?._dismiss();
+  }
+
+  void _removeEntry() {
+    _offstage.value = true;
   }
 }
 
 class _SidebarSheet extends StatefulWidget {
   final VoidCallback onDismiss;
   final Widget child;
-  const _SidebarSheet({required this.onDismiss, required this.child});
+  const _SidebarSheet({required this.onDismiss, required this.child, super.key});
 
   @override
   State<_SidebarSheet> createState() => _SidebarSheetState();
@@ -249,7 +263,9 @@ class _SidebarSheetState extends State<_SidebarSheet>
     await _controller.reverse();
     widget.onDismiss();
   }
-
+  void animateIn() {
+    _controller.forward(from: 0);
+  }
   @override
   void dispose() {
     _controller.dispose();
@@ -287,7 +303,8 @@ class _SidebarSheetState extends State<_SidebarSheet>
 }
 
 class SideBarContent extends ConsumerStatefulWidget {
-  const SideBarContent({super.key});
+  final SidebarOverlay? overlayController;
+  const SideBarContent({super.key, this.overlayController});
   @override
   // ignore: library_private_types_in_public_api
   _SideBarContentState createState() => _SideBarContentState();
@@ -298,6 +315,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
   List<ImmichAsset> _localAssets = [];
   bool _isScanning = false;
   String _scanStatus = '';
+  String selectedTab = 'Photos';
 
   Future<void> scanDrive(String driveLetter) async {
     setState(() => _isScanning = true);
@@ -324,17 +342,17 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            menuItem('Photos', Icons.photo_library_rounded, true),
-            menuItem('Explore', Icons.search, false),
-            menuItem('Map', Icons.map, false),
+            menuItem('Photos', Icons.photo_library_rounded, onClick: () => ref.read(galleryProvider.notifier).loadCloud()),
+            menuItem('Explore', Icons.search),
+            menuItem('Map', Icons.map),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text('Library'),
             ),
-            menuItem('Favorites', Icons.favorite_outline, false),
-            menuItem('Albums', Icons.photo_album_rounded, false),
-            menuItem('Tags', Icons.label, false),
-            menuItem('Trash', Icons.delete_outline, false),
+            menuItem('Favorites', Icons.favorite_outline),
+            menuItem('Albums', Icons.photo_album_rounded),
+            menuItem('Tags', Icons.label),
+            menuItem('Trash', Icons.delete_outline),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -345,23 +363,24 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               ),
             ),
             for (final drive in drives)
-                ListTile(
-                  leading: const Icon(Icons.usb),
-                  title: Text(drive['label']!),
-                  onTap: () => scanDrive(drive['letter']!)
-                ),
+              menuItem(drive['label']!, Icons.usb, onClick: () => scanDrive(drive['letter']!)),
           ]
         ),
       )
     );
   }
-  Widget menuItem(String label, IconData icon, bool selected) {
+  Widget menuItem(String label, IconData icon, {Function? onClick}) {
+    final bool selected = label == selectedTab;
     return ClipRRect(
       borderRadius: BorderRadius.only(topRight: Radius.circular(30), bottomRight: Radius.circular(30)),
       child: Material(
         color: selected ? Color.fromARGB(200, 17, 20, 25) : Colors.transparent,
         child: InkWell(
-          onTap: (){},
+          onTap: () async {
+            await onClick?.call();
+            setState(() => selectedTab = label);
+            widget.overlayController?.hide();
+          },
           hoverColor: Colors.white.withValues(alpha: 0.05),
           mouseCursor: SystemMouseCursors.click,
           child: Padding(

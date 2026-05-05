@@ -14,7 +14,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   bool _hasMore = true;
   bool _loadingMore = false;
   int pulledItems = 80;
-  bool isLocal = true;
+  bool isLocal = false;
   final Map<String, List<ImmichAsset>> _groupedAssets = {};
   List<ImmichAsset> fullLocal = [];
   ImmichService get _service => ref.read(immichServiceProvider);
@@ -165,11 +165,25 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
     _hasMore = fullLocal.length > pulledItems;
     _page = 1;
+    isLocal = true;
 
     _groupedAssets.clear();
-
     _updateGroupedMap(assets.sublist(0, pulledItems + 1));
     state = AsyncData(_buildGalleryItems());
+  }
+
+  Future<void> loadCloud() async {
+    if (!isLocal && state.value != null) return;
+    _page = 1;
+    _groupedAssets.clear();
+
+    final results = await _service.fetchImages(page: _page);
+    _hasMore = results.length == pulledItems;
+
+    _updateGroupedMap(results);
+    fullLocal = [];
+    state = AsyncData(_buildGalleryItems());
+    originalContent ??= state.value;
   }
 
   Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
