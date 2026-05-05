@@ -156,8 +156,8 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
     final height = _exifInt(exif['Image ImageLength'] ?? exif['EXIF ExifImageLength']);
 
     exifInfo.addAll({ // todo note 'JPEGThumbnail' does exist here if i want to bundle it in
-      'width': ?width,
-      'height': ?height,
+      'exifImageWidth': ?width,
+      'exifImageHeight': ?height,
       if (exif['EXIF FocalLength'] != null) 'focalLength': exif['EXIF FocalLength'].toString(),
       if (exif['EXIF FNumber'] != null) 'fNumber': exif['EXIF FNumber'].toString(),
       if (exif['EXIF ISOSpeedRatings'] != null) 'iso': exif['EXIF ISOSpeedRatings'].toString(),
@@ -203,6 +203,11 @@ Future<ImmichAsset?> _assetFromVideo(File file, String ext) async {
 
   try {
     exifInfo.addAll(await Mp4MetadataReader.fromPath(file.path));
+
+    exifInfo['exifImageWidth'] = exifInfo['width'];
+    exifInfo['exifImageHeight'] = exifInfo['height'];
+    exifInfo.remove('width');
+    exifInfo.remove('height');
   } catch (_) {}
 
   return ImmichAsset(
