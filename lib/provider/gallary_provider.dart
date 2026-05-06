@@ -77,7 +77,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     }
   }
 
-  /// Reconstructs the GalleryItem list from the map
+  // Reconstructs the GalleryItem list from the map
   List<GalleryItem> _buildGalleryItems() {
     final List<GalleryItem> result = [];
 
@@ -173,10 +173,13 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   }
 
   Future<void> loadCloud() async {
-    if (!isLocal && state.value != null) return;
+    if (!isLocal && state.value != null && searchOptions.isEmpty()) return;
+    
+    state = const AsyncLoading();
+
     _page = 1;
     _groupedAssets.clear();
-
+    searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
     final results = await _service.fetchImages(page: _page);
     _hasMore = results.length == pulledItems;
 
@@ -200,10 +203,20 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     state = AsyncData(_buildGalleryItems());
     await _service.favoriteImmichAsset(asset.id, newValue);
   }
-  Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
+
+  void searchFromOptions(SearchOptions options, {bool force = false}) async {
+    final results = await smartSearch(options, force: force);
+    if (results == null) return;
+
+    _hasMore = results.length >= pulledItems;
+    _updateGroupedMap(results);
+    state = AsyncData(_buildGalleryItems());
+  }
+
+  Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false, bool force = false}) async {
     searchOptions = options;
 
-    if (options.query.isEmpty && options.searchType == SearchType.context) {
+    if (options.query.isEmpty && options.searchType == SearchType.context && !force) {
       if (originalContent == null) return null;
       state = AsyncData(originalContent!);
       _hasMore = originalContent!.length >= pulledItems;

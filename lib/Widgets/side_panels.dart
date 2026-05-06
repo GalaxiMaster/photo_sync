@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
+import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
@@ -349,7 +350,14 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text('Library'),
             ),
-            menuItem('Favorites', Icons.favorite_outline),
+            menuItem('Favorites', Icons.favorite_outline, onClick: () {
+              final searchOptions = SearchOptions(
+                query: '',
+                searchType: SearchType.fileName,
+                favorited: true,
+              );
+              ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
+            }),
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
             menuItem('Trash', Icons.delete_outline),

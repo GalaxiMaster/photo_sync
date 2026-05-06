@@ -87,6 +87,7 @@ class SearchOptions {
   final Set<String>? tags;
   final PlaceFilter? placeFilter;
   final CameraFilter? cameraFilter;
+  final bool? favorited;
 
   SearchOptions({
     required this.query,
@@ -98,8 +99,22 @@ class SearchOptions {
     this.endDate, 
     this.tags, 
     this.placeFilter,
-    this.cameraFilter,
+    this.cameraFilter, 
+    this.favorited,
   });
+
+  bool isEmpty() {
+    return query.isEmpty &&
+        mediaType == null &&
+        untagged != true &&
+        (display == null || display!.isEmpty) &&
+        startDate == null &&
+        endDate == null &&
+        (tags == null || tags!.isEmpty) &&
+        placeFilter == const PlaceFilter() &&
+        cameraFilter == const CameraFilter() &&
+        favorited != true;
+  }
   SearchOptions copyWith({
     String? query,
     SearchType? searchType,
@@ -111,6 +126,7 @@ class SearchOptions {
     Set<String>? tags,
     PlaceFilter? placeFilter,
     CameraFilter? cameraFilter,
+    bool? favorited,
   }) => SearchOptions(
     query: query ?? this.query,
     searchType: searchType ?? this.searchType,
@@ -122,6 +138,7 @@ class SearchOptions {
     tags: tags ?? this.tags,
     placeFilter: placeFilter ?? this.placeFilter,
     cameraFilter: cameraFilter ?? this.cameraFilter,
+    favorited: favorited ?? this.favorited,
   );
 }
 

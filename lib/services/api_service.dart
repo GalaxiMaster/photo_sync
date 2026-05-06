@@ -220,6 +220,7 @@ class ImmichService {
         if (searchOptions.cameraFilter?.model != null) 'model': searchOptions.cameraFilter?.model,
         if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
       },
+      if (searchOptions.favorited == true) 'isFavorite': true,
       'withExif': true,
     };
 

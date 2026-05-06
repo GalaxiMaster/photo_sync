@@ -181,7 +181,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                     onFieldSubmitted: (value) {
                                       final SearchOptions searchOptions = SearchOptions(query: value.trim(), searchType: SearchType.context);
                                       
-                                      ref.read(galleryProvider.notifier).smartSearch(searchOptions);
+                                      ref.read(galleryProvider.notifier).searchFromOptions(searchOptions);
                                       currentSearch = searchOptions;
                                     },
                                   ),
@@ -190,7 +190,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                   onPressed: () async {
                                     final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch);
                                     if (searchOptions != null) {
-                                      ref.read(galleryProvider.notifier).smartSearch(searchOptions);
+                                      ref.read(galleryProvider.notifier).searchFromOptions(searchOptions);
                                       queryController.text = searchOptions.query;
                                       currentSearch = searchOptions;
                                     }
