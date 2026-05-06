@@ -185,7 +185,21 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     state = AsyncData(_buildGalleryItems());
     originalContent ??= state.value;
   }
+  void toggleFavorite(ImmichAsset asset) async {
+    final newValue = !asset.isFavorite;
+    final updatedAsset = asset.copyWith(isFavorite: newValue);
+    final key = asset.pixelPairKey ?? asset.baseName;
 
+    if (_groupedAssets.containsKey(key)) {
+      final index = _groupedAssets[key]!.indexWhere((a) => a.id == asset.id);
+      if (index != -1) {
+        _groupedAssets[key]![index] = updatedAsset;
+      }
+    }
+
+    state = AsyncData(_buildGalleryItems());
+    await _service.favoriteImmichAsset(asset.id, newValue);
+  }
   Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false}) async {
     searchOptions = options;
 

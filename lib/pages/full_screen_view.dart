@@ -65,7 +65,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
       StackedAssets a => [a.primary, ...a.children],
     };
 
-    final currentImage = _currentImageId != null
+    final ImmichAsset currentImage = _currentImageId != null
         ? all.firstWhere((a) => a.id == _currentImageId,
             orElse: () => active.leadAsset)
         : active.leadAsset;
@@ -258,8 +258,26 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             iconSize: iconSize,
                             icon: const Icon(Icons.info_outline, color: Colors.white),
                           ),
-                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.tune, color: Colors.white)),
-                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.favorite_border, color: Colors.white)),
+                          IconButton(
+                            onPressed: () {}, 
+                            mouseCursor: SystemMouseCursors.click, 
+                            iconSize: iconSize, 
+                            icon: const Icon(
+                              Icons.tune, 
+                              color: Colors.white
+                            )
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              ref.read(galleryProvider.notifier).toggleFavorite(currentImage);
+                            }, 
+                            mouseCursor: SystemMouseCursors.click, 
+                            iconSize: iconSize, 
+                            icon: Icon(
+                              currentImage.isFavorite ? Icons.favorite : Icons.favorite_border, 
+                              color: Colors.white
+                            )
+                          ),
                           IconButton(
                             key: deleteKey,
                             onPressed: () async {

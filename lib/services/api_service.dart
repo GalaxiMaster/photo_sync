@@ -16,7 +16,7 @@ class ImmichAsset {
   final String? mimeType;
   final Map exifInfo;
   final String? localPath;
-
+  final bool isFavorite;
   const ImmichAsset({
     required this.id,
     required this.type,
@@ -24,7 +24,8 @@ class ImmichAsset {
     required this.fileCreatedAt,
     required this.mimeType, 
     required this.exifInfo, 
-    this.localPath,
+    this.isFavorite = false,
+    this.localPath, 
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -36,6 +37,7 @@ class ImmichAsset {
           DateTime.now(),
       mimeType: json['originalMimeType'] as String?, 
       exifInfo: json['exifInfo'],
+      isFavorite: json['isFavorite'] ?? false,
     );
   }
 
@@ -47,6 +49,7 @@ class ImmichAsset {
     String? mimeType,
     Map? exifInfo,
     String? localPath,
+    bool? isFavorite,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -56,6 +59,7 @@ class ImmichAsset {
       mimeType: mimeType ?? this.mimeType, 
       exifInfo: exifInfo ?? this.exifInfo,
       localPath: localPath ?? this.localPath,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 
@@ -128,10 +132,14 @@ class ImmichService {
   Future<void> deleteAssets(List<String> assetIds) async {
     await _dio.delete('/assets', data: {
       'ids': assetIds,
-      // 'force': true, // skip trash
     });
   }
 
+  Future<void> favoriteImmichAsset(String assetId, bool isFavorite) async {
+    await _dio.put('/assets/$assetId', data: {
+      'isFavorite': isFavorite,
+    });
+  }
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,
