@@ -233,9 +233,31 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
       _groupedAssets.clear();
       state = const AsyncLoading();
     }
+    final results = isLocal 
+      ? localSearch(searchOptions: options, page: _page)
+      : await _service.search(searchOptions: options, page: _page);
 
-    final results = await _service.search(searchOptions: options, page: _page);
     return results;
+  }
+
+  List<ImmichAsset> localSearch({required SearchOptions searchOptions, required int page}){
+    return fullLocal.where((asset) {
+      final matchesQuery = searchOptions.query.isEmpty || asset.baseName.toLowerCase().contains(searchOptions.query.toLowerCase());
+      final matchesMediaType = searchOptions.mediaType == null || asset.isOfType(searchOptions.mediaType!);
+      final matchesDate = (searchOptions.startDate == null || asset.fileCreatedAt.isAfter(searchOptions.startDate!)) && // todo check if this is inclusive
+                          (searchOptions.endDate == null || asset.fileCreatedAt.isBefore(searchOptions.endDate!));
+      final matchesMake = (searchOptions.cameraFilter?.isEmpty() ?? true) || (asset.exifInfo['make'] != null && asset.exifInfo['make']!.toLowerCase() == searchOptions.cameraFilter!.make!.toLowerCase());
+      final matchesModel = (searchOptions.cameraFilter?.isEmpty() ?? true) || (asset.exifInfo['model'] != null && asset.exifInfo['model']!.toLowerCase() == searchOptions.cameraFilter!.model!.toLowerCase());
+      final matchesLensModel = (searchOptions.cameraFilter?.isEmpty() ?? true) || (asset.exifInfo['lensModel'] != null && asset.exifInfo['lensModel']!.toLowerCase() == searchOptions.cameraFilter!.lens!.toLowerCase());
+
+      return matchesQuery && matchesMediaType && matchesDate && matchesMake && matchesModel && matchesLensModel;
+    }).skip((page - 1) * pulledItems).take(pulledItems).toList();
+  // final String query; filename | description
+
+  // final SearchType searchType;
+  // final Set<String>? tags;
+  // final bool? favorited;
+  // final SortOrder sortOrder;
   }
 
   bool get hasMore => _hasMore;

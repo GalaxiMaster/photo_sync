@@ -188,7 +188,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                 ),
                                 IconButton(
                                   onPressed: () async {
-                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch);
+                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch, localSearch: ref.read(galleryProvider.notifier).isLocal);
                                     if (searchOptions != null) {
                                       ref.read(galleryProvider.notifier).searchFromOptions(searchOptions);
                                       queryController.text = searchOptions.query;
@@ -457,15 +457,26 @@ class LocalImage extends ConsumerStatefulWidget {
 }
 
 class _ImageTileState extends ConsumerState<LocalImage> {
-  late final Future<Uint8List?> future;
+  Future<Uint8List?>? future;
+  @override
   @override
   void initState() {
     super.initState();
-    future = widget.asset.isRaw
-      ? getEmbeddedJpeg(widget.asset.localPath!)
-      : Future.value(null);
+    _refreshFuture();
   }
+  @override
+  void didUpdateWidget(covariant LocalImage oldWidget) {
+    super.didUpdateWidget(oldWidget);
 
+    if (oldWidget.asset.localPath != widget.asset.localPath) {
+      _refreshFuture();
+    }
+  }
+  void _refreshFuture() {
+    future = widget.asset.isRaw
+        ? getEmbeddedJpeg(widget.asset.localPath!)
+        : null;
+  }
   @override
   Widget build(BuildContext context) {
     if (widget.asset.isRaw) {
@@ -486,6 +497,7 @@ class _ImageTileState extends ConsumerState<LocalImage> {
               child: Image.memory(
                 snapshot.data!,
                 fit: BoxFit.cover,
+                key: ValueKey(widget.asset.originalUrl),
                 cacheWidth: widget.preview ? 400 : widget.asset.exifInfo['exifImageWidth'],
                 errorBuilder: (context, error, stackTrace) {
                   debugPrint('Image decode failed: $error');
@@ -508,6 +520,7 @@ class _ImageTileState extends ConsumerState<LocalImage> {
         File(widget.asset.localPath!),
         fit: BoxFit.cover,
         cacheWidth: widget.preview ? 200 : null,
+        key: ValueKey(widget.asset.originalUrl),
         frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
           if (wasSynchronouslyLoaded || frame != null) return child;
           return const ColoredBox(color: Color(0xFF1A1A1A));
@@ -562,6 +575,7 @@ class _VideoTileState extends ConsumerState<_VideoTile> {
                   snapshot.data!,
                   fit: BoxFit.cover,
                   cacheWidth: 400,
+                  key: ValueKey(widget.asset.originalUrl),
                   errorBuilder: (context, error, stackTrace) {
                     debugPrint('Image decode failed: $error');
                     return const Icon(Icons.warning_amber_rounded);

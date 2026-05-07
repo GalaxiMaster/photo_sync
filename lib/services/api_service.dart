@@ -72,6 +72,13 @@ class ImmichAsset {
   //   'people'
   //   'hasMetadata'
   // }
+  bool isOfType(MediaType mediaType) {
+    return switch (mediaType) {
+      MediaType.image => isJpg || isRaw,
+      MediaType.video => isVideo,
+      MediaType.all => true,
+    };
+  }
   String thumbnailUrl({String size = 'thumbnail'}) => '${ImmichConfig.baseUrl}/api/assets/$id/thumbnail?size=$size';
 
   String get originalUrl => localPath == null 

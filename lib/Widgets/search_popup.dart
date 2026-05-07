@@ -5,13 +5,14 @@ import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
 enum SearchType {
-  context('Context'),
-  fileName('File name or extension'),
-  description('Description'),
-  ocr('OCR');
+  context('Context', false),
+  fileName('File name or extension', true),
+  description('Description', true),
+  ocr('OCR', false);
 
-  const SearchType(this.label);
+  const SearchType(this.label, this.localSearchSafe);
   final String label;
+  final bool localSearchSafe;
 }
 
 enum MediaType {
@@ -49,6 +50,10 @@ class PlaceFilter {
     city: city ?? this.city,
   );
 
+  bool isEmpty() {
+    return country == null && state == null && city == null;
+  }
+
   PlaceFilter clearCountry() => PlaceFilter(state: state, city: city);
   PlaceFilter clearState() => PlaceFilter(country: country, city: city);
   PlaceFilter clearCity() => PlaceFilter(country: country, state: state);
@@ -70,6 +75,10 @@ class CameraFilter {
     model: model ?? this.model,
     lens: lens ?? this.lens,
   );
+
+  bool isEmpty() {
+    return lens == null && model == null && make == null;
+  }
 
   CameraFilter clearMake() => CameraFilter(model: model, lens: lens);
   CameraFilter clearModel() => CameraFilter(make: make, lens: lens);
@@ -163,10 +172,10 @@ final searchSuggestionsProvider = FutureProvider<SearchSuggestions>((ref) async 
 
 
 
-Future<SearchOptions?> showSearchOptionsDialog(BuildContext context, {SearchOptions? initialSettings}) async {
+Future<SearchOptions?> showSearchOptionsDialog(BuildContext context, {SearchOptions? initialSettings, bool localSearch = false}) async {
   final SearchOptions? searchOptions = await showDialog(
     context: context,
-    builder: (context) => SearchOptionsDialog(initialSettings: initialSettings,),
+    builder: (context) => SearchOptionsDialog(initialSettings: initialSettings, localSearch: localSearch),
   );
   return searchOptions;
 }
@@ -174,7 +183,8 @@ Future<SearchOptions?> showSearchOptionsDialog(BuildContext context, {SearchOpti
 
 class SearchOptionsDialog extends ConsumerStatefulWidget {
   final SearchOptions? initialSettings;
-  const SearchOptionsDialog({super.key, this.initialSettings});
+  final bool localSearch;
+  const SearchOptionsDialog({super.key, this.initialSettings, this.localSearch = false});
 
   @override
   ConsumerState<SearchOptionsDialog> createState() => _SearchOptionsDialogState();
@@ -332,7 +342,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         const SizedBox(height: 8),
         Wrap(
           spacing: 4,
-          children: SearchType.values.map((type) {
+          children: (widget.localSearch ? SearchType.values.where((t) => t.localSearchSafe) : SearchType.values).map((type) {
             return Row(
               mainAxisSize: MainAxisSize.min,
               children: [
