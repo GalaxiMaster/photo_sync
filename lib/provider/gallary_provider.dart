@@ -1,5 +1,5 @@
 import 'dart:math';
-
+import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
@@ -161,7 +161,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
   Future<void> loadLocal(List<ImmichAsset> assets) async {
     originalContent ??= state.value;
-    fullLocal = assets;
+    fullLocal = assets..sort((a, b) => b.fileCreatedAt.compareTo(a.fileCreatedAt));
 
     _hasMore = fullLocal.length > pulledItems;
     _page = 1;
@@ -241,7 +241,10 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   }
 
   List<ImmichAsset> localSearch({required SearchOptions searchOptions, required int page}){
-    return fullLocal.where((asset) {
+    return fullLocal.sorted((a, b) {
+      final cmp = a.fileCreatedAt.compareTo(b.fileCreatedAt);
+      return searchOptions.sortOrder == SortOrder.desc ? -cmp : cmp;
+    }).where((asset) {
       final matchesQuery = searchOptions.query.isEmpty || asset.baseName.toLowerCase().contains(searchOptions.query.toLowerCase());
       final matchesMediaType = searchOptions.mediaType == null || asset.isOfType(searchOptions.mediaType!);
       final matchesDate = (searchOptions.startDate == null || asset.fileCreatedAt.isAfter(searchOptions.startDate!)) && // todo check if this is inclusive
@@ -257,7 +260,6 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   // final SearchType searchType;
   // final Set<String>? tags;
   // final bool? favorited;
-  // final SortOrder sortOrder;
   }
 
   bool get hasMore => _hasMore;
