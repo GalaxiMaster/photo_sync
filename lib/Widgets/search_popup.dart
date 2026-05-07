@@ -207,7 +207,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   @override
   void initState() {
     super.initState();
-    _searchType = widget.initialSettings?.searchType ?? _searchType;
+    _searchType = widget.initialSettings?.searchType ?? (widget.localSearch ? SearchType.fileName : _searchType);
     _mediaType = widget.initialSettings?.mediaType ?? _mediaType;
     _untagged = widget.initialSettings?.untagged ?? _untagged;
     _displayOptions = widget.initialSettings?.display ?? _displayOptions;
@@ -246,14 +246,20 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPeopleSection(),
-                    const Divider(color: Colors.white12),
+                    if (!widget.localSearch) ...[
+                      _buildPeopleSection(),
+                      const Divider(color: Colors.white12),
+                    ],
                     _buildSearchTypeSection(),
                     const Divider(color: Colors.white12),
-                    _buildTagsSection(),
-                    const Divider(color: Colors.white12),
-                    _buildPlaceSection(),
-                    const Divider(color: Colors.white12),
+                    if (!widget.localSearch) ...[
+                      _buildTagsSection(),
+                      const Divider(color: Colors.white12),
+                    ],
+                    if (!widget.localSearch) ...[
+                      _buildPlaceSection(),
+                      const Divider(color: Colors.white12),
+                    ],
                     _buildCameraSection(),
                     const Divider(color: Colors.white12),
                     _buildDateSection(),
@@ -592,7 +598,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: Column(
+              child: Column( // todo make wrap if display settings arent there due to local search
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
@@ -655,6 +661,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
               ),
             ),
             // Display options
+            if (!widget.localSearch)
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
