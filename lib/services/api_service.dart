@@ -185,7 +185,7 @@ class ImmichService {
       lensModels: List<String>.from(results[5].data),
     );
   }
-  
+
   Future<List<ImmichAsset>> search({
     required SearchOptions searchOptions,
     int page = 1,
@@ -222,6 +222,7 @@ class ImmichService {
         if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
       },
       if (searchOptions.favorited == true) 'isFavorite': true,
+      "order": searchOptions.sortOrder == SortOrder.asc ? 'asc' : 'desc',
       'withExif': true,
     };
     if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {

@@ -76,6 +76,14 @@ class CameraFilter {
   CameraFilter clearLens() => CameraFilter(make: make, model: model);
 }
 
+enum SortOrder {
+  desc('Descending'),
+  asc('Ascending');
+
+  const SortOrder(this.label);
+  final String label;
+}
+
 class SearchOptions {
   final String query;
   final SearchType searchType;
@@ -88,10 +96,12 @@ class SearchOptions {
   final PlaceFilter? placeFilter;
   final CameraFilter? cameraFilter;
   final bool? favorited;
+  final SortOrder sortOrder;
 
   SearchOptions({
     required this.query,
     required this.searchType, 
+    this.sortOrder = SortOrder.desc,
     this.mediaType, 
     this.untagged, 
     this.display, 
@@ -127,6 +137,7 @@ class SearchOptions {
     PlaceFilter? placeFilter,
     CameraFilter? cameraFilter,
     bool? favorited,
+    SortOrder? sortOrder,
   }) => SearchOptions(
     query: query ?? this.query,
     searchType: searchType ?? this.searchType,
@@ -139,6 +150,7 @@ class SearchOptions {
     placeFilter: placeFilter ?? this.placeFilter,
     cameraFilter: cameraFilter ?? this.cameraFilter,
     favorited: favorited ?? this.favorited,
+    sortOrder: sortOrder ?? this.sortOrder,
   );
 }
 
@@ -171,6 +183,7 @@ class SearchOptionsDialog extends ConsumerStatefulWidget {
 class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   SearchType _searchType = SearchType.context;
   MediaType _mediaType = MediaType.all;
+  SortOrder _sortOrder = SortOrder.desc;
   bool _untagged = false;
   Set<DisplayOption> _displayOptions = {};
   PlaceFilter _placeFilter = const PlaceFilter();
@@ -190,6 +203,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
     _displayOptions = widget.initialSettings?.display ?? _displayOptions;
     _placeFilter = widget.initialSettings?.placeFilter ?? _placeFilter;
     _cameraFilter = widget.initialSettings?.cameraFilter ?? _cameraFilter;
+    _sortOrder = widget.initialSettings?.sortOrder ?? _sortOrder;
 
     if (widget.initialSettings?.startDate != null) {
       _startDateController.text = DateFormat("dd / mm / yyyy").format(widget.initialSettings!.startDate!);
@@ -599,6 +613,34 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                       );
                     }).toList(),
                   ),
+                  const Text(
+                    'Sort order',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    children: SortOrder.values.map((order) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<SortOrder>(
+                            value: order,
+                            groupValue: _sortOrder,
+                            onChanged: (v) => setState(() => _sortOrder = v!),
+                            activeColor: Colors.blue,
+                          ),
+                          Text(
+                            order.label,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          const SizedBox(width: 4),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ],
               ),
             ),
@@ -686,7 +728,8 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                   startDate: parseDate(_startDateController.text.replaceAll(' ', '')),
                   endDate: parseDate(_endDateController.text.replaceAll(' ', '')),
                   placeFilter: _placeFilter,
-                  cameraFilter: _cameraFilter
+                  cameraFilter: _cameraFilter,
+                  sortOrder: _sortOrder,
                 ));
               },
               style: FilledButton.styleFrom(
