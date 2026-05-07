@@ -105,15 +105,15 @@ class SearchOptions {
 
   bool isEmpty() {
     return query.isEmpty &&
-        mediaType == null &&
-        untagged != true &&
-        (display == null || display!.isEmpty) &&
-        startDate == null &&
-        endDate == null &&
-        (tags == null || tags!.isEmpty) &&
-        placeFilter == const PlaceFilter() &&
-        cameraFilter == const CameraFilter() &&
-        favorited != true;
+      mediaType == null &&
+      untagged != true &&
+      (display == null || display!.isEmpty) &&
+      startDate == null &&
+      endDate == null &&
+      (tags == null || tags!.isEmpty) &&
+      placeFilter == const PlaceFilter() &&
+      cameraFilter == const CameraFilter() &&
+      favorited != true;
   }
   SearchOptions copyWith({
     String? query,
@@ -401,7 +401,13 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 'Search country...', 
                 items: suggestionsAsync.value?[0],
                 intialValue: _placeFilter.country,
-                onChange: (value) => _placeFilter = _placeFilter.copyWith(country: value)
+                onChange: (value) {
+                  if (value != null) {
+                    _placeFilter = _placeFilter.copyWith(country: value);
+                  } else {
+                    _placeFilter = _placeFilter.clearCountry();
+                  }
+                }
               )
             ),
             const SizedBox(width: 8),
@@ -410,7 +416,13 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 'Search state...', 
                 items: suggestionsAsync.value?[1],
                 intialValue: _placeFilter.state,
-                onChange: (value) => _placeFilter = _placeFilter.copyWith(state: value)
+                onChange: (value) {
+                  if (value != null) {
+                    _placeFilter = _placeFilter.copyWith(state: value);
+                  } else {
+                    _placeFilter = _placeFilter.clearState();
+                  }
+                }
               )
             ),
             const SizedBox(width: 8),
@@ -418,7 +430,13 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
               child: _buildDropdown(
                 'Search city...', items: suggestionsAsync.value?[2],
                 intialValue: _placeFilter.city,
-                onChange: (value) => _placeFilter = _placeFilter.copyWith(city: value)
+                onChange: (value) {
+                  if (value != null) {
+                    _placeFilter = _placeFilter.copyWith(city: value);
+                  } else {
+                    _placeFilter = _placeFilter.clearCity();
+                  }
+                }
               )
             ),
           ],
@@ -448,7 +466,13 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 'Search camera make...', 
                 items: suggestionsAsync.value?[0],
                 intialValue: _cameraFilter.make,
-                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(make: value),
+                onChange: (value) {
+                  if (value != null) {
+                    _cameraFilter = _cameraFilter.copyWith(make: value);
+                  } else {
+                    _cameraFilter = _cameraFilter.clearMake();
+                  }
+                },
               )
             ),
             const SizedBox(width: 8),
@@ -457,7 +481,13 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                 'Search camera model...', 
                 items: suggestionsAsync.value?[1],
                 intialValue: _cameraFilter.model,
-                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(model: value)
+                onChange: (value) {
+                  if (value != null) {
+                    _cameraFilter = _cameraFilter.copyWith(model: value);
+                  } else {
+                    _cameraFilter = _cameraFilter.clearModel();
+                  }
+                }
               )
             ),
             const SizedBox(width: 8),
@@ -465,8 +495,14 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
               child: _buildDropdown(
                 'Search lens model...', 
                 items: suggestionsAsync.value?[2],
-                intialValue: _cameraFilter.model,
-                onChange: (value) => _cameraFilter = _cameraFilter.copyWith(model: value)
+                intialValue: _cameraFilter.lens,
+                onChange: (value) {
+                  if (value != null) {
+                    _cameraFilter = _cameraFilter.copyWith(lens: value);
+                  } else {
+                    _cameraFilter = _cameraFilter.clearLens();
+                  }
+                }
               )
             ),
           ],
@@ -642,16 +678,16 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             child: FilledButton(
               onPressed: () {
                 Navigator.of(context).pop(SearchOptions(
-                query: _queryController.text,
-                searchType: _searchType,
-                mediaType: _mediaType,
-                untagged: _untagged,
-                display: _displayOptions,
-                startDate: parseDate(_startDateController.text.replaceAll(' ', '')),
-                endDate: parseDate(_endDateController.text.replaceAll(' ', '')),
-                placeFilter: _placeFilter,
-                cameraFilter: _cameraFilter
-              ));
+                  query: _queryController.text,
+                  searchType: _searchType,
+                  mediaType: _mediaType,
+                  untagged: _untagged,
+                  display: _displayOptions,
+                  startDate: parseDate(_startDateController.text.replaceAll(' ', '')),
+                  endDate: parseDate(_endDateController.text.replaceAll(' ', '')),
+                  placeFilter: _placeFilter,
+                  cameraFilter: _cameraFilter
+                ));
               },
               style: FilledButton.styleFrom(
                 backgroundColor: Colors.blue.shade300,

@@ -185,6 +185,7 @@ class ImmichService {
       lensModels: List<String>.from(results[5].data),
     );
   }
+  
   Future<List<ImmichAsset>> search({
     required SearchOptions searchOptions,
     int page = 1,
@@ -223,7 +224,9 @@ class ImmichService {
       if (searchOptions.favorited == true) 'isFavorite': true,
       'withExif': true,
     };
-
+    if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {
+      searchOptions = searchOptions.copyWith(searchType: SearchType.fileName);
+    }
     final String endpoint = switch (searchOptions.searchType) {
       SearchType.context => '/search/smart',
       _ => '/search/metadata',

@@ -217,7 +217,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   Future<List<ImmichAsset>?> smartSearch(SearchOptions options, {bool fetchMore = false, bool force = false}) async {
     searchOptions = options;
 
-    if (options.query.isEmpty && options.searchType == SearchType.context && !force) {
+    if (options.isEmpty() && options.searchType == SearchType.context && !force) {
       if (originalContent == null) return null;
       state = AsyncData(originalContent!);
       _hasMore = originalContent!.length >= pulledItems;
