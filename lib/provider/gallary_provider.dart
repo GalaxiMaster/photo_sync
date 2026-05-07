@@ -174,11 +174,12 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
   Future<void> loadCloud() async {
     if (!isLocal && state.value != null && searchOptions.isEmpty()) return;
-    
+
     state = const AsyncLoading();
 
     _page = 1;
     _groupedAssets.clear();
+    isLocal = false;
     searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
     final results = await _service.fetchImages(page: _page);
     _hasMore = results.length == pulledItems;

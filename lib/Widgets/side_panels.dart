@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -312,11 +313,20 @@ class SideBarContent extends ConsumerStatefulWidget {
 }
 
 class _SideBarContentState extends ConsumerState<SideBarContent> {
-  final drives = getRemovableDrives();
+  List drives = getRemovableDrives();
   List<ImmichAsset> _localAssets = [];
   bool _isScanning = false;
   String _scanStatus = '';
   String selectedTab = 'Photos';
+  Timer? _timer;
+
+  @override
+  initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) { 
+      if (mounted) refreshDrives(); 
+    });
+  }
 
   Future<void> scanDrive(String driveLetter) async {
     setState(() => _isScanning = true);
@@ -334,6 +344,15 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
       _scanStatus = 'Done — ${assets.length} files found';
     });
     ref.read(galleryProvider.notifier).loadLocal(_localAssets);
+  }
+
+  void refreshDrives() {
+    setState(() => drives = getRemovableDrives());
+  }
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
   @override
   Widget build(BuildContext context) {
@@ -364,9 +383,21 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
+                mainAxisSize: MainAxisSize.max,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Computer'),
-                  Text(_scanStatus)
+                  Text(
+                    'Computer',
+                    style: TextStyle(
+                      fontSize: 16,
+                    ),
+                  ),
+                  // Text(_scanStatus)
+                  if (_isScanning)
+                  SizedBox(
+                    height: 20, width: 20,
+                    child: CircularProgressIndicator()
+                  )
                 ],
               ),
             ),
