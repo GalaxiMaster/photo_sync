@@ -129,7 +129,13 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                             final size = asset.exifInfo['fileSizeInByte'] ?? 0;
                                             return sum + (size as int);
                                           });
-                                          final bool? confirm = await ImmichPopup.delete(itemCount: selection.length, spaceSaved: totalBytes/pow(1024, 2),context: context, anchorKey: deleteKey);
+                                          final bool? confirm = await ImmichPopup.delete(
+                                            itemCount: selection.length, 
+                                            spaceSaved: totalBytes/pow(1024, 2),
+                                            context: context, 
+                                            anchorKey: deleteKey,
+                                            sources: selection.expand((asset) => asset.imageSources).toSet(),
+                                          );
                                           if (confirm ?? false) {
                                             ref.read(galleryProvider.notifier).deleteAssets(selection.map((element) => element.id).toList());
                                             if (context.mounted) {
@@ -273,6 +279,7 @@ class _Grid extends StatelessWidget {
         mainAxisSpacing: 2,
       ),
       itemCount: assets.length,
+      cacheExtent: 200,
       itemBuilder: (context, index) {
         if (index >= assets.length) {
           return const _LoadingTile();
@@ -480,37 +487,33 @@ class _ImageTileState extends ConsumerState<LocalImage> {
   @override
   Widget build(BuildContext context) {
     if (widget.asset.isRaw) {
-      return FittedBox(
-        fit: BoxFit.cover,
-        clipBehavior: Clip.hardEdge,
-        child: FutureBuilder<Uint8List?>(
-          future: future,
-          key: ValueKey(widget.asset.originalUrl),
-          builder: (context, snapshot) {
-            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-              debugPrint('Image decode failed: ${snapshot.error}');
-              return const Icon(Icons.broken_image);
-            }
-        
-            return RotatedBox(
-              quarterTurns: _exifRotation(widget.asset.exifInfo),
-              child: Image.memory(
-                snapshot.data!,
-                fit: BoxFit.cover,
-                key: ValueKey(widget.asset.originalUrl),
-                cacheWidth: widget.preview ? 400 : widget.asset.exifInfo['exifImageWidth'],
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('Image decode failed: $error');
-                  return const Icon(Icons.warning_amber_rounded);
-                },
-                frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                  if (frame == null) return const ColoredBox(color: Colors.black12);
-                  return child;
-                },
-              ),
-            );
-          },
-        ),
+      return FutureBuilder<Uint8List?>(
+        future: future,
+        key: ValueKey(widget.asset.originalUrl),
+        builder: (context, snapshot) {
+          if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+            debugPrint('Image decode failed: ${snapshot.error}');
+            return const Icon(Icons.broken_image);
+          }
+      
+          return RotatedBox(
+            quarterTurns: _exifRotation(widget.asset.exifInfo),
+            child: Image.memory(
+              snapshot.data!,
+              fit: BoxFit.cover,
+              key: ValueKey(widget.asset.originalUrl),
+              cacheWidth: widget.preview ? 400 : widget.asset.exifInfo['exifImageWidth'],
+              errorBuilder: (context, error, stackTrace) {
+                debugPrint('Image decode failed: $error');
+                return const Icon(Icons.warning_amber_rounded);
+              },
+              frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                if (frame == null) return const ColoredBox(color: Colors.black12);
+                return child;
+              },
+            ),
+          );
+        },
       );
     }
 

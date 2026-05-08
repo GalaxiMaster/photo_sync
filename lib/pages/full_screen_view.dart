@@ -303,6 +303,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 stackSize: all.length,
                                 context: context,
                                 anchorKey: deleteKey,
+                                sources: currentImage.imageSources,
                               );
 
                               if ((option ?? 0) <= 0) return;

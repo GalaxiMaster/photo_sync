@@ -186,7 +186,8 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
     fileCreatedAt: fileCreatedAt,
     mimeType: mimeType,
     exifInfo: exifInfo,
-    localPath: file.path
+    localPath: file.path,
+    imageSources: const {ImageSource.local},
   );
 }
 
@@ -218,6 +219,7 @@ Future<ImmichAsset?> _assetFromVideo(File file, String ext) async {
     mimeType: mimeType,
     exifInfo: exifInfo,
     localPath: file.path,
+    imageSources: const {ImageSource.local},
   );
 }
 

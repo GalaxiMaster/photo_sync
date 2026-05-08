@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:photo_sync/services/api_service.dart';
 
 Future<T?> showPositionedPopup<T>({
   required BuildContext context,
@@ -45,6 +46,7 @@ class ImmichPopup {
     required GlobalKey anchorKey,
     required int itemCount,
     required double spaceSaved,
+    Set<ImageSource> sources = const {ImageSource.immich},
   }) {
     return showPositionedPopup<bool>(
       context: context,
@@ -62,9 +64,12 @@ class ImmichPopup {
                     text: "Move $itemCount ${itemCount == 1 ? 'item' : 'items'} to trash?\n\n",
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
                   ),
-                  const TextSpan(text: "Remove from your Immich server and linked devices?\n\n"),
+                  if (sources.contains(ImageSource.immich))
+                  const TextSpan(text: "Remove from your Immich server and linked devices?"),
+                  if (sources.contains(ImageSource.local))
+                  const TextSpan(text: "Remove from your local storage?                   "),
                   TextSpan(
-                    text: "You will recover ${spaceSaved.toStringAsFixed(1)} MB.",
+                    text: "\n\nYou will recover ${spaceSaved.toStringAsFixed(1)} MB.",
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
                   ),
                 ],
@@ -94,6 +99,7 @@ class ImmichPopup {
     required int stackSize,
     required BuildContext context,
     required GlobalKey anchorKey,
+    Set<ImageSource> sources = const {ImageSource.immich},
   }) {
     Widget optionBox(String label, int value) {
       return SizedBox(
@@ -131,13 +137,18 @@ class ImmichPopup {
               text: TextSpan(
                 style: const TextStyle(color: Colors.white70, fontSize: 15, height: 1.4),
                 children: [
+                  if (sources.contains(ImageSource.immich))
                   const TextSpan(text: "Remove from your Immich server and linked devices?"),
+                  if (sources.contains(ImageSource.local))
+                  const TextSpan(text: "Remove from your local storage?                   "),
                 ],
               ),
             ),
           ),
-          optionBox('Delete all $stackSize photos', 1),
-          optionBox('Delete current photo only', 2)
+          if (stackSize > 1)...[
+            optionBox('Delete all $stackSize photos', 1),
+            optionBox('Delete current photo only', 2)
+          ] else optionBox('Confirm delete photo', 2),
         ],
       ),
     );

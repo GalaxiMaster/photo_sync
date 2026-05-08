@@ -17,6 +17,7 @@ class ImmichAsset {
   final Map exifInfo;
   final String? localPath;
   final bool isFavorite;
+  final Set<ImageSource> imageSources;
   const ImmichAsset({
     required this.id,
     required this.type,
@@ -26,6 +27,7 @@ class ImmichAsset {
     required this.exifInfo, 
     this.isFavorite = false,
     this.localPath, 
+    this.imageSources = const {ImageSource.immich},
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -33,8 +35,7 @@ class ImmichAsset {
       id: json['id'] as String,
       type: json['type'] as String,
       originalFileName: json['originalFileName'] as String? ?? '',
-      fileCreatedAt: DateTime.tryParse(json['fileCreatedAt'] as String? ?? '') ??
-          DateTime.now(),
+      fileCreatedAt: DateTime.tryParse(json['fileCreatedAt'] as String? ?? '') ?? DateTime.now(),
       mimeType: json['originalMimeType'] as String?, 
       exifInfo: json['exifInfo'],
       isFavorite: json['isFavorite'] ?? false,
@@ -50,6 +51,7 @@ class ImmichAsset {
     Map? exifInfo,
     String? localPath,
     bool? isFavorite,
+    Set<ImageSource>? imageSources,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -60,6 +62,7 @@ class ImmichAsset {
       exifInfo: exifInfo ?? this.exifInfo,
       localPath: localPath ?? this.localPath,
       isFavorite: isFavorite ?? this.isFavorite,
+      imageSources: imageSources ?? this.imageSources,
     );
   }
 
@@ -107,6 +110,10 @@ class ImmichAsset {
   }
 }
 
+enum ImageSource {
+  immich,
+  local,
+}
 
 class ImmichService {
   late final Dio _dio;
