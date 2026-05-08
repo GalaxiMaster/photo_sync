@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
+// import 'package:open_file/open_file.dart';
 
 class FullscreenView extends ConsumerStatefulWidget {
   final GalleryItem asset;
@@ -277,7 +280,13 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             icon: const Icon(Icons.info_outline, color: Colors.white),
                           ),
                           IconButton(
-                            onPressed: () {}, 
+                            onPressed: () {
+                              if (currentImage.localPath == null) {
+                                showErrorSnackbar('No local path available for this asset');
+                                return;
+                              }
+                              openWithDialog(currentImage.localPath!);
+                            }, 
                             mouseCursor: SystemMouseCursors.click, 
                             iconSize: iconSize, 
                             icon: const Icon(
@@ -328,8 +337,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                   return;
                                 }
 
-                                // Clamp index and clear stale image ID now that
-                                // the provider state has settled.
                                 setState(() => _onAfterDelete(updatedAssets));
 
                                 showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
@@ -368,3 +375,21 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
     );
   }
 }
+
+Future<void> openWithDialog(String filePath) async {
+  if (Platform.isWindows) {
+    // await OpenFile.open(absolutePath);
+    final cleanPath = filePath.replaceAll(r'\\', r'\');
+
+    final result = await Process.run(
+      'rundll32',
+      ['shell32.dll,OpenAs_RunDLL', cleanPath],
+      runInShell: true,
+    );
+    debugPrint(result.toString());
+  } else if (Platform.isLinux) {
+    await Process.run('xdg-open', [filePath]);
+  }
+}
+
+
