@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
+import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
@@ -30,6 +31,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   final double iconSize = 24;
   bool _showInfo = false;
   final GlobalKey deleteKey = GlobalKey();
+  final GlobalKey uploadKey = GlobalKey();
 
   @override
   void initState() {
@@ -294,6 +296,8 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               color: Colors.white
                             )
                           ),
+
+                          if (currentImage.imageSources.contains(ImageSource.immich))
                           IconButton(
                             onPressed: () {
                               ref.read(galleryProvider.notifier).toggleFavorite(currentImage);
@@ -305,10 +309,35 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               color: Colors.white
                             )
                           ),
+
+                          if (!currentImage.imageSources.contains(ImageSource.immich))
+                          IconButton(
+                            key: uploadKey,
+                            onPressed: () async {
+                              final uploadController = UploadProgressController(
+                                onComplete: () => Navigator.pop(context),
+                              );
+
+                              showProgressPopup(
+                                context: context,
+                                anchorKey: uploadKey,
+                                controller: uploadController,
+                              );
+                              await ref.read(galleryProvider.notifier).uploadToImmich(currentImage, popupController: uploadController);
+                              uploadController.complete();
+                              uploadController.dispose();
+                            },
+                            mouseCursor: SystemMouseCursors.click, 
+                            iconSize: iconSize, 
+                            icon: Icon(
+                              Icons.upload_sharp, 
+                              color: Colors.white
+                            )
+                          ),
                           IconButton(
                             key: deleteKey,
                             onPressed: () async {
-                              final int? option = await ImmichPopup.deleteStack(
+                              final int? option = await DeletePopups.deleteStack(
                                 stackSize: all.length,
                                 context: context,
                                 anchorKey: deleteKey,

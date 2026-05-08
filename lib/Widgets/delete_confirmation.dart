@@ -40,7 +40,7 @@ Future<T?> showPositionedPopup<T>({
   );
 }
 
-class ImmichPopup {
+class DeletePopups {
   static Future<bool?> delete({
     required BuildContext context,
     required GlobalKey anchorKey,

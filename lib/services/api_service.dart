@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
+import 'package:path/path.dart' as p;
 import 'package:photo_sync/Widgets/search_popup.dart';
 
 class ImmichConfig {
@@ -259,6 +262,29 @@ class ImmichService {
     return (assets['items'] as List)
         .map((a) => ImmichAsset.fromJson(a))
         .toList();
+  }
+
+  Future<bool> uploadToImmich(String filePath, {Function? onProgress}) async {
+    final file = File(filePath);
+    final stat = await file.stat();
+    final filename = p.basename(filePath);
+
+    final formData = FormData.fromMap({
+      'deviceAssetId': filename,
+      'deviceId': 'photo-sync-desktop',
+      'fileCreatedAt': stat.modified.toIso8601String(),
+      'fileModifiedAt': stat.modified.toIso8601String(),
+      'assetData': await MultipartFile.fromFile(filePath, filename: filename),
+    });
+
+    final response = await _dio.post(
+      '/assets',
+      data: formData,
+      onSendProgress: (sent, total) {
+        onProgress?.call(sent, total);
+      },
+    );
+    return response.statusCode == 200;
   }
 }
 

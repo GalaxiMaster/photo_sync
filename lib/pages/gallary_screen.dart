@@ -129,7 +129,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                             final size = asset.exifInfo['fileSizeInByte'] ?? 0;
                                             return sum + (size as int);
                                           });
-                                          final bool? confirm = await ImmichPopup.delete(
+                                          final bool? confirm = await DeletePopups.delete(
                                             itemCount: selection.length, 
                                             spaceSaved: totalBytes/pow(1024, 2),
                                             context: context, 

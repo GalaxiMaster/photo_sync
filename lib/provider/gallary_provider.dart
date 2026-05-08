@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -21,7 +22,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   ImmichService get _service => ref.read(immichServiceProvider);
   List<GalleryItem>? originalContent;
   SearchOptions searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
-
+  Set<ImmichAsset> uploadQueue = {};
   @override
   Future<List<GalleryItem>> build() => _fetch();
 
@@ -278,6 +279,37 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
       return matchesQuery && matchesMediaType && matchesDate && matchesMake && matchesModel && matchesLensModel;
     }).skip((page - 1) * pulledItems).take(pulledItems).toList();
+  }
+
+  Future<void> uploadToImmich(ImmichAsset asset, {UploadProgressController? popupController}) async {
+    final cleanPath = asset.localPath?.replaceAll(r'\\', r'\');
+
+    if (cleanPath == null || uploadQueue.contains(asset)) return;
+
+    uploadQueue.add(asset);
+    final result = await _service.uploadToImmich(cleanPath, onProgress: (popupController != null ? (int sent, int total) {
+        popupController.update(
+          filename: asset.originalFileName.split('/').last,
+          sent: sent,
+          total: total,
+        );
+    } : null));
+
+    if (result) {
+      final newAsset = asset.copyWith(imageSources: {...asset.imageSources, ImageSource.immich});
+      final key = asset.pixelPairKey ?? asset.baseName;
+
+      // Update map directly
+      if (_groupedAssets.containsKey(key)) {
+        final index = _groupedAssets[key]!.indexWhere((a) => a.id == asset.id);
+        if (index != -1) {
+          _groupedAssets[key]![index] = newAsset;
+        }
+      }
+
+      state = AsyncData(_buildGalleryItems());
+    }
+    uploadQueue.remove(asset);
   }
 
   bool get hasMore => _hasMore;
