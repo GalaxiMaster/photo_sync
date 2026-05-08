@@ -51,14 +51,32 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
     });
   }
 
+  void _onAfterDelete(List<GalleryItem> updatedAssets) {
+    _currentImageId = null;
+    if (updatedAssets.isEmpty) return;
+    if (_index >= updatedAssets.length) {
+      _index = updatedAssets.length - 1;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final assets = ref.watch(galleryProvider).value ?? [];
-
     if (assets.isEmpty) return const Scaffold(backgroundColor: Colors.black);
-    if (_index >= assets.length) _index = assets.length - 1;
 
-    final active = assets[_index];
+    if (_index >= assets.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _index = assets.length - 1;
+            _currentImageId = null;
+          });
+        }
+      });
+    }
+
+    final safeIndex = _index.clamp(0, assets.length - 1);
+    final active = assets[safeIndex];
 
     final all = switch (active) {
       SingleAsset a => [a.asset],
@@ -124,7 +142,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                         ),
                         Positioned(
                           top: 0, bottom: 0, right: 10,
-                          child: _index < assets.length - 1
+                          child: safeIndex < assets.length - 1
                             ? MouseRegion(
                                 onEnter: (_) => setState(() => _hoverRight = true),
                                 onExit: (_) => setState(() => _hoverRight = false),
@@ -148,7 +166,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                         ),
                         Positioned(
                           top: 0, bottom: 0, left: 10,
-                          child: _index > 0
+                          child: safeIndex > 0
                             ? MouseRegion(
                                 onEnter: (_) => setState(() => _hoverLeft = true),
                                 onExit: (_) => setState(() => _hoverLeft = false),
@@ -281,19 +299,48 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           IconButton(
                             key: deleteKey,
                             onPressed: () async {
-                              final int? option = await ImmichPopup.deleteStack(stackSize: all.length,context: context, anchorKey: deleteKey);
-                              if ((option ?? 0) > 0) {
-                                if (option == 1) { // Delete Stack
-                                  ref.read(galleryProvider.notifier).deleteAssets(all.map((element) => element.id).toList());
-                                } else if (option == 2) { // delete single
-                                  ref.read(galleryProvider.notifier).deleteAssets([currentImage.id]);
+                              final int? option = await ImmichPopup.deleteStack(
+                                stackSize: all.length,
+                                context: context,
+                                anchorKey: deleteKey,
+                              );
+
+                              if ((option ?? 0) <= 0) return;
+
+                              try {
+                                if (option == 1) {
+                                  // Delete full stack
+                                  await ref.read(galleryProvider.notifier)
+                                      .deleteAssets(all.map((e) => e.id).toList());
+                                } else if (option == 2) {
+                                  // Delete single asset
+                                  await ref.read(galleryProvider.notifier)
+                                      .deleteAssets([currentImage.id]);
                                 }
+
+                                if (!context.mounted) return;
+
+                                final updatedAssets = ref.read(galleryProvider).value ?? [];
+
+                                if (updatedAssets.isEmpty) {
+                                  Navigator.pop(context);
+                                  return;
+                                }
+
+                                // Clamp index and clear stale image ID now that
+                                // the provider state has settled.
+                                setState(() => _onAfterDelete(updatedAssets));
+
+                                showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
+                              } catch (e) {
                                 if (context.mounted) {
-                                  showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
+                                  showErrorSnackbar('Delete failed: $e');
                                 }
                               }
                             }, 
-                            mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.delete_outline, color: Colors.white)
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.delete_outline, color: Colors.white),
                           ),
                           IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
                         ],

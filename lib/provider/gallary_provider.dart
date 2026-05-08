@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -43,7 +44,14 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     try {
       late List<ImmichAsset>? results;
       if (isLocal) {
-        results = fullLocal.sublist(_page * pulledItems, min(++_page * pulledItems, fullLocal.length));
+        final start = _page * pulledItems;
+        // Guard against start exceeding the list after deletions.
+        if (start >= fullLocal.length) {
+          _hasMore = false;
+          return;
+        }
+        final end = min(++_page * pulledItems, fullLocal.length);
+        results = fullLocal.sublist(start, end);
       } else {
         results = await smartSearch(searchOptions, fetchMore: true);
       }
@@ -120,7 +128,18 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
   Future<void> deleteAssets(List<String> assetIds) async {
     try {
-      await _service.deleteAssets(assetIds);
+      if (isLocal) {
+        final assetsToDelete = fullLocal.where((a) => assetIds.contains(a.id)).toList();
+        for (final asset in assetsToDelete) {
+          fullLocal.remove(asset);
+          if (asset.localPath != null) {
+            final file = File(asset.localPath!);
+            if (file.existsSync()) file.deleteSync();
+          }
+        }
+      } else {
+        await _service.deleteAssets(assetIds);
+      }
 
       final idSet = assetIds.toSet();
 
@@ -138,8 +157,10 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
       state = AsyncData(_buildGalleryItems());
       ref.read(selectionProvider.notifier).clear();
-    } catch (e) {
-      throw Exception('Failed to delete assets: $e');
+    } catch (e, st) {
+      // Rethrow so the call site (e.g. FullscreenView) can handle and surface
+      // the error rather than it becoming an unhandled Future error.
+      Error.throwWithStackTrace(Exception('Failed to delete assets: $e'), st);
     }
   }
 
@@ -168,7 +189,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     isLocal = true;
 
     _groupedAssets.clear();
-    _updateGroupedMap(assets.sublist(0, pulledItems + 1));
+    final end = min(pulledItems, fullLocal.length);
+    _updateGroupedMap(fullLocal.sublist(0, end));
     state = AsyncData(_buildGalleryItems());
   }
 
@@ -189,6 +211,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     state = AsyncData(_buildGalleryItems());
     originalContent ??= state.value;
   }
+
   void toggleFavorite(ImmichAsset asset) async {
     final newValue = !asset.isFavorite;
     final updatedAsset = asset.copyWith(isFavorite: newValue);
@@ -228,7 +251,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     originalContent ??= state.value;
     if (fetchMore) {
       ++_page;
-    } else{
+    } else {
       _page = 1;
       _groupedAssets.clear();
       state = const AsyncLoading();
@@ -240,14 +263,14 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return results;
   }
 
-  List<ImmichAsset> localSearch({required SearchOptions searchOptions, required int page}){
+  List<ImmichAsset> localSearch({required SearchOptions searchOptions, required int page}) {
     return fullLocal.sorted((a, b) {
       final cmp = a.fileCreatedAt.compareTo(b.fileCreatedAt);
       return searchOptions.sortOrder == SortOrder.desc ? -cmp : cmp;
     }).where((asset) {
       final matchesQuery = searchOptions.query.isEmpty || asset.baseName.toLowerCase().contains(searchOptions.query.toLowerCase());
       final matchesMediaType = searchOptions.mediaType == null || asset.isOfType(searchOptions.mediaType!);
-      final matchesDate = (searchOptions.startDate == null || asset.fileCreatedAt.isAfter(searchOptions.startDate!)) && // todo check if this is inclusive
+      final matchesDate = (searchOptions.startDate == null || asset.fileCreatedAt.isAfter(searchOptions.startDate!)) &&
                           (searchOptions.endDate == null || asset.fileCreatedAt.isBefore(searchOptions.endDate!));
       final matchesMake = (searchOptions.cameraFilter?.isEmpty() ?? true) || (asset.exifInfo['make'] != null && asset.exifInfo['make']!.toLowerCase() == searchOptions.cameraFilter!.make!.toLowerCase());
       final matchesModel = (searchOptions.cameraFilter?.isEmpty() ?? true) || (asset.exifInfo['model'] != null && asset.exifInfo['model']!.toLowerCase() == searchOptions.cameraFilter!.model!.toLowerCase());
@@ -255,11 +278,6 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
       return matchesQuery && matchesMediaType && matchesDate && matchesMake && matchesModel && matchesLensModel;
     }).skip((page - 1) * pulledItems).take(pulledItems).toList();
-  // final String query; filename | description
-
-  // final SearchType searchType;
-  // final Set<String>? tags;
-  // final bool? favorited;
   }
 
   bool get hasMore => _hasMore;
