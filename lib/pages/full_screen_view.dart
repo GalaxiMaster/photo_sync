@@ -358,7 +358,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                       .deleteAssets([currentImage.id], isTrashed: currentImage.isTrashed ?? false);
                                 }
 
-                                if (!context.mounted) return;
+                                if (!context.mounted && mounted) return;
 
                                 final updatedAssets = ref.read(galleryProvider).value ?? [];
 
@@ -370,10 +370,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 setState(() => _onAfterDelete(updatedAssets));
 
                                 showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
-                              } catch (e) {
-                                if (context.mounted) {
-                                  showErrorSnackbar('Delete failed: $e');
-                                }
+                              }  catch (e, st) {
+                                debugPrint('Delete error: $e\n$st');
+                                if (mounted) showErrorSnackbar('Delete failed: $e');
                               }
                             }, 
                             mouseCursor: SystemMouseCursors.click,

@@ -163,10 +163,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
       state = AsyncData(_buildGalleryItems());
       ref.read(selectionProvider.notifier).clear();
-    } catch (e, st) {
-      // Rethrow so the call site (e.g. FullscreenView) can handle and surface
-      // the error rather than it becoming an unhandled Future error.
-      Error.throwWithStackTrace(Exception('Failed to delete assets: $e'), st);
+    } catch (e) {
+      throw Exception('Failed to delete assets: $e'); // rethrow cleanly
     }
   }
 

@@ -1,10 +1,14 @@
+import 'dart:async' show Timer;
 import 'package:flutter/material.dart';
 import 'package:photo_sync/main.dart';
+
+Timer? _snackbarTimer;
 
 void showErrorSnackbar(String errorMessage) {
   final messenger = scaffoldMessengerKey.currentState;
   if (messenger == null) return;
-
+  
+  _snackbarTimer?.cancel();
   messenger.clearSnackBars();
 
   final controller = messenger.showSnackBar(
@@ -39,15 +43,16 @@ void showErrorSnackbar(String errorMessage) {
   );
 
   // Manually dismiss after 2s to work around Flutter desktop bug
-  Future.delayed(const Duration(seconds: 3), () {
+  _snackbarTimer = Timer(const Duration(seconds: 3), () {
     controller.close();
   });
 }
 
-void showSuccessSnackbar(String errorMessage) {
+void showSuccessSnackbar(String message) {
   final messenger = scaffoldMessengerKey.currentState;
   if (messenger == null) return;
 
+  _snackbarTimer?.cancel();
   messenger.clearSnackBars();
 
   final controller = messenger.showSnackBar(
@@ -58,7 +63,7 @@ void showSuccessSnackbar(String errorMessage) {
           const SizedBox(width: 12),
           Expanded(
             child: SelectableText(
-              errorMessage,
+              message,
               style: const TextStyle(color: Colors.white),
             ),
           ),
@@ -68,22 +73,16 @@ void showSuccessSnackbar(String errorMessage) {
       behavior: SnackBarBehavior.floating,
       width: 900,
       duration: const Duration(seconds: 3),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       action: SnackBarAction(
         label: 'DISMISS',
         textColor: Colors.white,
-        onPressed: () {
-          messenger.hideCurrentSnackBar();
-        },
+        onPressed: () => messenger.hideCurrentSnackBar(),
       ),
     ),
   );
 
-  // Manually dismiss after 2s to work around Flutter desktop bug
-  Future.delayed(const Duration(seconds: 3), () {
+  _snackbarTimer = Timer(const Duration(seconds: 3), () {
     controller.close();
   });
 }
-
