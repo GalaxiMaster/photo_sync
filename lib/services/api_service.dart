@@ -20,6 +20,8 @@ class ImmichAsset {
   final String? localPath;
   final bool isFavorite;
   final Set<ImageSource> imageSources;
+  final String? deviceId;
+  
   const ImmichAsset({
     required this.id,
     required this.type,
@@ -29,7 +31,8 @@ class ImmichAsset {
     required this.exifInfo, 
     this.isFavorite = false,
     this.localPath, 
-    this.imageSources = const {ImageSource.immich},
+    this.imageSources = const {ImageSource.immich}, 
+    this.deviceId,
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -41,6 +44,7 @@ class ImmichAsset {
       mimeType: json['originalMimeType'] as String?, 
       exifInfo: json['exifInfo'],
       isFavorite: json['isFavorite'] ?? false,
+      deviceId: json['deviceId'] as String?,
     );
   }
 
@@ -54,6 +58,7 @@ class ImmichAsset {
     String? localPath,
     bool? isFavorite,
     Set<ImageSource>? imageSources,
+    String? deviceId,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -65,6 +70,7 @@ class ImmichAsset {
       localPath: localPath ?? this.localPath,
       isFavorite: isFavorite ?? this.isFavorite,
       imageSources: imageSources ?? this.imageSources,
+      deviceId: deviceId ?? this.deviceId,
     );
   }
 
@@ -263,7 +269,7 @@ class ImmichService {
         .toList();
   }
 
-  Future<bool> uploadToImmich(String filePath, {Function? onProgress}) async {
+  Future<String?> uploadToImmich(String filePath, {Function? onProgress}) async {
     final file = File(filePath);
     final stat = await file.stat();
     final filename = p.basename(filePath);
@@ -283,8 +289,11 @@ class ImmichService {
         onProgress?.call(sent, total);
       },
     );
-    Set<int> allowedStatusCodes = {200, 201}; // todo could return the new id and map it in cache later
-    return allowedStatusCodes.contains(response.statusCode);
+    Set<int> allowedStatusCodes = {200, 201};
+    if (allowedStatusCodes.contains(response.statusCode)) { // todo cache it later?
+      return response.data['id'] as String;
+    }
+    return null;
   }
 
   Future<String?> findExistingByMetadata({

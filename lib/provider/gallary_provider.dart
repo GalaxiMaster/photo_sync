@@ -294,7 +294,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     if (cleanPath == null || uploadQueue.contains(asset)) return;
 
     uploadQueue.add(asset);
-    final result = await _service.uploadToImmich(cleanPath, onProgress: (popupController != null ? (int sent, int total) {
+    final newId = await _service.uploadToImmich(cleanPath, onProgress: (popupController != null ? (int sent, int total) {
         popupController.update(
           filename: asset.originalFileName.split('/').last,
           sent: sent,
@@ -302,8 +302,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
         );
     } : null));
 
-    if (result) {
-      final newAsset = asset.copyWith(imageSources: {...asset.imageSources, ImageSource.immich});
+    if (newId != null) {
+      final newAsset = asset.copyWith(imageSources: {...asset.imageSources, ImageSource.immich}, id: newId);
       final key = asset.pixelPairKey ?? asset.baseName;
 
       // Update map directly

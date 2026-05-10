@@ -93,7 +93,7 @@ enum SortOrder {
   final String label;
 }
 
-class SearchOptions {
+class SearchOptions { // todo add device ID & image source
   final String query;
   final SearchType searchType;
   final MediaType? mediaType;

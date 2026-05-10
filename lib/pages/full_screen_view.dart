@@ -410,12 +410,11 @@ Future<void> openWithDialog(String filePath) async {
     // await OpenFile.open(absolutePath);
     final cleanPath = filePath.replaceAll(r'\\', r'\');
 
-    final result = await Process.run(
+    await Process.run(
       'rundll32',
       ['shell32.dll,OpenAs_RunDLL', cleanPath],
       runInShell: true,
     );
-    debugPrint(result.toString());
   } else if (Platform.isLinux) {
     await Process.run('xdg-open', [filePath]);
   }
