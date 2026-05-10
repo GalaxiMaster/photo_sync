@@ -319,8 +319,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     uploadQueue.remove(asset);
   }
 
-  Future<Map<String, String>?> checkExisting(List<ImmichAsset> asset) async {
-    Map<String, String> result = {};
+  Future<Map<String, Map>?> checkExisting(List<ImmichAsset> asset) async {
+    Map<String, Map> result = {};
     for (final a in asset) {
       final res = await _service.findExistingByMetadata(asset: a);
       
@@ -358,7 +358,11 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
       for (final (i, asset) in batch.enumerate) {
         if (results[i] == null) continue;
-        final newAsset = asset.copyWith(imageSources: {...asset.imageSources, ImageSource.immich}, id: results[i]!);
+        final newAsset = asset.copyWith(
+          imageSources: {...asset.imageSources, ImageSource.immich}, 
+          id: results[i]!['id'] as String,
+          isFavorite: results[i]!['isFavorite'] as bool
+        );
         final key = asset.pixelPairKey ?? asset.baseName;
         if (_groupedAssets.containsKey(key)) {
           final index = _groupedAssets[key]!.indexWhere((a) => a.localPath == asset.localPath);

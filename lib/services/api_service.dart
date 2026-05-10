@@ -296,7 +296,7 @@ class ImmichService {
     return null;
   }
 
-  Future<String?> findExistingByMetadata({
+  Future<Map?> findExistingByMetadata({
     required ImmichAsset asset
   }) async {
     final createdAt = asset.fileCreatedAt.toUtc();
@@ -307,7 +307,7 @@ class ImmichService {
     });
 
     final assets = (response.data['assets']['items'] as List);
-    return assets.isEmpty ? null : assets.first['id'] as String;
+    return assets.isEmpty ? null : assets.first;
   }
 }
 
