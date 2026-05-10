@@ -135,6 +135,7 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                             context: context, 
                                             anchorKey: deleteKey,
                                             sources: selection.expand((asset) => asset.imageSources).toSet(),
+                                            isTrashed: selection.every((a) => a.isTrashed ?? false)
                                           );
                                           if (confirm ?? false) {
                                             ref.read(galleryProvider.notifier).deleteAssets(selection.map((element) => element.id).toList());

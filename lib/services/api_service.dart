@@ -21,6 +21,7 @@ class ImmichAsset {
   final bool isFavorite;
   final Set<ImageSource> imageSources;
   final String? deviceId;
+  final bool? isTrashed;
   
   const ImmichAsset({
     required this.id,
@@ -33,6 +34,7 @@ class ImmichAsset {
     this.localPath, 
     this.imageSources = const {ImageSource.immich}, 
     this.deviceId,
+    this.isTrashed,
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -45,6 +47,7 @@ class ImmichAsset {
       exifInfo: json['exifInfo'],
       isFavorite: json['isFavorite'] ?? false,
       deviceId: json['deviceId'] as String?,
+      isTrashed: json['isTrashed'] as bool?,
     );
   }
 
@@ -59,6 +62,7 @@ class ImmichAsset {
     bool? isFavorite,
     Set<ImageSource>? imageSources,
     String? deviceId,
+    bool? isTrashed,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -71,6 +75,7 @@ class ImmichAsset {
       isFavorite: isFavorite ?? this.isFavorite,
       imageSources: imageSources ?? this.imageSources,
       deviceId: deviceId ?? this.deviceId,
+      isTrashed: isTrashed ?? this.isTrashed,
     );
   }
 
@@ -151,9 +156,10 @@ class ImmichService {
     return items.map((e) => ImmichAsset.fromJson(e)).toList();
   }
 
-  Future<void> deleteAssets(List<String> assetIds) async {
+  Future<void> deleteAssets(List<String> assetIds, {force = false}) async {
     await _dio.delete('/assets', data: {
       'ids': assetIds,
+      'force': force,
     });
   }
 
@@ -228,7 +234,7 @@ class ImmichService {
       // Display options
       if (searchOptions.display != null) ...{
         // if (display.contains(DisplayOption. notInAlbum)) 'withArchived': true,
-        if (!searchOptions.display!.contains(DisplayOption.archive)) 'isArchived': true,
+        if (searchOptions.display!.contains(DisplayOption.archive)) 'isArchived': true,
         if (searchOptions.display!.contains(DisplayOption.favorites)) 'isFavorite': true,
       },
       // Place filters
@@ -243,7 +249,8 @@ class ImmichService {
         if (searchOptions.cameraFilter?.model != null) 'model': searchOptions.cameraFilter?.model,
         if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
       },
-      if (searchOptions.favorited == true) 'isFavorite': true,
+      if (searchOptions.isFavorited == true) 'isFavorite': true,
+      if (searchOptions.isTrashed == true) 'trashedBefore': DateTime.now().toUtc().toIso8601String(),
       "order": searchOptions.sortOrder == SortOrder.asc ? 'asc' : 'desc',
       'withExif': true,
     };

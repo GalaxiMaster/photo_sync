@@ -132,7 +132,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return result;
   }
 
-  Future<void> deleteAssets(List<String> assetIds) async {
+  Future<void> deleteAssets(List<String> assetIds, {bool isTrashed = false}) async {
     try {
       if (isLocal) {
         final assetsToDelete = fullLocal.where((a) => assetIds.contains(a.id)).toList();
@@ -144,7 +144,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
           }
         }
       } else {
-        await _service.deleteAssets(assetIds);
+        await _service.deleteAssets(assetIds, force: isTrashed);
       }
 
       final idSet = assetIds.toSet();

@@ -47,6 +47,7 @@ class DeletePopups {
     required int itemCount,
     required double spaceSaved,
     Set<ImageSource> sources = const {ImageSource.immich},
+    bool isTrashed = false,
   }) {
     return showPositionedPopup<bool>(
       context: context,
@@ -85,7 +86,7 @@ class DeletePopups {
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Move to trash"),
+                  child: Text(isTrashed ? "Delete permanently" : "Move to trash"),
                 ),
               ],
             ),
@@ -100,6 +101,7 @@ class DeletePopups {
     required BuildContext context,
     required GlobalKey anchorKey,
     Set<ImageSource> sources = const {ImageSource.immich},
+    bool isTrashed = false,
   }) {
     Widget optionBox(String label, int value) {
       return SizedBox(

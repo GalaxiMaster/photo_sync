@@ -104,8 +104,9 @@ class SearchOptions { // todo add device ID & image source
   final Set<String>? tags;
   final PlaceFilter? placeFilter;
   final CameraFilter? cameraFilter;
-  final bool? favorited;
+  final bool? isFavorited;
   final SortOrder sortOrder;
+  final bool? isTrashed;
 
   SearchOptions({
     required this.query,
@@ -119,7 +120,8 @@ class SearchOptions { // todo add device ID & image source
     this.tags, 
     this.placeFilter,
     this.cameraFilter, 
-    this.favorited,
+    this.isFavorited, 
+    this.isTrashed,
   });
 
   bool isEmpty() {
@@ -132,7 +134,8 @@ class SearchOptions { // todo add device ID & image source
       (tags == null || tags!.isEmpty) &&
       placeFilter == const PlaceFilter() &&
       cameraFilter == const CameraFilter() &&
-      favorited != true;
+      isFavorited != true &&
+      isTrashed != true;
   }
   SearchOptions copyWith({
     String? query,
@@ -145,8 +148,9 @@ class SearchOptions { // todo add device ID & image source
     Set<String>? tags,
     PlaceFilter? placeFilter,
     CameraFilter? cameraFilter,
-    bool? favorited,
+    bool? isFavorited,
     SortOrder? sortOrder,
+    bool? isTrashed,
   }) => SearchOptions(
     query: query ?? this.query,
     searchType: searchType ?? this.searchType,
@@ -158,8 +162,9 @@ class SearchOptions { // todo add device ID & image source
     tags: tags ?? this.tags,
     placeFilter: placeFilter ?? this.placeFilter,
     cameraFilter: cameraFilter ?? this.cameraFilter,
-    favorited: favorited ?? this.favorited,
+    isFavorited: isFavorited ?? this.isFavorited,
     sortOrder: sortOrder ?? this.sortOrder,
+    isTrashed: isTrashed ?? this.isTrashed,
   );
 }
 

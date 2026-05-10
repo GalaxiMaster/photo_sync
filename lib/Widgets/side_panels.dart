@@ -373,14 +373,22 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               final searchOptions = SearchOptions(
                 query: '',
                 searchType: SearchType.fileName,
-                favorited: true,
+                isFavorited: true,
               );
               await ref.read(galleryProvider.notifier).loadCloud();
               ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
-            menuItem('Trash', Icons.delete_outline),
+            menuItem('Trash', Icons.delete_outline, onClick: () async{
+              final searchOptions = SearchOptions(
+                query: '',
+                searchType: SearchType.fileName,
+                isTrashed: true,
+              );
+              await ref.read(galleryProvider.notifier).loadCloud();
+              ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
+            }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
