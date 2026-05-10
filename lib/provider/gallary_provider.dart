@@ -6,6 +6,7 @@ import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
+import 'package:photo_sync/services/tools.dart';
 
 final immichServiceProvider = Provider<ImmichService>(
   (_) => ImmichService(),
@@ -23,6 +24,9 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
   List<GalleryItem>? originalContent;
   SearchOptions searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
   Set<ImmichAsset> uploadQueue = {};
+
+  bool get hasMore => _hasMore;
+
   @override
   Future<List<GalleryItem>> build() => _fetch();
 
@@ -53,6 +57,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
         }
         final end = min(++_page * pulledItems, fullLocal.length);
         results = fullLocal.sublist(start, end);
+        checkImmichStatusInBackground(results);
       } else {
         results = await smartSearch(searchOptions, fetchMore: true);
       }
@@ -191,8 +196,10 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
 
     _groupedAssets.clear();
     final end = min(pulledItems, fullLocal.length);
-    _updateGroupedMap(fullLocal.sublist(0, end));
+    final sublist = fullLocal.sublist(0, end);
+    _updateGroupedMap(sublist);
     state = AsyncData(_buildGalleryItems());
+    checkImmichStatusInBackground(sublist);
   }
 
   Future<void> loadCloud() async {
@@ -312,7 +319,57 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     uploadQueue.remove(asset);
   }
 
-  bool get hasMore => _hasMore;
+  Future<Map<String, String>?> checkExisting(List<ImmichAsset> asset) async {
+    Map<String, String> result = {};
+    for (final a in asset) {
+      final res = await _service.findExistingByMetadata(asset: a);
+      
+      if (res != null) {
+        result[a.id] = res;
+      }
+    }
+    return result;
+  }
+
+  Future<void> updateSources(String assetId, ImageSource newSource) async {
+    // Update map directly
+    for (final group in _groupedAssets.values) {
+      final index = group.indexWhere((a) => a.id == assetId);
+      if (index != -1) {
+        final asset = group[index];
+        final updatedAsset = asset.copyWith(imageSources: {...asset.imageSources, newSource});
+        group[index] = updatedAsset;
+        break;
+      }
+    }
+
+    state = AsyncData(_buildGalleryItems());
+  }
+  
+  Future<void> checkImmichStatusInBackground(List<ImmichAsset> assets) async {
+    const batchSize = 50;
+
+    for (var i = 0; i < assets.length; i += batchSize) {
+      final batch = assets.sublist(i, (i + batchSize).clamp(0, assets.length));
+
+      final results = await Future.wait(
+        batch.map((a) => _service.findExistingByMetadata(asset: a)),
+      );
+
+      for (final (i, asset) in batch.enumerate) {
+        if (results[i] == null) continue;
+        final newAsset = asset.copyWith(imageSources: {...asset.imageSources, ImageSource.immich}, id: results[i]!);
+        final key = asset.pixelPairKey ?? asset.baseName;
+        if (_groupedAssets.containsKey(key)) {
+          final index = _groupedAssets[key]!.indexWhere((a) => a.localPath == asset.localPath);
+          if (index != -1) {
+            _groupedAssets[key]![index] = newAsset;
+          }
+        }
+      }
+      state = AsyncData(_buildGalleryItems());
+    }
+  }
 }
 
 final galleryProvider = AsyncNotifierProvider<GalleryNotifier, List<GalleryItem>>(

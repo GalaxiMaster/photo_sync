@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
@@ -284,7 +283,22 @@ class ImmichService {
         onProgress?.call(sent, total);
       },
     );
-    return response.statusCode == 200;
+    Set<int> allowedStatusCodes = {200, 201}; // todo could return the new id and map it in cache later
+    return allowedStatusCodes.contains(response.statusCode);
+  }
+
+  Future<String?> findExistingByMetadata({
+    required ImmichAsset asset
+  }) async {
+    final createdAt = asset.fileCreatedAt.toUtc();
+    final response = await _dio.post('/search/metadata', data: {
+      'originalFileName': asset.originalFileName,
+      'takenAfter': createdAt.subtract(Duration(seconds: 1)).toIso8601String(),
+      'takenBefore': createdAt.add(Duration(seconds: 1)).toIso8601String(),
+    });
+
+    final assets = (response.data['assets']['items'] as List);
+    return assets.isEmpty ? null : assets.first['id'] as String;
   }
 }
 
