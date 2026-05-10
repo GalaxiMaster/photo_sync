@@ -369,12 +369,13 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text('Library'),
             ),
-            menuItem('Favorites', Icons.favorite_outline, onClick: () {
+            menuItem('Favorites', Icons.favorite_outline, onClick: () async{
               final searchOptions = SearchOptions(
                 query: '',
                 searchType: SearchType.fileName,
                 favorited: true,
               );
+              await ref.read(galleryProvider.notifier).loadCloud();
               ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
