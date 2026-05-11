@@ -44,7 +44,11 @@ void showErrorSnackbar(String errorMessage) {
 
   // Manually dismiss after 2s to work around Flutter desktop bug
   _snackbarTimer = Timer(const Duration(seconds: 3), () {
-    controller.close();
+    try {
+      if (scaffoldMessengerKey.currentState != null) {
+        controller.close();
+      }
+    } catch (_) {} // Ignore if already dismissed
   });
 }
 
@@ -83,6 +87,10 @@ void showSuccessSnackbar(String message) {
   );
 
   _snackbarTimer = Timer(const Duration(seconds: 3), () {
-    controller.close();
-  });
+    try {
+      if (scaffoldMessengerKey.currentState != null) {
+        controller.close();
+      }
+    } catch (_) {} // Ignore if already dismissed
+ });
 }
