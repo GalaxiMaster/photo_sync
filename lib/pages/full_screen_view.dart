@@ -351,11 +351,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 if (option == 1) {
                                   // Delete full stack
                                   await ref.read(galleryProvider.notifier)
-                                      .deleteAssets(all.map((e) => e.id).toList(), isTrashed: all.every((a) => a.isTrashed ?? false));
+                                      .deleteAssets(all.toSet(), isTrashed: all.every((a) => a.isTrashed ?? false));
                                 } else if (option == 2) {
                                   // Delete single asset
                                   await ref.read(galleryProvider.notifier)
-                                      .deleteAssets([currentImage.id], isTrashed: currentImage.isTrashed ?? false);
+                                      .deleteAssets({currentImage}, isTrashed: currentImage.isTrashed ?? false);
                                 }
 
                                 if (!context.mounted && mounted) return;

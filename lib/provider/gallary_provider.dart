@@ -132,27 +132,40 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return result;
   }
 
-  Future<void> deleteAssets(List<String> assetIds, {bool isTrashed = false}) async {
+  Future<void> deleteAssets(Set<ImmichAsset> assets, {bool isTrashed = false}) async {
     try {
       if (isLocal) {
-        final assetsToDelete = fullLocal.where((a) => assetIds.contains(a.id)).toList();
+        final assetsToDelete = fullLocal.where((a) => assets.contains(a)).toList();
         for (final asset in assetsToDelete) {
           fullLocal.remove(asset);
           if (asset.localPath != null) {
             final file = File(asset.localPath!);
             if (file.existsSync()) file.deleteSync();
+            if (asset.imageSources.contains(ImageSource.immich)) {
+              await _service.deleteAssets([asset.id], force: true);
+            }
           }
         }
       } else {
-        await _service.deleteAssets(assetIds, force: isTrashed);
+        await _service.deleteAssets(assets.map((e) => e.id).toList(), force: isTrashed);
+        for (final asset in assets) {
+          if (asset.localPath != null) {
+            try {
+              final file = File(asset.localPath!);
+             if (file.existsSync()) file.deleteSync();
+            } catch (e) {
+              continue;
+            }
+          }
+        }
       }
 
-      final idSet = assetIds.toSet();
+      final idSet = assets.toSet();
 
       // Update the map by removing targeted IDs
       final keysToRemove = <String>[];
       _groupedAssets.forEach((key, list) {
-        list.removeWhere((asset) => idSet.contains(asset.id));
+        list.removeWhere((asset) => idSet.contains(asset));
         if (list.isEmpty) keysToRemove.add(key);
       });
 
@@ -164,7 +177,7 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
       state = AsyncData(_buildGalleryItems());
       ref.read(selectionProvider.notifier).clear();
     } catch (e) {
-      throw Exception('Failed to delete assets: $e'); // rethrow cleanly
+      throw Exception('Failed to delete assets: $e');
     }
   }
 

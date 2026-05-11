@@ -48,6 +48,7 @@ class ImmichAsset {
       isFavorite: json['isFavorite'] ?? false,
       deviceId: json['deviceId'] as String?,
       isTrashed: json['isTrashed'] as bool?,
+      localPath: (json['deviceAssetId'] ?? '').contains('.') ? json['deviceAssetId'] as String? : null,
     );
   }
 
@@ -282,7 +283,7 @@ class ImmichService {
     final filename = p.basename(filePath);
 
     final formData = FormData.fromMap({
-      'deviceAssetId': filename,
+      'deviceAssetId': filePath,
       'deviceId': 'photo-sync-desktop',
       'fileCreatedAt': stat.modified.toIso8601String(),
       'fileModifiedAt': stat.modified.toIso8601String(),
@@ -335,7 +336,7 @@ extension GalleryItemX on GalleryItem {
   String get originalFileName => leadAsset.originalFileName;
   String get id => leadAsset.id;
   DateTime get fileCreatedAt => leadAsset.fileCreatedAt;
-  bool get isLocal => leadAsset.localPath != null;
+  bool get isLocal => leadAsset.imageSources.contains(ImageSource.local);
 }
 
 
