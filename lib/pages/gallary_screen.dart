@@ -12,7 +12,11 @@ import 'package:photo_sync/services/exiftool.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
-  const GalleryScreen({super.key});
+  final bool canScroll;
+  final Widget? header;
+
+  const GalleryScreen({super.key, this.canScroll = true, this.header});
+
   @override
   GalleryScreenState createState() => GalleryScreenState();
 }
@@ -39,24 +43,22 @@ class GalleryScreenState extends ConsumerState<GalleryScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final galleryState = ref.watch(galleryProvider);
 
-    return Expanded(
-      child: galleryState.when(
-        loading: () => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-        error: (err, _) => Center(
+    final gridSliver = galleryState.when(
+      loading: () => const SliverToBoxAdapter(
+        child: Center(child: CircularProgressIndicator(color: Colors.white)),
+      ),
+      error: (err, _) => SliverToBoxAdapter(
+        child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.cloud_off, color: Colors.white54, size: 48),
               const SizedBox(height: 12),
-              Text(err.toString(),
-                  style: const TextStyle(color: Colors.white54)),
+              Text(err.toString(), style: const TextStyle(color: Colors.white54)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => ref.read(galleryProvider.notifier).refresh(),
@@ -65,51 +67,36 @@ class GalleryScreenState extends ConsumerState<GalleryScreen> {
             ],
           ),
         ),
-        data: (assets) => _Grid(
-          assets: assets,
-          scrollController: _scrollController,
-          hasMore: ref.read(galleryProvider.notifier).hasMore,
+      ),
+      data: (assets) => SliverGrid(
+        delegate: SliverChildBuilderDelegate(
+          (context, index) => index >= assets.length
+              ? const _LoadingTile()
+              : _Tile(asset: assets[index]),
+          childCount: assets.length,
+        ),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 8,
+          crossAxisSpacing: 2,
+          mainAxisSpacing: 2,
         ),
       ),
     );
-  }
 
-}
-
-class _Grid extends StatelessWidget {
-  final List<GalleryItem> assets;
-  final ScrollController scrollController;
-  final bool hasMore;
-
-  const _Grid({
-    required this.assets,
-    required this.scrollController,
-    required this.hasMore,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-
-    return GridView.builder(
-      controller: scrollController,
-      padding: const EdgeInsets.all(2),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 8,
-        crossAxisSpacing: 2,
-        mainAxisSpacing: 2,
-      ),
-      itemCount: assets.length,
-      cacheExtent: 200,
-      itemBuilder: (context, index) {
-        if (index >= assets.length) {
-          return const _LoadingTile();
-        }
-        return _Tile(asset: assets[index]);
-      },
+    final scrollView = CustomScrollView(
+      controller: _scrollController,
+      physics: widget.canScroll ? null : const NeverScrollableScrollPhysics(),
+      shrinkWrap: !widget.canScroll,
+      slivers: [
+        if (widget.header != null)
+          SliverToBoxAdapter(child: widget.header!),
+        gridSliver,
+      ],
     );
+
+    return widget.canScroll ? Expanded(child: scrollView) : scrollView;
   }
 }
-
 
 class _Tile extends ConsumerStatefulWidget {
   final GalleryItem asset;
