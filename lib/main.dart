@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/pages/home.dart';
 
 void main() async {
   await dotenv.load(fileName: ".env");
@@ -28,7 +28,7 @@ class App extends StatelessWidget {
         colorScheme: const ColorScheme.dark(),
       ),
       scaffoldMessengerKey: scaffoldMessengerKey,
-      home: const GalleryScreen(),
+      home: const MainApp(),
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/tools.dart';
@@ -273,8 +274,8 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return await _service.restoreFromTrash([asset.id]);
   }
 
-  Future<void> getPeople(ImmichAsset asset) async {
-    await _service.getPeople();
+  Future<List<ImmichPerson>> getPeople() async {
+    return await _service.getPeople();
   }
 
   void searchFromOptions(SearchOptions options, {bool force = false}) async {

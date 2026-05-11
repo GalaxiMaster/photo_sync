@@ -185,16 +185,16 @@ class ImmichService {
     });
     return response.statusCode == 200;
   }
+  
   Future<List<ImmichPerson>> getPeople() async {
-    final response = await _dio.get('/api/people', queryParameters: {
-      'withHidden': false,
-    });
+    final response = await _dio.get('/people');
 
     final data = response.data as Map<String, dynamic>;
     return (data['people'] as List)
         .map((p) => ImmichPerson.fromJson(p))
         .toList();
   }
+
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,

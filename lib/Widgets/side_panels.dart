@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
+import 'package:photo_sync/pages/explore.dart';
+import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
@@ -363,7 +365,9 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             menuItem('Photos', Icons.photo_library_rounded, onClick: () => ref.read(galleryProvider.notifier).loadCloud()),
-            menuItem('Explore', Icons.search),
+            menuItem('Explore', Icons.search, onClick: () {
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.explore);
+            }),
             menuItem('Map', Icons.map),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
