@@ -7,6 +7,7 @@ import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
+import 'package:photo_sync/pages/person_page.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import '../provider/gallary_provider.dart';
@@ -15,10 +16,10 @@ class MainApp extends ConsumerStatefulWidget {
   const MainApp({super.key});
 
   @override
-  ConsumerState<MainApp> createState() => _GalleryScreenState();
+  ConsumerState<MainApp> createState() => _MainAppState();
 }
 
-class _GalleryScreenState extends ConsumerState<MainApp> {
+class _MainAppState extends ConsumerState<MainApp> {
   final double iconSize = 22;
   final deleteKey = GlobalKey();
   final sideBarKey = GlobalKey();
@@ -31,8 +32,9 @@ class _GalleryScreenState extends ConsumerState<MainApp> {
   SearchOptions? currentSearch;
 
   static final _bodies = <AppBody, Widget>{
-    AppBody.gallery:     const GalleryScreen(),
-    AppBody.explore:  const ExplorePage(),
+    AppBody.gallery: const GalleryScreen(),
+    AppBody.explore: const ExplorePage(),
+    AppBody.person: const PersonPage(),
   };
   
   @override
@@ -46,6 +48,7 @@ class _GalleryScreenState extends ConsumerState<MainApp> {
     final inSelectionMode = ref.watch(isSelectionModeProvider);
     final selection = ref.watch(selectionProvider);
     final current = ref.watch(appBodyProvider);
+    final previousPage = ref.watch(appBodyProvider.notifier).previousPage;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -57,12 +60,21 @@ class _GalleryScreenState extends ConsumerState<MainApp> {
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Row(
                 children: [
-                  IconButton(
-                    onPressed: (){
-                      sidebar.show(context, sideBarContent);
-                    }, 
-                    icon: Icon(Icons.menu)
-                  ),
+                  if (previousPage == null)
+                    IconButton(
+                      onPressed: (){
+                        sidebar.show(context, sideBarContent);
+                      }, 
+                      icon: Icon(Icons.menu)
+                    )
+                  else
+                    IconButton(
+                      onPressed: (){
+                        ref.read(appBodyProvider.notifier).goToPrevious();
+                      }, 
+                      icon: Icon(Icons.arrow_back_outlined)
+                    ),
+                  
                   const Text(
                     'Gallery',
                     style: TextStyle(

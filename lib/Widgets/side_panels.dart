@@ -1,12 +1,10 @@
 import 'dart:async';
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
-import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -333,6 +331,8 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
   Future<void> scanDrive(String driveLetter) async {
     setState(() => _isScanning = true);
 
+    ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+
     final assets = await scanDriveAssets( // todo make this cancellable
       '$driveLetter\\',
       onProgress: (path, found) {
@@ -351,6 +351,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
   void refreshDrives() {
     setState(() => drives = getRemovableDrives());
   }
+  
   @override
   void dispose() {
     _timer?.cancel();
@@ -364,7 +365,14 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            menuItem('Photos', Icons.photo_library_rounded, onClick: () => ref.read(galleryProvider.notifier).loadCloud()),
+            menuItem(
+              'Photos', 
+              Icons.photo_library_rounded, 
+              onClick: () {
+                ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                ref.read(galleryProvider.notifier).loadCloud();
+              }
+            ),
             menuItem('Explore', Icons.search, onClick: () {
               ref.read(appBodyProvider.notifier).switchTo(AppBody.explore);
             }),
@@ -385,6 +393,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
             menuItem('Trash', Icons.delete_outline, onClick: () async{
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
               final searchOptions = SearchOptions(
                 query: '',
                 searchType: SearchType.fileName,

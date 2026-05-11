@@ -107,6 +107,7 @@ class SearchOptions { // todo add device ID & image source
   final bool? isFavorited;
   final SortOrder sortOrder;
   final bool? isTrashed;
+  final Set<String>? personIds;
 
   SearchOptions({
     required this.query,
@@ -121,7 +122,8 @@ class SearchOptions { // todo add device ID & image source
     this.placeFilter,
     this.cameraFilter, 
     this.isFavorited, 
-    this.isTrashed,
+    this.isTrashed, 
+    this.personIds,
   });
 
   bool isEmpty() {
@@ -151,6 +153,7 @@ class SearchOptions { // todo add device ID & image source
     bool? isFavorited,
     SortOrder? sortOrder,
     bool? isTrashed,
+    Set<String>? personIds,
   }) => SearchOptions(
     query: query ?? this.query,
     searchType: searchType ?? this.searchType,
@@ -165,6 +168,7 @@ class SearchOptions { // todo add device ID & image source
     isFavorited: isFavorited ?? this.isFavorited,
     sortOrder: sortOrder ?? this.sortOrder,
     isTrashed: isTrashed ?? this.isTrashed,
+    personIds: personIds ?? this.personIds,
   );
 }
 

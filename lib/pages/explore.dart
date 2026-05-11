@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
+import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
@@ -35,19 +37,83 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
             return Center(child: Text('Error loading people: ${snapshot.error}'));
           }
           final people = snapshot.data ?? [];
-          return ListView(
-            children: people.map((person) => ListTile(
-              leading: CircleAvatar(
-                backgroundImage: CachedNetworkImageProvider(
-                  person.thumbnailUrl(ImmichConfig.baseUrl),
-                  headers: {'x-api-key': ImmichConfig.apiKey},
-                ),
-              ),
-              title: Text(person.name),
-              subtitle: Text('Birthdate: ${person.birthDate ?? "Unknown"}'),
-            )).toList(),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final itemCount = 12;
+              const padding = 24.0;
+              final separators = (itemCount - 1) * 12.0;
+              final itemWidth = (constraints.maxWidth - padding - separators) / itemCount;
+
+              return PersonBox(people: people, itemWidth: itemWidth);
+            },
           );
         },
+      ),
+    );
+  }
+}
+
+class PersonBox extends ConsumerWidget {
+  const PersonBox({
+    super.key,
+    required this.people,
+    required this.itemWidth,
+  });
+
+  final List<ImmichPerson> people;
+  final double itemWidth;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      child: SizedBox(
+        height: 90,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          itemCount: people.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 12),
+          itemBuilder: (context, index) {
+            final person = people[index];
+            return MouseRegion(
+              cursor: SystemMouseCursors.click,
+              child: GestureDetector(
+                onTap: (){
+                  final SearchOptions options = SearchOptions(
+                    query: '', 
+                    searchType: SearchType.fileName,
+                    personIds: {person.id}
+                  );
+                  ref.read(galleryProvider.notifier).searchFromOptions(options);
+                  ref.read(appBodyProvider.notifier).goToPerson(person);
+                },
+                child: SizedBox(
+                  width: itemWidth,
+                  child: Column(
+                    children: [
+                      CircleAvatar(
+                        radius: itemWidth / 2 - 4,
+                        foregroundImage: CachedNetworkImageProvider(
+                          person.thumbnailUrl(ImmichConfig.baseUrl),
+                          headers: {'x-api-key': ImmichConfig.apiKey},
+                        ),
+                        child: Text(person.name.isNotEmpty ? person.name[0] : '?'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        person.name.isEmpty ? 'Unknown' : person.name,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
