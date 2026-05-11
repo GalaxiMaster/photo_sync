@@ -38,17 +38,25 @@ class ImmichAsset {
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
+    final localPath = (json['deviceAssetId'] ?? '').contains('.')
+        ? json['deviceAssetId'] as String?
+        : null;
+
     return ImmichAsset(
       id: json['id'] as String,
       type: json['type'] as String,
       originalFileName: json['originalFileName'] as String? ?? '',
       fileCreatedAt: DateTime.tryParse(json['fileCreatedAt'] as String? ?? '') ?? DateTime.now(),
-      mimeType: json['originalMimeType'] as String?, 
+      mimeType: json['originalMimeType'] as String?,
       exifInfo: json['exifInfo'],
       isFavorite: json['isFavorite'] ?? false,
       deviceId: json['deviceId'] as String?,
       isTrashed: json['isTrashed'] as bool?,
-      localPath: (json['deviceAssetId'] ?? '').contains('.') ? json['deviceAssetId'] as String? : null,
+      localPath: localPath,
+      imageSources: {
+        ImageSource.immich,
+        if (localPath != null) ImageSource.local,
+      },
     );
   }
 
@@ -336,7 +344,8 @@ extension GalleryItemX on GalleryItem {
   String get originalFileName => leadAsset.originalFileName;
   String get id => leadAsset.id;
   DateTime get fileCreatedAt => leadAsset.fileCreatedAt;
-  bool get isLocal => leadAsset.imageSources.contains(ImageSource.local);
+  bool get isLocal => !leadAsset.imageSources.contains(ImageSource.immich);
+  Set<ImageSource> get imageSources => leadAsset.imageSources;
 }
 
 

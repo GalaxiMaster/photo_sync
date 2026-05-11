@@ -14,6 +14,7 @@ import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/exiftool.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class GalleryScreen extends ConsumerStatefulWidget {
   const GalleryScreen({super.key});
@@ -370,7 +371,8 @@ class _TileState extends ConsumerState<_Tile> {
 
             if (widget.asset is StackedAssets) _buildStackIcon(),
             if (widget.asset.isRaw) _buildRawLabel(),
-            
+            if (widget.asset.imageSources.length > 1) _buildExternalSourceLabel(widget.asset.imageSources.last),
+
             ValueListenableBuilder<bool>(
               valueListenable: _isHovered,
               builder: (context, hovered, child) {
@@ -409,6 +411,19 @@ class _TileState extends ConsumerState<_Tile> {
   Widget _buildRawLabel() => const Positioned(
     top: 10, right: 12.5,
     child: Text('RAW', style: TextStyle(color: Colors.white70, fontSize: 10))
+  );
+
+  Widget _buildExternalSourceLabel(ImageSource source) => Positioned(
+    bottom: 10, left: 12.5,
+    child: SvgPicture.asset(
+      switch (source) {
+        ImageSource.local => 'assets/icons/local.svg',
+        ImageSource.immich => 'assets/icons/immich.svg',
+      },
+      width: 15,
+      height: 15,
+      colorFilter: ColorFilter.mode(Colors.white.withAlpha(200), BlendMode.srcIn),
+    )
   );
 
   void _showFullscreen(BuildContext context) {

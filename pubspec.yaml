@@ -29,6 +29,7 @@ dependencies:
   win32: ^6.0.1
   flutter_video_thumbnail_plus: ^1.0.6
   collection: ^1.19.1
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -39,3 +40,4 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/icons/
