@@ -273,6 +273,10 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return await _service.restoreFromTrash([asset.id]);
   }
 
+  Future<void> getPeople(ImmichAsset asset) async {
+    await _service.getPeople();
+  }
+
   void searchFromOptions(SearchOptions options, {bool force = false}) async {
     final results = await smartSearch(options, force: force);
     if (results == null) return;

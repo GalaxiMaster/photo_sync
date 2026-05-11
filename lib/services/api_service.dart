@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dio/dio.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_sync/Widgets/search_popup.dart';
+import 'package:photo_sync/models/immich_models.dart';
 
 class ImmichConfig {
   static String baseUrl = dotenv.env['immich_url'] ?? '';
@@ -184,7 +185,16 @@ class ImmichService {
     });
     return response.statusCode == 200;
   }
+  Future<List<ImmichPerson>> getPeople() async {
+    final response = await _dio.get('/api/people', queryParameters: {
+      'withHidden': false,
+    });
 
+    final data = response.data as Map<String, dynamic>;
+    return (data['people'] as List)
+        .map((p) => ImmichPerson.fromJson(p))
+        .toList();
+  }
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,
@@ -367,22 +377,4 @@ class StackedAssets extends GalleryItem {
   final List<ImmichAsset> children;
   final bool containsRaw;
   const StackedAssets({required this.primary, this.containsRaw = false, required this.children});
-}
-
-class SearchSuggestions {
-  final List<String> countries;
-  final List<String> states;
-  final List<String> cities;
-  final List<String> cameraMakes;
-  final List<String> cameraModels;
-  final List<String> lensModels;
-
-  const SearchSuggestions({
-    required this.countries,
-    required this.states,
-    required this.cities,
-    required this.cameraMakes,
-    required this.cameraModels, 
-    required this.lensModels,
-  });
 }

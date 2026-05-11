@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
-import 'package:photo_sync/services/api_service.dart';
 
 enum SearchType {
   context('Context', false),
