@@ -259,6 +259,20 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     await _service.favoriteImmichAsset(asset.id, newValue);
   }
 
+  Future<bool> restoreFromTrash(ImmichAsset asset) async {
+    final key = asset.pixelPairKey ?? asset.baseName;
+
+    if (_groupedAssets.containsKey(key)) {
+      final index = _groupedAssets[key]!.indexWhere((a) => a.id == asset.id);
+      if (index != -1) {
+        _groupedAssets[key]!.removeAt(index);
+      }
+    }
+
+    state = AsyncData(_buildGalleryItems());
+    return await _service.restoreFromTrash([asset.id]);
+  }
+
   void searchFromOptions(SearchOptions options, {bool force = false}) async {
     final results = await smartSearch(options, force: force);
     if (results == null) return;

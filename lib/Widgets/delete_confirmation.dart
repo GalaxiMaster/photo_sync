@@ -359,7 +359,7 @@ class _ExternalDeleteDialogState extends State<_ExternalDeleteDialog> {
                     children: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, <ImmichAsset>[]),
-                        child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+                        child: const Text('Keep', style: TextStyle(color: Colors.white54)),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(

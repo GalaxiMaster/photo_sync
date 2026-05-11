@@ -177,6 +177,14 @@ class ImmichService {
       'isFavorite': isFavorite,
     });
   }
+
+  Future<bool> restoreFromTrash(List<String> assetIds) async {
+    final response = await _dio.post('/trash/restore/assets', data: {
+      'ids': assetIds,
+    });
+    return response.statusCode == 200;
+  }
+
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,

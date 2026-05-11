@@ -297,6 +297,24 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             )
                           ),
 
+                          if (currentImage.isTrashed ?? false)
+                          IconButton(
+                            onPressed: () async {
+                              final result = await ref.read(galleryProvider.notifier).restoreFromTrash(currentImage);
+                              if (result) {
+                                showSuccessSnackbar('Asset restored successfully');
+                              } else {
+                                showErrorSnackbar('Failed to restore asset');
+                              }
+                            }, 
+                            mouseCursor: SystemMouseCursors.click, 
+                            iconSize: iconSize, 
+                            icon: Icon(
+                              Icons.restore, 
+                              color: Colors.white
+                            )
+                          ),
+
                           if (currentImage.imageSources.contains(ImageSource.immich))
                           IconButton(
                             onPressed: () {
