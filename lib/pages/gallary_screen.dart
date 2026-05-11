@@ -138,7 +138,11 @@ class _GalleryScreenState extends ConsumerState<GalleryScreen> {
                                             isTrashed: selection.every((a) => a.isTrashed ?? false)
                                           );
                                           if (confirm ?? false) {
-                                            ref.read(galleryProvider.notifier).deleteAssets(selection);
+                                            ref.read(galleryProvider.notifier).deleteAssets(
+                                              selection,
+                                              isTrashed: selection.every((a) => a.isTrashed ?? false),
+                                              deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
+                                            );
                                             if (context.mounted) {
                                               showSuccessSnackbar('Successfully sent selected assets to the trash');
                                             }

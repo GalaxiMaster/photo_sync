@@ -350,12 +350,18 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               try {
                                 if (option == 1) {
                                   // Delete full stack
-                                  await ref.read(galleryProvider.notifier)
-                                      .deleteAssets(all.toSet(), isTrashed: all.every((a) => a.isTrashed ?? false));
+                                  await ref.read(galleryProvider.notifier).deleteAssets(
+                                    all.toSet(), 
+                                    isTrashed: all.every((a) => a.isTrashed ?? false),
+                                    deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
+                                  );
                                 } else if (option == 2) {
                                   // Delete single asset
-                                  await ref.read(galleryProvider.notifier)
-                                      .deleteAssets({currentImage}, isTrashed: currentImage.isTrashed ?? false);
+                                  await ref.read(galleryProvider.notifier).deleteAssets(
+                                    {currentImage}, 
+                                    isTrashed: currentImage.isTrashed ?? false,
+                                    deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
+                                  );
                                 }
 
                                 if (!context.mounted && mounted) return;

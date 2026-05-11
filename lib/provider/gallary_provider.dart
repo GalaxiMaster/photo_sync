@@ -132,7 +132,9 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
     return result;
   }
 
-  Future<void> deleteAssets(Set<ImmichAsset> assets, {bool isTrashed = false}) async {
+  Future<void> deleteAssets(Set<ImmichAsset> assets, {bool isTrashed = false, Function(List<ImmichAsset>)? deleteFromExternalSource}) async {
+    List<ImmichAsset> externalSourceAssets = [];
+
     try {
       if (isLocal) {
         final assetsToDelete = fullLocal.where((a) => assets.contains(a)).toList();
@@ -142,19 +144,29 @@ class GalleryNotifier extends AsyncNotifier<List<GalleryItem>> {
             final file = File(asset.localPath!);
             if (file.existsSync()) file.deleteSync();
             if (asset.imageSources.contains(ImageSource.immich)) {
-              await _service.deleteAssets([asset.id], force: true);
+              externalSourceAssets.add(asset);
             }
           }
+        }
+        if (externalSourceAssets.isNotEmpty && deleteFromExternalSource != null) {
+          List<ImmichAsset> toDelete = await deleteFromExternalSource.call(externalSourceAssets);
+          await _service.deleteAssets(toDelete.map((e) => e.id).toList(), force: true);
         }
       } else {
         await _service.deleteAssets(assets.map((e) => e.id).toList(), force: isTrashed);
         for (final asset in assets) {
           if (asset.localPath != null) {
-            try {
+            final file = File(asset.localPath!);
+            if (!file.existsSync()) continue;
+            externalSourceAssets.add(asset);
+          }
+        }
+        if (externalSourceAssets.isNotEmpty && deleteFromExternalSource != null) {
+          List<ImmichAsset> toDelete = await deleteFromExternalSource.call(externalSourceAssets);
+          for (final asset in toDelete) {
+            if (asset.localPath != null) {
               final file = File(asset.localPath!);
-             if (file.existsSync()) file.deleteSync();
-            } catch (e) {
-              continue;
+              if (file.existsSync()) file.deleteSync();
             }
           }
         }
