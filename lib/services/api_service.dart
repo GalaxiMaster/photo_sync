@@ -344,6 +344,22 @@ class ImmichService {
     final assets = (response.data['assets']['items'] as List);
     return assets.isEmpty ? null : assets.first;
   }
+
+  Future<Map<String, int>> fetchMonthBuckets() async {
+    final response = await _dio.get('/timeline/buckets', queryParameters: {
+      'size': 'MONTH',
+      'isArchived': false,
+      'isTrashed': false,
+    });
+
+    final result = <String, int>{};
+    for (final bucket in response.data as List) {
+      final dt = DateTime.parse(bucket['timeBucket'] as String);
+      final key = '${dt.year}-${dt.month.toString().padLeft(2, '0')}';
+      result[key] = bucket['count'] as int;
+    }
+    return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
+  }
 }
 
 sealed class GalleryItem {
