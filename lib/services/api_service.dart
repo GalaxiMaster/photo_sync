@@ -360,6 +360,35 @@ class ImmichService {
     }
     return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
   }
+  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket) async {
+    // timeBucket is e.g. "2025-04-01T00:00:00.000Z"
+    final dt = DateTime.parse(timeBucket);
+    final start = DateTime(dt.year, dt.month, 1);
+    final end = DateTime(dt.year, dt.month + 1, 1); // rolls over correctly
+
+    List<ImmichAsset> all = [];
+    String? nextPage;
+
+    do {
+      final response = await _dio.post('/search/metadata', data: {
+        'takenAfter': start.toUtc().toIso8601String(),
+        'takenBefore': end.toUtc().toIso8601String(),
+        'isArchived': false,
+        'isTrashed': false,
+        'withExif': true,
+        if (nextPage != null) 'page': int.parse(nextPage),
+        'size': 1000,
+      });
+
+      final items = (response.data['assets']['items'] as List)
+          .map((j) => ImmichAsset.fromJson(j as Map<String, dynamic>))
+          .toList();
+      all.addAll(items);
+      nextPage = response.data['assets']['nextPage'] as String?;
+    } while (nextPage != null);
+
+    return all;
+  }
 }
 
 sealed class GalleryItem {

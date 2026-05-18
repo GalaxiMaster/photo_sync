@@ -136,7 +136,7 @@ class _MainAppState extends ConsumerState<MainApp> {
                                             isTrashed: selection.every((a) => a.isTrashed ?? false)
                                           );
                                           if (confirm ?? false) {
-                                            ref.read(galleryProvider.notifier).deleteAssets(
+                                            ref.read(galleryBucketProvider.notifier).deleteAssets(
                                               selection,
                                               isTrashed: selection.every((a) => a.isTrashed ?? false),
                                               deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
@@ -190,16 +190,16 @@ class _MainAppState extends ConsumerState<MainApp> {
                                     onFieldSubmitted: (value) {
                                       final SearchOptions searchOptions = SearchOptions(query: value.trim(), searchType: SearchType.context);
                                       
-                                      ref.read(galleryProvider.notifier).searchFromOptions(searchOptions);
+                                      ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions);
                                       currentSearch = searchOptions;
                                     },
                                   ),
                                 ),
                                 IconButton(
                                   onPressed: () async {
-                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch, localSearch: ref.read(galleryProvider.notifier).isLocal);
+                                    final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch, localSearch: ref.read(galleryBucketProvider.notifier).isLocal);
                                     if (searchOptions != null) {
-                                      ref.read(galleryProvider.notifier).searchFromOptions(searchOptions);
+                                      ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions);
                                       queryController.text = searchOptions.query;
                                       currentSearch = searchOptions;
                                     }
@@ -218,7 +218,7 @@ class _MainAppState extends ConsumerState<MainApp> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () => ref.read(galleryProvider.notifier).refresh(),
+                    onPressed: () => ref.read(galleryBucketProvider.notifier).refresh(),
                   ),
                 ],
               ),

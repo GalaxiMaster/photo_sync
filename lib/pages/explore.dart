@@ -21,7 +21,7 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
   @override
   void initState() {
     super.initState();
-    _peopleFuture = ref.read(galleryProvider.notifier).getPeople();
+    _peopleFuture = ref.read(galleryBucketProvider.notifier).getPeople();
   }
 
   @override
@@ -84,7 +84,7 @@ class PersonBox extends ConsumerWidget {
                     searchType: SearchType.fileName,
                     personIds: {person.id}
                   );
-                  ref.read(galleryProvider.notifier).searchFromOptions(options);
+                  ref.read(galleryBucketProvider.notifier).searchFromOptions(options);
                   ref.read(appBodyProvider.notifier).goToPerson(person);
                 },
                 child: SizedBox(

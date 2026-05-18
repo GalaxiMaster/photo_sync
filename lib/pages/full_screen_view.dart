@@ -11,11 +11,10 @@ import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
-// import 'package:open_file/open_file.dart';
 
 class FullscreenView extends ConsumerStatefulWidget {
   final GalleryItem asset;
-  
+
   const FullscreenView({super.key, required this.asset});
 
   @override
@@ -24,8 +23,11 @@ class FullscreenView extends ConsumerStatefulWidget {
 
 class _FullscreenViewState extends ConsumerState<FullscreenView> {
   final _focusNode = FocusNode();
+
   late int _index;
+
   String? _currentImageId;
+
   bool _hoverLeft = false;
   bool _hoverRight = false;
   final double iconSize = 24;
@@ -33,11 +35,18 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   final GlobalKey deleteKey = GlobalKey();
   final GlobalKey uploadKey = GlobalKey();
 
+  List<GalleryItem> _flatAssets(GalleryBucketState state) {
+    return [
+      for (final bucket in state.buckets)
+        if (bucket.assets != null) ...bucket.assets!,
+    ];
+  }
+
   @override
   void initState() {
     super.initState();
-    final assets = ref.read(galleryProvider).value ?? [];
-    _index = assets.indexOf(widget.asset);
+    final assets = _flatAssets(ref.read(galleryBucketProvider));
+    _index = assets.indexWhere((a) => a.leadAsset.id == widget.asset.leadAsset.id);
     if (_index < 0) _index = 0;
   }
 
@@ -47,7 +56,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
     super.dispose();
   }
 
-  void switchPhoto(int delta, List<GalleryItem> assets) {
+  void _switchPhoto(int delta, List<GalleryItem> assets) {
     final next = _index + delta;
     if (next < 0 || next >= assets.length) return;
     setState(() {
@@ -66,7 +75,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
 
   @override
   Widget build(BuildContext context) {
-    final assets = ref.watch(galleryProvider).value ?? [];
+    final bucketState = ref.watch(galleryBucketProvider);
+    final assets = _flatAssets(bucketState);
+
     if (assets.isEmpty) return const Scaffold(backgroundColor: Colors.black);
 
     if (_index >= assets.length) {
@@ -89,8 +100,10 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
     };
 
     final ImmichAsset currentImage = _currentImageId != null
-        ? all.firstWhere((a) => a.id == _currentImageId,
-            orElse: () => active.leadAsset)
+        ? all.firstWhere(
+            (a) => a.id == _currentImageId,
+            orElse: () => active.leadAsset,
+          )
         : active.leadAsset;
 
     return Scaffold(
@@ -102,9 +115,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
           if (event is! KeyDownEvent) return;
           switch (event.logicalKey) {
             case LogicalKeyboardKey.arrowLeft:
-              switchPhoto(-1, assets);
+              _switchPhoto(-1, assets);
             case LogicalKeyboardKey.arrowRight:
-              switchPhoto(1, assets);
+              _switchPhoto(1, assets);
             case LogicalKeyboardKey.escape:
               Navigator.of(context).pop();
           }
@@ -124,35 +137,46 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               constraints: BoxConstraints(
                                 maxWidth: MediaQuery.of(context).size.width * 0.85,
                               ),
-                              child: !widget.asset.isLocal ? CachedNetworkImage(
-                                imageUrl: currentImage.thumbnailUrl(size: 'preview'),
-                                httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                fit: BoxFit.contain,
-                                placeholder: (_, _) => CachedNetworkImage(
-                                  imageUrl: currentImage.thumbnailUrl(size: 'preview'),
-                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                  fit: BoxFit.cover,
-                                  errorWidget: (_, _, _) =>
-                                      const Icon(Icons.broken_image, color: Colors.white38, size: 32),
-                                ),
-                                errorWidget: (_, _, _) =>
-                                    const Icon(Icons.broken_image, color: Colors.white38, size: 64),
-                              ) : LocalAssetTile(
-                                key: ValueKey(currentImage.id),
-                                asset: currentImage, 
-                                preview: false,
-                              ),
+                              child: !active.isLocal
+                                ? CachedNetworkImage(
+                                    imageUrl: currentImage.thumbnailUrl(size: 'preview'),
+                                    httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                    fit: BoxFit.contain,
+                                    placeholder: (_, _) => CachedNetworkImage(
+                                      imageUrl: currentImage.thumbnailUrl(size: 'preview'),
+                                      httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                      fit: BoxFit.cover,
+                                      errorWidget: (_, _, _) => const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.white38,
+                                        size: 32,
+                                      ),
+                                    ),
+                                    errorWidget: (_, _, _) => const Icon(
+                                      Icons.broken_image,
+                                      color: Colors.white38,
+                                      size: 64,
+                                    ),
+                                  )
+                                : LocalAssetTile(
+                                    key: ValueKey(currentImage.id),
+                                    asset: currentImage,
+                                    preview: false,
+                                  ),
                             ),
                           ),
                         ),
+
                         Positioned(
-                          top: 0, bottom: 0, right: 10,
+                          top: 0,
+                          bottom: 0,
+                          right: 10,
                           child: safeIndex < assets.length - 1
                             ? MouseRegion(
                                 onEnter: (_) => setState(() => _hoverRight = true),
                                 onExit: (_) => setState(() => _hoverRight = false),
                                 child: GestureDetector(
-                                  onTap: () => switchPhoto(1, assets),
+                                  onTap: () => _switchPhoto(1, assets),
                                   behavior: HitTestBehavior.opaque,
                                   child: SizedBox(
                                     width: MediaQuery.of(context).size.width * (1 / 5),
@@ -161,7 +185,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                       child: AnimatedOpacity(
                                         duration: const Duration(milliseconds: 200),
                                         opacity: _hoverRight ? 1.0 : 0.0,
-                                        child: const Icon(Icons.arrow_forward_ios, size: 32, color: Colors.white70),
+                                        child: const Icon(
+                                          Icons.arrow_forward_ios,
+                                          size: 32,
+                                          color: Colors.white70,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -169,14 +197,17 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               )
                             : const SizedBox.shrink(),
                         ),
+
                         Positioned(
-                          top: 0, bottom: 0, left: 10,
+                          top: 0,
+                          bottom: 0,
+                          left: 10,
                           child: safeIndex > 0
                             ? MouseRegion(
                                 onEnter: (_) => setState(() => _hoverLeft = true),
                                 onExit: (_) => setState(() => _hoverLeft = false),
                                 child: GestureDetector(
-                                  onTap: () => switchPhoto(-1, assets),
+                                  onTap: () => _switchPhoto(-1, assets),
                                   behavior: HitTestBehavior.opaque,
                                   child: SizedBox(
                                     width: MediaQuery.of(context).size.width * (1 / 5),
@@ -185,7 +216,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                       child: AnimatedOpacity(
                                         duration: const Duration(milliseconds: 200),
                                         opacity: _hoverLeft ? 1.0 : 0.0,
-                                        child: const Icon(Icons.arrow_back_ios_new, size: 32, color: Colors.white70),
+                                        child: const Icon(
+                                          Icons.arrow_back_ios_new,
+                                          size: 32,
+                                          color: Colors.white70,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -196,7 +231,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
 
                         if (active is StackedAssets)
                           Positioned(
-                            bottom: 15, right: 0, left: 0,
+                            bottom: 15,
+                            right: 0,
+                            left: 0,
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: all.map((a) {
@@ -212,8 +249,8 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                     decoration: BoxDecoration(
                                       border: Border.all(
                                         color: isActive
-                                            ? Colors.white
-                                            : Colors.white.withAlpha((255 * 0.4).round()),
+                                          ? Colors.white
+                                          : Colors.white.withAlpha((255 * 0.4).round()),
                                         width: isActive ? 2 : 0,
                                       ),
                                       borderRadius: BorderRadius.circular(10),
@@ -226,13 +263,22 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                             child: AnimatedOpacity(
                                               duration: const Duration(milliseconds: 200),
                                               opacity: isActive ? 1.0 : 0.5,
-                                              child: CachedNetworkImage(
-                                                imageUrl: a.thumbnailUrl(size: 'preview'),
-                                                httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                                fit: BoxFit.cover,
-                                                errorWidget: (_, _, _) =>
-                                                    const Icon(Icons.broken_image, color: Colors.white38, size: 32),
-                                              ),
+                                              child: active.isLocal
+                                                ? LocalAssetTile(
+                                                    key: ValueKey(a.id),
+                                                    asset: a,
+                                                    preview: true,
+                                                  )
+                                                : CachedNetworkImage(
+                                                    imageUrl: a.thumbnailUrl(size: 'preview'),
+                                                    httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                                    fit: BoxFit.cover,
+                                                    errorWidget: (_, _, _) => const Icon(
+                                                      Icons.broken_image,
+                                                      color: Colors.white38,
+                                                      size: 32,
+                                                    ),
+                                                  ),
                                             ),
                                           ),
                                           if (a.isRaw)
@@ -240,7 +286,8 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                               child: Text(
                                                 'RAW',
                                                 style: TextStyle(
-                                                  color: Colors.white.withAlpha((255 * 0.6).round()),
+                                                  color: Colors.white.withAlpha(
+                                                      (255 * 0.6).round()),
                                                   fontSize: isActive ? 10 : 6,
                                                   fontWeight: FontWeight.w400,
                                                 ),
@@ -257,13 +304,13 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                       ],
                     ),
                   ),
+
                   Positioned(
                     top: 0,
                     right: 0,
                     left: 0,
                     child: SizedBox(
                       height: 55,
-                      width: MediaQuery.of(context).size.width,
                       child: Row(
                         children: [
                           const SizedBox(width: 5),
@@ -274,7 +321,12 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             icon: const Icon(Icons.arrow_back, color: Colors.white),
                           ),
                           const Spacer(),
-                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.share, color: Colors.white)),
+                          IconButton(
+                            onPressed: () {},
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.share, color: Colors.white),
+                          ),
                           IconButton(
                             onPressed: () => setState(() => _showInfo = !_showInfo),
                             mouseCursor: SystemMouseCursors.click,
@@ -288,70 +340,69 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 return;
                               }
                               openWithDialog(currentImage.localPath!);
-                            }, 
-                            mouseCursor: SystemMouseCursors.click, 
-                            iconSize: iconSize, 
-                            icon: const Icon(
-                              Icons.tune, 
-                              color: Colors.white
-                            )
+                            },
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.tune, color: Colors.white),
                           ),
 
                           if (currentImage.isTrashed ?? false)
-                          IconButton(
-                            onPressed: () async {
-                              final result = await ref.read(galleryProvider.notifier).restoreFromTrash(currentImage);
-                              if (result) {
-                                showSuccessSnackbar('Asset restored successfully');
-                              } else {
-                                showErrorSnackbar('Failed to restore asset');
-                              }
-                            }, 
-                            mouseCursor: SystemMouseCursors.click, 
-                            iconSize: iconSize, 
-                            icon: Icon(
-                              Icons.restore, 
-                              color: Colors.white
-                            )
-                          ),
+                            IconButton(
+                              onPressed: () async {
+                                final result = await ref.read(galleryBucketProvider.notifier).restoreFromTrash(currentImage);
+                                if (result) {
+                                  showSuccessSnackbar('Asset restored successfully');
+                                } else {
+                                  showErrorSnackbar('Failed to restore asset');
+                                }
+                              },
+                              mouseCursor: SystemMouseCursors.click,
+                              iconSize: iconSize,
+                              icon: const Icon(Icons.restore, color: Colors.white),
+                            ),
 
                           if (currentImage.imageSources.contains(ImageSource.immich))
-                          IconButton(
-                            onPressed: () {
-                              ref.read(galleryProvider.notifier).toggleFavorite(currentImage);
-                            }, 
-                            mouseCursor: SystemMouseCursors.click, 
-                            iconSize: iconSize, 
-                            icon: Icon(
-                              currentImage.isFavorite ? Icons.favorite : Icons.favorite_border, 
-                              color: Colors.white
-                            )
-                          ),
+                            IconButton(
+                              onPressed: () {
+                                ref.read(galleryBucketProvider.notifier).toggleFavorite(currentImage);
+                                ref.read(galleryBucketProvider.notifier).updateAsset(
+                                  currentImage.copyWith(isFavorite: !currentImage.isFavorite),
+                                );
+                              },
+                              mouseCursor: SystemMouseCursors.click,
+                              iconSize: iconSize,
+                              icon: Icon(
+                                currentImage.isFavorite
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                                color: Colors.white,
+                              ),
+                            ),
 
                           if (!currentImage.imageSources.contains(ImageSource.immich))
-                          IconButton(
-                            key: uploadKey,
-                            onPressed: () async {
-                              final uploadController = UploadProgressController(
-                                onComplete: () => Navigator.pop(context),
-                              );
+                            IconButton(
+                              key: uploadKey,
+                              onPressed: () async {
+                                final uploadController = UploadProgressController(
+                                  onComplete: () => Navigator.pop(context),
+                                );
+                                showProgressPopup(
+                                  context: context,
+                                  anchorKey: uploadKey,
+                                  controller: uploadController,
+                                );
+                                await ref.read(galleryBucketProvider.notifier).uploadToImmich(
+                                      currentImage,
+                                      popupController: uploadController,
+                                    );
+                                uploadController.complete();
+                                uploadController.dispose();
+                              },
+                              mouseCursor: SystemMouseCursors.click,
+                              iconSize: iconSize,
+                              icon: const Icon(Icons.upload_sharp, color: Colors.white),
+                            ),
 
-                              showProgressPopup(
-                                context: context,
-                                anchorKey: uploadKey,
-                                controller: uploadController,
-                              );
-                              await ref.read(galleryProvider.notifier).uploadToImmich(currentImage, popupController: uploadController);
-                              uploadController.complete();
-                              uploadController.dispose();
-                            },
-                            mouseCursor: SystemMouseCursors.click, 
-                            iconSize: iconSize, 
-                            icon: Icon(
-                              Icons.upload_sharp, 
-                              color: Colors.white
-                            )
-                          ),
                           IconButton(
                             key: deleteKey,
                             onPressed: () async {
@@ -360,31 +411,30 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 context: context,
                                 anchorKey: deleteKey,
                                 sources: currentImage.imageSources,
-                                isTrashed: all.every((a) => a.isTrashed ?? false)
+                                isTrashed: all.every((a) => a.isTrashed ?? false),
                               );
 
                               if ((option ?? 0) <= 0) return;
 
                               try {
-                                if (option == 1) {
-                                  // Delete full stack
-                                  await ref.read(galleryProvider.notifier).deleteAssets(
-                                    all.toSet(), 
-                                    isTrashed: all.every((a) => a.isTrashed ?? false),
-                                    deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
-                                  );
-                                } else if (option == 2) {
-                                  // Delete single asset
-                                  await ref.read(galleryProvider.notifier).deleteAssets(
-                                    {currentImage}, 
-                                    isTrashed: currentImage.isTrashed ?? false,
-                                    deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
-                                  );
-                                }
+                                final toDelete = option == 1
+                                    ? all.toSet() // full stack
+                                    : {currentImage}; // single asset
 
-                                if (!context.mounted && mounted) return;
+                                await ref.read(galleryBucketProvider.notifier).deleteAssets(
+                                  toDelete,
+                                  isTrashed: option == 1
+                                      ? all.every((a) => a.isTrashed ?? false)
+                                      : (currentImage.isTrashed ?? false),
+                                  deleteFromExternalSource: (assetsFound) =>
+                                      confirmExternalSourceDelete(context, assetsFound),
+                                );
 
-                                final updatedAssets = ref.read(galleryProvider).value ?? [];
+                                ref.read(galleryBucketProvider.notifier).removeAssets(toDelete);
+
+                                if (!context.mounted || !mounted) return;
+
+                                final updatedAssets = _flatAssets(ref.read(galleryBucketProvider));
 
                                 if (updatedAssets.isEmpty) {
                                   Navigator.pop(context);
@@ -392,18 +442,24 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 }
 
                                 setState(() => _onAfterDelete(updatedAssets));
-
-                                showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
-                              }  catch (e, st) {
+                                showSuccessSnackbar(
+                                    'Successfully sent selected asset(s) to the trash');
+                              } catch (e, st) {
                                 debugPrint('Delete error: $e\n$st');
                                 if (mounted) showErrorSnackbar('Delete failed: $e');
                               }
-                            }, 
+                            },
                             mouseCursor: SystemMouseCursors.click,
                             iconSize: iconSize,
                             icon: const Icon(Icons.delete_outline, color: Colors.white),
                           ),
-                          IconButton(onPressed: () {}, mouseCursor: SystemMouseCursors.click, iconSize: iconSize, icon: const Icon(Icons.more_vert, color: Colors.white)),
+
+                          IconButton(
+                            onPressed: () {},
+                            mouseCursor: SystemMouseCursors.click,
+                            iconSize: iconSize,
+                            icon: const Icon(Icons.more_vert, color: Colors.white),
+                          ),
                         ],
                       ),
                     ),
@@ -411,6 +467,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                 ],
               ),
             ),
+
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeInOut,
@@ -431,9 +488,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
 
 Future<void> openWithDialog(String filePath) async {
   if (Platform.isWindows) {
-    // await OpenFile.open(absolutePath);
     final cleanPath = filePath.replaceAll(r'\\', r'\');
-
     await Process.run(
       'rundll32',
       ['shell32.dll,OpenAs_RunDLL', cleanPath],
@@ -443,5 +498,3 @@ Future<void> openWithDialog(String filePath) async {
     await Process.run('xdg-open', [filePath]);
   }
 }
-
-

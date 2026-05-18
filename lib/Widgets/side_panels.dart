@@ -76,7 +76,7 @@ class InfoPanel extends ConsumerWidget {
                   onClick: () async {
                     final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
                     if (picked != null) {
-                      await ref.read(galleryProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
+                      await ref.read(galleryBucketProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
                     }
                   },
                 ),
@@ -345,7 +345,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
       _isScanning = false;
       _scanStatus = 'Done — ${assets.length} files found';
     });
-    ref.read(galleryProvider.notifier).loadLocal(_localAssets);
+    ref.read(galleryBucketProvider.notifier).loadLocal(_localAssets);
   }
 
   void refreshDrives() {
@@ -370,7 +370,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               Icons.photo_library_rounded, 
               onClick: () {
                 ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-                ref.read(galleryProvider.notifier).loadCloud();
+                ref.read(galleryBucketProvider.notifier).loadCloud();
               }
             ),
             menuItem('Explore', Icons.search, onClick: () {
@@ -387,8 +387,8 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
                 searchType: SearchType.fileName,
                 isFavorited: true,
               );
-              await ref.read(galleryProvider.notifier).loadCloud();
-              ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
+              await ref.read(galleryBucketProvider.notifier).loadCloud();
+              ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions, force: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
@@ -399,8 +399,8 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
                 searchType: SearchType.fileName,
                 isTrashed: true,
               );
-              await ref.read(galleryProvider.notifier).loadCloud();
-              ref.read(galleryProvider.notifier).searchFromOptions(searchOptions, force: true);
+              await ref.read(galleryBucketProvider.notifier).loadCloud();
+              ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions, force: true);
             }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
