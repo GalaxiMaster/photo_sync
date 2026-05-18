@@ -91,13 +91,23 @@ class PersonBox extends ConsumerWidget {
                   width: itemWidth,
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: itemWidth / 2 - 4,
-                        foregroundImage: CachedNetworkImageProvider(
-                          person.thumbnailUrl(ImmichConfig.baseUrl),
-                          headers: {'x-api-key': ImmichConfig.apiKey},
-                        ),
-                        child: Text(person.name.isNotEmpty ? person.name[0] : '?'),
+                      Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: itemWidth / 2 - 4,
+                            foregroundImage: CachedNetworkImageProvider(
+                              person.thumbnailUrl(ImmichConfig.baseUrl),
+                              headers: {'x-api-key': ImmichConfig.apiKey},
+                            ),
+                            child: Text(person.name.isNotEmpty ? person.name[0] : '?'),
+                          ),
+                          if (person.isFavorite)
+                          Positioned(
+                            bottom: 5,
+                            right: 10,
+                            child: Icon(Icons.favorite, color: Color(0xffe4443e),),
+                          )
+                        ],
                       ),
                       const SizedBox(height: 4),
                       Text(

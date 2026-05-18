@@ -20,12 +20,14 @@ class ImmichPerson {
   final String name;
   final String? birthDate;
   final bool isHidden;
+  final bool isFavorite;
 
   ImmichPerson({
     required this.id,
     required this.name,
     this.birthDate,
-    required this.isHidden,
+    required this.isHidden, 
+    required this.isFavorite,
   });
 
   factory ImmichPerson.fromJson(Map<String, dynamic> json) => ImmichPerson(
@@ -33,6 +35,7 @@ class ImmichPerson {
     name: json['name'] as String? ?? '',
     birthDate: json['birthDate'] as String?,
     isHidden: json['isHidden'] as bool? ?? false,
+    isFavorite: json['isFavorite'] as bool? ?? false,
   );
 
   String thumbnailUrl(String baseUrl) => '$baseUrl/api/people/$id/thumbnail';
