@@ -241,7 +241,7 @@ class ImmichService {
     );
   }
 
-  Future<List<ImmichAsset>> search({
+  Future<(List<ImmichAsset>, String?)> search({
     required SearchOptions searchOptions,
     int page = 1,
     int size = 100,
@@ -276,7 +276,7 @@ class ImmichService {
         if (searchOptions.cameraFilter?.model != null) 'model': searchOptions.cameraFilter?.model,
         if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
       },
-      if (searchOptions.isFavorited == true) 'isFavorite': true,
+      if (searchOptions.isFavorite == true) 'isFavorite': true,
       if (searchOptions.isTrashed == true) 'trashedBefore': DateTime.now().toUtc().toIso8601String(),
       "order": searchOptions.sortOrder == SortOrder.asc ? 'asc' : 'desc',
       'withExif': true,
@@ -299,9 +299,10 @@ class ImmichService {
 
     final response = await _dio.post(endpoint, data: body);
     final assets = response.data['assets'] as Map<String, dynamic>;
-    return (assets['items'] as List)
-        .map((a) => ImmichAsset.fromJson(a))
-        .toList();
+    return (
+      (assets['items'] as List).map((a) => ImmichAsset.fromJson(a)).toList(), 
+      response.data['assets']['nextPage'] as String?
+      );
   }
 
   Future<String?> uploadToImmich(String filePath, {Function? onProgress}) async {
@@ -345,11 +346,13 @@ class ImmichService {
     return assets.isEmpty ? null : assets.first;
   }
 
-  Future<Map<String, int>> fetchMonthBuckets() async {
+  Future<Map<String, int>> fetchMonthBuckets({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
     final response = await _dio.get('/timeline/buckets', queryParameters: {
       'size': 'MONTH',
-      'isArchived': false,
-      'isTrashed': false,
+      'isArchived': isArchived ?? false,
+      'isTrashed': isTrashed ?? false,
+      'isFavorite': ?isFavorite,
+      'personId': ?personId,
     });
 
     final result = <String, int>{};
@@ -360,8 +363,8 @@ class ImmichService {
     }
     return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
   }
-  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket) async {
-    // timeBucket is e.g. "2025-04-01T00:00:00.000Z"
+  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions}) async {
+    // timeBucket: e.g. "2025-04-01T00:00:00.000Z"
     final dt = DateTime.parse(timeBucket);
     final start = DateTime(dt.year, dt.month, 1);
     final end = DateTime(dt.year, dt.month + 1, 1); // rolls over correctly
@@ -370,21 +373,11 @@ class ImmichService {
     String? nextPage;
 
     do {
-      final response = await _dio.post('/search/metadata', data: {
-        'takenAfter': start.toUtc().toIso8601String(),
-        'takenBefore': end.toUtc().toIso8601String(),
-        'isArchived': false,
-        'isTrashed': false,
-        'withExif': true,
-        if (nextPage != null) 'page': int.parse(nextPage),
-        'size': 1000,
-      });
+      SearchOptions options = (initOptions ?? SearchOptions()).copyWith(startDate: start, endDate: end);
+      final items = await search(searchOptions: options, page: nextPage != null ? int.parse(nextPage) : 1, size: 1000);
 
-      final items = (response.data['assets']['items'] as List)
-          .map((j) => ImmichAsset.fromJson(j as Map<String, dynamic>))
-          .toList();
-      all.addAll(items);
-      nextPage = response.data['assets']['nextPage'] as String?;
+      all.addAll(items.$1);
+      nextPage = items.$2;
     } while (nextPage != null);
 
     return all;

@@ -149,8 +149,7 @@ class GalleryScreenState extends ConsumerState<GalleryScreen> {
         key: ValueKey(buckets[i].key),
         bucket: buckets[i],
         bucketIndex: i,
-        onVisible: () =>
-            ref.read(galleryBucketProvider.notifier).prefetchAround(i),
+        onVisible: () => ref.read(galleryBucketProvider.notifier).prefetchAround(i),
       )),
     ];
 

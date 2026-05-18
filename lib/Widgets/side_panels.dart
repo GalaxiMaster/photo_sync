@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
-import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -382,25 +381,12 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               child: Text('Library'),
             ),
             menuItem('Favorites', Icons.favorite_outline, onClick: () async{
-              final searchOptions = SearchOptions(
-                query: '',
-                searchType: SearchType.fileName,
-                isFavorited: true,
-              );
-              await ref.read(galleryBucketProvider.notifier).loadCloud();
-              ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions, force: true);
+              await ref.read(galleryBucketProvider.notifier).loadCloud(isFavorite: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
             menuItem('Trash', Icons.delete_outline, onClick: () async{
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-              final searchOptions = SearchOptions(
-                query: '',
-                searchType: SearchType.fileName,
-                isTrashed: true,
-              );
-              await ref.read(galleryBucketProvider.notifier).loadCloud();
-              ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions, force: true);
+              await ref.read(galleryBucketProvider.notifier).loadCloud(isTrashed: true);
             }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),

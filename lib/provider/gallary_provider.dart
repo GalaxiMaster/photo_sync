@@ -107,13 +107,13 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<void> loadCloud() async {
+  Future<void> loadCloud({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
     isLocal = false;
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
-    await _initRemote();
+    searchOptions = SearchOptions(query: '', searchType: SearchType.fileName, isFavorite: isFavorite, isTrashed: isTrashed, personIds: personId != null ? {personId} : null);
+    await _initRemote(isFavorite: isFavorite, isTrashed: isTrashed, isArchived: isArchived, personId: personId);
   }
 
   Future<void> loadLocal(List<ImmichAsset> assets) async {
@@ -160,8 +160,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
 
     final results = isLocal
-        ? localSearch(searchOptions: options, page: _page)
-        : await _service.search(searchOptions: options, page: _page);
+      ? localSearch(searchOptions: options, page: _page)
+      : (await _service.search(searchOptions: options, page: _page)).$1;
 
     return results;
   }
@@ -205,7 +205,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _inflight.add(key);
     _replaceBucket(idx, bucket.copyWith(loading: true));
     try {
-      final raw = await _service.fetchBucketAssets(bucket.timeBucket);
+      final raw = await _service.fetchBucketAssets(bucket.timeBucket, initOptions: searchOptions); // ! boom
       final newIdx = state.buckets.indexWhere((b) => b.key == key);
       if (newIdx != -1) {
         _replaceBucket(
@@ -431,12 +431,12 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<void> _initRemote() async {
+  Future<void> _initRemote({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
     _inflight.clear();
     isLocal = false;
     state = const GalleryBucketState(initialising: true);
     try {
-      final raw = await _service.fetchMonthBuckets();
+      final raw = await _service.fetchMonthBuckets(isFavorite: isFavorite, isTrashed: isTrashed, isArchived: isArchived, personId: personId);
       final buckets = raw.entries.map((e) {
         final parts = e.key.split('-');
         return MonthBucket(
@@ -446,11 +446,10 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
           month: int.parse(parts[1]),
           count: e.value,
         );
-      }).toList()
-        ..sort((a, b) {
-          final cmp = b.year.compareTo(a.year);
-          return cmp != 0 ? cmp : b.month.compareTo(a.month);
-        });
+      }).toList()..sort((a, b) {
+        final cmp = b.year.compareTo(a.year);
+        return cmp != 0 ? cmp : b.month.compareTo(a.month);
+      });
       state = GalleryBucketState(buckets: buckets);
     } catch (e) {
       state = state.copyWith(initialising: false, error: e.toString());
