@@ -29,8 +29,6 @@ class _MainAppState extends ConsumerState<MainApp> {
 
   final TextEditingController queryController = TextEditingController();
 
-  SearchOptions? currentSearch;
-
   static final _bodies = <AppBody, Widget>{
     AppBody.gallery: const GalleryScreen(),
     AppBody.explore: const ExplorePage(),
@@ -49,7 +47,10 @@ class _MainAppState extends ConsumerState<MainApp> {
     final selection = ref.watch(selectionProvider);
     final current = ref.watch(appBodyProvider);
     final previousPage = ref.watch(appBodyProvider.notifier).previousPage;
+    final currentSearch = ref.watch(searchOptionsProvider);
 
+    ref.listen(searchOptionsProvider.select((state)=> state.query), (oldQuery, query) => queryController.text = query);
+    
     return Scaffold(
       backgroundColor: Colors.black,
       body: Column(
@@ -188,10 +189,8 @@ class _MainAppState extends ConsumerState<MainApp> {
                                       isDense: true,
                                     ),
                                     onFieldSubmitted: (value) {
-                                      final SearchOptions searchOptions = SearchOptions(query: value.trim(), searchType: SearchType.context);
-                                      
-                                      ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions);
-                                      currentSearch = searchOptions;
+                                      final newOptions = ref.read(searchOptionsProvider.notifier).updateQuery(value);
+                                      ref.read(galleryBucketProvider.notifier).searchFromOptions(newOptions);
                                     },
                                   ),
                                 ),
@@ -200,8 +199,7 @@ class _MainAppState extends ConsumerState<MainApp> {
                                     final SearchOptions? searchOptions = await showSearchOptionsDialog(context, initialSettings: currentSearch, localSearch: ref.read(galleryBucketProvider.notifier).isLocal);
                                     if (searchOptions != null) {
                                       ref.read(galleryBucketProvider.notifier).searchFromOptions(searchOptions);
-                                      queryController.text = searchOptions.query;
-                                      currentSearch = searchOptions;
+                                      ref.read(searchOptionsProvider.notifier).updateState(searchOptions);
                                     }
                                   },
                                   visualDensity: VisualDensity.compact,

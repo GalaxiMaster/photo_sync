@@ -150,7 +150,7 @@ class SearchOptions { // todo add device ID & image source
     Set<String>? tags,
     PlaceFilter? placeFilter,
     CameraFilter? cameraFilter,
-    bool? isFavorited,
+    bool? isFavorite,
     SortOrder? sortOrder,
     bool? isTrashed,
     Set<String>? personIds,
@@ -165,7 +165,7 @@ class SearchOptions { // todo add device ID & image source
     tags: tags ?? this.tags,
     placeFilter: placeFilter ?? this.placeFilter,
     cameraFilter: cameraFilter ?? this.cameraFilter,
-    isFavorite: isFavorited ?? this.isFavorite,
+    isFavorite: isFavorite ?? this.isFavorite,
     sortOrder: sortOrder ?? this.sortOrder,
     isTrashed: isTrashed ?? this.isTrashed,
     personIds: personIds ?? this.personIds,
@@ -745,7 +745,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
           Expanded(
             child: FilledButton(
               onPressed: () {
-                Navigator.of(context).pop(SearchOptions(
+                Navigator.of(context).pop((widget.initialSettings ?? SearchOptions()).copyWith(
                   query: _queryController.text,
                   searchType: _searchType,
                   mediaType: _mediaType,

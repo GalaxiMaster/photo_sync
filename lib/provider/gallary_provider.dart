@@ -72,12 +72,32 @@ final flatGalleryProvider = Provider<List<GalleryItem>>( // not really used
   (ref) => ref.watch(galleryBucketProvider).buckets.expand<GalleryItem>((b) => b.assets ?? []).toList(),
 );
 
+class SearchOptionsNotifier extends Notifier<SearchOptions> {
+  @override
+  SearchOptions build() {
+    return SearchOptions(query: '', searchType: SearchType.context);
+  }
+
+  void updateState(SearchOptions options) {
+    state = options;
+  }
+
+  SearchOptions updateQuery(String query) {
+    state = state.copyWith(query: query);
+    return state;
+  }
+}
+
+final searchOptionsProvider = NotifierProvider<SearchOptionsNotifier, SearchOptions>(
+  SearchOptionsNotifier.new,
+);
+
 class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   ImmichService get _service => ref.read(immichServiceProvider);
   bool isLocal = false;
   List<ImmichAsset> fullLocal = [];
 
-  SearchOptions searchOptions = SearchOptions(query: '', searchType: SearchType.fileName);
+  SearchOptions get searchOptions => ref.read(searchOptionsProvider);
 
   bool get hasMore => _hasMore;
   bool _hasMore = false;
@@ -112,7 +132,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    searchOptions = SearchOptions(query: '', searchType: SearchType.fileName, isFavorite: isFavorite, isTrashed: isTrashed, personIds: personId != null ? {personId} : null);
+    ref.read(searchOptionsProvider.notifier).updateState(SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: personId != null ? {personId} : null));
     await _initRemote(isFavorite: isFavorite, isTrashed: isTrashed, isArchived: isArchived, personId: personId);
   }
 
@@ -141,7 +161,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     bool fetchMore = false,
     bool force = false,
   }) async {
-    searchOptions = options;
+    ref.read(searchOptionsProvider.notifier).updateState(options);
 
     // Empty context search → restore prior
     if (options.isEmpty() &&
