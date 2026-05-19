@@ -191,8 +191,8 @@ class ImmichService {
 
     final data = response.data as Map<String, dynamic>;
     return (data['people'] as List)
-        .map((p) => ImmichPerson.fromJson(p))
-        .toList();
+      .map((p) => ImmichPerson.fromJson(p))
+      .toList();
   }
 
   Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
@@ -280,7 +280,7 @@ class ImmichService {
       if (searchOptions.isTrashed == true) 'trashedBefore': DateTime.now().toUtc().toIso8601String(),
       "order": searchOptions.sortOrder == SortOrder.asc ? 'asc' : 'desc',
       'withExif': true,
-      if (searchOptions.personIds != null) 'personIds': searchOptions.personIds!.toList(),
+      if (searchOptions.personIds.isNotEmpty) 'personIds': searchOptions.personIds.toList(),
     };
     if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {
       searchOptions = searchOptions.copyWith(searchType: SearchType.fileName);

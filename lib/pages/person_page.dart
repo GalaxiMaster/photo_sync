@@ -3,7 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
+import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
+
+final galleryAssetCountProvider = Provider<int>((ref) {
+  final buckets = ref.watch(galleryBucketProvider.select((s) => s.buckets));
+  return buckets.fold<int>(0, (sum, b) => sum + b.count);
+});
 
 class PersonPage extends ConsumerStatefulWidget {
   const PersonPage({super.key});
@@ -23,6 +29,8 @@ class _PersonPageState extends ConsumerState<PersonPage> {
     final person = ref.watch(selectedPersonProvider);
     if (person == null) return const SizedBox.shrink();
 
+    final assetCount = ref.watch(galleryAssetCountProvider);
+
     return GalleryScreen(
       header: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -37,11 +45,22 @@ class _PersonPageState extends ConsumerState<PersonPage> {
               child: Text(person.name.isNotEmpty ? person.name[0] : '?'),
             ),
             const SizedBox(width: 15),
-            Text(
-              person.name.isEmpty ? 'Unknown' : person.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 30),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  person.name.isEmpty ? 'Unknown' : person.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 30),
+                ),
+                Text(
+                  "$assetCount assets",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ],
             ),
           ],
         ),

@@ -107,7 +107,7 @@ class SearchOptions { // todo add device ID & image source
   final bool? isFavorite;
   final SortOrder sortOrder;
   final bool? isTrashed;
-  final Set<String>? personIds;
+  final Set<String> personIds;
 
   SearchOptions({
     this.query = '',
@@ -123,7 +123,7 @@ class SearchOptions { // todo add device ID & image source
     this.cameraFilter = const CameraFilter(), 
     this.isFavorite, 
     this.isTrashed, 
-    this.personIds,
+    this.personIds = const {},
   });
 
   bool isEmpty() {

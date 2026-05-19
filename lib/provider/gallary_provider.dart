@@ -132,8 +132,9 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    ref.read(searchOptionsProvider.notifier).updateState(SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: personId != null ? {personId} : null));
-    await _initRemote(isFavorite: isFavorite, isTrashed: isTrashed, isArchived: isArchived, personId: personId);
+    final SearchOptions newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId});
+    ref.read(searchOptionsProvider.notifier).updateState(newOptions);
+    await _initRemote(options: newOptions);
   }
 
   Future<void> loadLocal(List<ImmichAsset> assets) async {
@@ -223,7 +224,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _inflight.add(key);
     _replaceBucket(idx, bucket.copyWith(loading: true));
     try {
-      final raw = await _service.fetchBucketAssets(bucket.timeBucket, initOptions: searchOptions); // ! boom
+      final raw = await _service.fetchBucketAssets(bucket.timeBucket, initOptions: searchOptions);
       final newIdx = state.buckets.indexWhere((b) => b.key == key);
       if (newIdx != -1) {
         _replaceBucket(
@@ -448,12 +449,12 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<void> _initRemote({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
+  Future<void> _initRemote({SearchOptions? options}) async {
     _inflight.clear();
     isLocal = false;
     state = const GalleryBucketState(initialising: true);
     try {
-      final raw = await _service.fetchMonthBuckets(isFavorite: isFavorite, isTrashed: isTrashed, isArchived: isArchived, personId: personId);
+      final raw = await _service.fetchMonthBuckets(isFavorite: options?.isFavorite, isTrashed: options?.isTrashed, personId: options?.personIds.elementAtOrNull(0));
       final buckets = raw.entries.map((e) {
         final parts = e.key.split('-');
         return MonthBucket(
