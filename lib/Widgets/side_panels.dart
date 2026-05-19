@@ -330,8 +330,6 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
   Future<void> scanDrive(String driveLetter) async {
     setState(() => _isScanning = true);
 
-    ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-
     final assets = await scanDriveAssets( // todo make this cancellable
       '$driveLetter\\',
       onProgress: (path, found) {
@@ -381,11 +379,13 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               child: Text('Library'),
             ),
             menuItem('Favorites', Icons.favorite_outline, onClick: () async{
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
               await ref.read(galleryBucketProvider.notifier).loadCloud(isFavorite: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
             menuItem('Tags', Icons.label),
             menuItem('Trash', Icons.delete_outline, onClick: () async{
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
               await ref.read(galleryBucketProvider.notifier).loadCloud(isTrashed: true);
             }),
             Padding(
@@ -410,7 +410,14 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               ),
             ),
             for (final drive in drives)
-              menuItem(drive['label']!, Icons.usb, onClick: () => scanDrive(drive['letter']!)),
+              menuItem(
+                drive['label']!, 
+                Icons.usb, 
+                onClick: () {
+                  ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                  scanDrive(drive['letter']!);
+                }
+              ),
           ]
         ),
       )
