@@ -102,8 +102,8 @@ class SearchOptions { // todo add device ID & image source
   final DateTime? startDate;
   final DateTime? endDate;
   final Set<String>? tags;
-  final PlaceFilter? placeFilter;
-  final CameraFilter? cameraFilter;
+  final PlaceFilter placeFilter;
+  final CameraFilter cameraFilter;
   final bool? isFavorite;
   final SortOrder sortOrder;
   final bool? isTrashed;
@@ -119,8 +119,8 @@ class SearchOptions { // todo add device ID & image source
     this.startDate, 
     this.endDate, 
     this.tags, 
-    this.placeFilter,
-    this.cameraFilter, 
+    this.placeFilter = const PlaceFilter(),
+    this.cameraFilter = const CameraFilter(), 
     this.isFavorite, 
     this.isTrashed, 
     this.personIds,
@@ -139,6 +139,7 @@ class SearchOptions { // todo add device ID & image source
       isFavorite != true &&
       isTrashed != true;
   }
+
   SearchOptions copyWith({
     String? query,
     SearchType? searchType,

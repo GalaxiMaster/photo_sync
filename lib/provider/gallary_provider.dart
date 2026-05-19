@@ -164,9 +164,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     ref.read(searchOptionsProvider.notifier).updateState(options);
 
     // Empty context search → restore prior
-    if (options.isEmpty() &&
-        options.searchType == SearchType.context &&
-        !force) {
+    if (options.isEmpty() && !force) {
       _restorePrior();
       return null;
     }
@@ -202,12 +200,12 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       final matchesDate = (searchOptions.startDate == null 
         || asset.fileCreatedAt.isAfter(searchOptions.startDate!)) &&
           (searchOptions.endDate == null || asset.fileCreatedAt.isBefore(searchOptions.endDate!));
-      final matchesMake = (searchOptions.cameraFilter?.isEmpty() ?? true) 
-        ||  (asset.exifInfo['make'] != null && asset.exifInfo['make']!.toLowerCase() == searchOptions.cameraFilter!.make!.toLowerCase());
-      final matchesModel = (searchOptions.cameraFilter?.isEmpty() ?? true) 
-        ||  (asset.exifInfo['model'] != null && asset.exifInfo['model']!.toLowerCase() == searchOptions.cameraFilter!.model!.toLowerCase());
-      final matchesLensModel = (searchOptions.cameraFilter?.isEmpty() ?? true) 
-        ||  (asset.exifInfo['lensModel'] != null && asset.exifInfo['lensModel']!.toLowerCase() == searchOptions.cameraFilter!.lens!.toLowerCase());
+      final matchesMake = (searchOptions.cameraFilter.isEmpty()) 
+        ||  (asset.exifInfo['make'] != null && asset.exifInfo['make']!.toLowerCase() == searchOptions.cameraFilter.make!.toLowerCase());
+      final matchesModel = (searchOptions.cameraFilter.isEmpty()) 
+        ||  (asset.exifInfo['model'] != null && asset.exifInfo['model']!.toLowerCase() == searchOptions.cameraFilter.model!.toLowerCase());
+      final matchesLensModel = (searchOptions.cameraFilter.isEmpty()) 
+        ||  (asset.exifInfo['lensModel'] != null && asset.exifInfo['lensModel']!.toLowerCase() == searchOptions.cameraFilter.lens!.toLowerCase());
 
       return matchesQuery && matchesMediaType && matchesDate && matchesMake && matchesModel && matchesLensModel;
     }).skip((page - 1) * pulledItems).take(pulledItems).toList();
@@ -255,7 +253,6 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       loadBucket(state.buckets[i].key);
     }
   }
-
 
   Future<void> loadMore() async {
     if (!_hasMore) return;

@@ -265,16 +265,16 @@ class ImmichService {
         if (searchOptions.display!.contains(DisplayOption.favorites)) 'isFavorite': true,
       },
       // Place filters
-      if (searchOptions.placeFilter != null) ...{
-        if (searchOptions.placeFilter?.country != null) 'country': searchOptions.placeFilter?.country,
-        if (searchOptions.placeFilter?.state != null) 'state': searchOptions.placeFilter?.state,
-        if (searchOptions.placeFilter?.city != null) 'city': searchOptions.placeFilter?.city,
+      if (!searchOptions.placeFilter.isEmpty()) ...{
+        if (searchOptions.placeFilter.country != null) 'country': searchOptions.placeFilter.country,
+        if (searchOptions.placeFilter.state != null) 'state': searchOptions.placeFilter.state,
+        if (searchOptions.placeFilter.city != null) 'city': searchOptions.placeFilter.city,
       },
       // Camera filters
-      if (searchOptions.cameraFilter != null) ...{
-        if (searchOptions.cameraFilter?.make != null) 'make': searchOptions.cameraFilter?.make,
-        if (searchOptions.cameraFilter?.model != null) 'model': searchOptions.cameraFilter?.model,
-        if (searchOptions.cameraFilter?.lens != null) 'lensModel': searchOptions.cameraFilter?.lens,
+      if (!searchOptions.cameraFilter.isEmpty()) ...{
+        if (searchOptions.cameraFilter.make != null) 'make': searchOptions.cameraFilter.make,
+        if (searchOptions.cameraFilter.model != null) 'model': searchOptions.cameraFilter.model,
+        if (searchOptions.cameraFilter.lens != null) 'lensModel': searchOptions.cameraFilter.lens,
       },
       if (searchOptions.isFavorite == true) 'isFavorite': true,
       if (searchOptions.isTrashed == true) 'trashedBefore': DateTime.now().toUtc().toIso8601String(),
