@@ -236,6 +236,8 @@ class _BucketSliver extends ConsumerStatefulWidget {
 }
 
 class _BucketSliverState extends ConsumerState<_BucketSliver> {
+  bool _didRequestLoad = false;
+
   @override
   Widget build(BuildContext context) {
     final bucket = ref.watch(
@@ -247,10 +249,13 @@ class _BucketSliverState extends ConsumerState<_BucketSliver> {
       ),
     );
 
-    if (bucket.assets == null && !bucket.loading) {
+    if (bucket.assets == null && !bucket.loading && !_didRequestLoad) {
+      _didRequestLoad = true;
       WidgetsBinding.instance.addPostFrameCallback(
           (_) { if (mounted) widget.onVisible(); });
     }
+    
+    if (bucket.assets != null) _didRequestLoad = false;
 
     final assets = bucket.assets;
 

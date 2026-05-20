@@ -245,6 +245,7 @@ class ImmichService {
     required SearchOptions searchOptions,
     int page = 1,
     int size = 100,
+    CancelToken? cancelToken,
   }) async {
     final body = <String, dynamic>{
       'page': page,
@@ -297,7 +298,7 @@ class ImmichService {
       body['originalFileName'] = searchOptions.query;
     }
 
-    final response = await _dio.post(endpoint, data: body);
+    final response = await _dio.post(endpoint, data: body, cancelToken: cancelToken);
     final assets = response.data['assets'] as Map<String, dynamic>;
     return (
       (assets['items'] as List).map((a) => ImmichAsset.fromJson(a)).toList(), 
@@ -346,7 +347,7 @@ class ImmichService {
     return assets.isEmpty ? null : assets.first;
   }
 
-  Future<Map<String, int>> fetchMonthBuckets({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
+  Future<Map<String, int>> fetchMonthBuckets({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId, CancelToken? cancelToken}) async {
     final response = await _dio.get('/timeline/buckets', queryParameters: {
       'size': 'MONTH',
       'isArchived': isArchived ?? false,
@@ -363,7 +364,7 @@ class ImmichService {
     }
     return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
   }
-  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions}) async {
+  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken}) async {
     // timeBucket: e.g. "2025-04-01T00:00:00.000Z"
     final dt = DateTime.parse(timeBucket);
     final start = DateTime(dt.year, dt.month, 1);
@@ -374,8 +375,8 @@ class ImmichService {
 
     do {
       SearchOptions options = (initOptions ?? SearchOptions()).copyWith(startDate: start, endDate: end);
-      final items = await search(searchOptions: options, page: nextPage != null ? int.parse(nextPage) : 1, size: 1000);
-
+      final items = await search(searchOptions: options, page: nextPage != null ? int.parse(nextPage) : 1, size: 1000, cancelToken: cancelToken);
+ 
       all.addAll(items.$1);
       nextPage = items.$2;
     } while (nextPage != null);

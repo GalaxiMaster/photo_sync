@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/progress_popups.dart';
@@ -97,7 +98,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   bool isLocal = false;
   List<ImmichAsset> fullLocal = [];
 
-  SearchOptions get searchOptions => ref.read(searchOptionsProvider);
+  SearchOptions get _activeOptions => ref.read(searchOptionsProvider);
+  CancelToken _cancelToken = CancelToken();
 
   bool get hasMore => _hasMore;
   bool _hasMore = false;
@@ -128,13 +130,14 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   }
 
   Future<void> loadCloud({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
+    cancel();
     isLocal = false;
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    final SearchOptions newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId});
+    final newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId});
     ref.read(searchOptionsProvider.notifier).updateState(newOptions);
-    await _initRemote(options: newOptions);
+    await _initRemote();
   }
 
   Future<void> loadLocal(List<ImmichAsset> assets) async {
@@ -180,7 +183,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
 
     final results = isLocal
       ? localSearch(searchOptions: options, page: _page)
-      : (await _service.search(searchOptions: options, page: _page)).$1;
+      : (await _service.search(searchOptions: options, page: _page, cancelToken: _cancelToken)).$1;
 
     return results;
   }
@@ -224,7 +227,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _inflight.add(key);
     _replaceBucket(idx, bucket.copyWith(loading: true));
     try {
-      final raw = await _service.fetchBucketAssets(bucket.timeBucket, initOptions: searchOptions);
+      final raw = await _service.fetchBucketAssets(bucket.timeBucket, initOptions: _activeOptions, cancelToken: _cancelToken);
       final newIdx = state.buckets.indexWhere((b) => b.key == key);
       if (newIdx != -1) {
         _replaceBucket(
@@ -263,7 +266,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       _page++;
       results = await _flatFetcher!(_page);
     } else {
-      final r = await smartSearch(searchOptions, fetchMore: true);
+      final r = await smartSearch(_activeOptions, fetchMore: true);
       if (r == null) return;
       results = r;
     }
@@ -449,12 +452,18 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<void> _initRemote({SearchOptions? options}) async {
+  Future<void> _initRemote() async {
     _inflight.clear();
     isLocal = false;
     state = const GalleryBucketState(initialising: true);
     try {
-      final raw = await _service.fetchMonthBuckets(isFavorite: options?.isFavorite, isTrashed: options?.isTrashed, personId: options?.personIds.elementAtOrNull(0));
+      final raw = await _service.fetchMonthBuckets(
+        isFavorite: _activeOptions.isFavorite, 
+        isTrashed: _activeOptions.isTrashed, 
+        personId: _activeOptions.personIds.elementAtOrNull(0), 
+        cancelToken: _cancelToken
+      );
+
       final buckets = raw.entries.map((e) {
         final parts = e.key.split('-');
         return MonthBucket(
@@ -557,5 +566,11 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     final list = List<MonthBucket>.of(state.buckets);
     list[idx] = updated;
     state = state.copyWith(buckets: list);
+  }
+
+  void cancel() {
+    _cancelToken.cancel();
+    _cancelToken = CancelToken();
+    _inflight.clear();
   }
 }
