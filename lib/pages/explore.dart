@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
+import 'package:photo_sync/provider/people_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 
 class ExplorePage extends ConsumerStatefulWidget {
@@ -14,27 +15,13 @@ class ExplorePage extends ConsumerStatefulWidget {
 }
 
 class _ExplorePageState extends ConsumerState<ExplorePage> {
-  late final Future<List<ImmichPerson>> _peopleFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _peopleFuture = ref.read(galleryBucketProvider.notifier).getPeople();
-  }
-
+  
   @override
   Widget build(BuildContext context) {
+    final peopleAsync = ref.watch(peopleStoreProvider);
     return Expanded(
-      child: FutureBuilder<List<ImmichPerson>>(
-        future: _peopleFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error loading people: ${snapshot.error}'));
-          }
-          final people = snapshot.data ?? [];
+      child: peopleAsync.when(
+        data: (people){
           return LayoutBuilder(
             builder: (context, constraints) {
               final itemCount = 12;
@@ -45,8 +32,10 @@ class _ExplorePageState extends ConsumerState<ExplorePage> {
               return PersonBox(people: people, itemWidth: itemWidth);
             },
           );
-        },
-      ),
+        }, 
+        error: (error, stack) => Center(child: Text('Error loading people: $error')), 
+        loading: ()=> Center(child: CircularProgressIndicator())
+      )
     );
   }
 }

@@ -23,6 +23,7 @@ class ImmichAsset {
   final Set<ImageSource> imageSources;
   final String? deviceId;
   final bool? isTrashed;
+  final Set<ImmichPerson> people;
   
   const ImmichAsset({
     required this.id,
@@ -36,12 +37,14 @@ class ImmichAsset {
     this.imageSources = const {ImageSource.immich}, 
     this.deviceId,
     this.isTrashed,
+    this.people = const {},
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
     final localPath = (json['deviceAssetId'] ?? '').contains('.')
         ? json['deviceAssetId'] as String?
         : null;
+    final people = json['people'];
 
     return ImmichAsset(
       id: json['id'] as String,
@@ -58,6 +61,9 @@ class ImmichAsset {
         ImageSource.immich,
         if (localPath != null) ImageSource.local,
       },
+    people: (people)
+      .map<ImmichPerson>((e) => ImmichPerson.fromJson(e))
+      .toSet(),
     );
   }
 
@@ -159,6 +165,7 @@ class ImmichService {
       'size': pageSize,
       'withArchived': false,
       'withExif': true,
+      'withPeople': true,
       // 'withStacked': false,
     });
 
@@ -202,6 +209,7 @@ class ImmichService {
       'page': page,
       'size': pageSize,
       'withExif': true,
+      'withPeople': true,
     });
 
     final items = response.data['assets']['items'] as List;
@@ -281,6 +289,7 @@ class ImmichService {
       if (searchOptions.isTrashed == true) 'trashedBefore': DateTime.now().toUtc().toIso8601String(),
       "order": searchOptions.sortOrder == SortOrder.asc ? 'asc' : 'desc',
       'withExif': true,
+      'withPeople': true,
       if (searchOptions.personIds.isNotEmpty) 'personIds': searchOptions.personIds.toList(),
     };
     if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {

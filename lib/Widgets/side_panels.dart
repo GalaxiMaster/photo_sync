@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -66,6 +68,54 @@ class InfoPanel extends ConsumerWidget {
                     Text('People'),
                     IconButton(onPressed: (){}, icon: Icon(Icons.add))
                   ],
+                ),
+                if (asset.people.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: SizedBox(
+                    height: 90,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: asset.people.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final ImmichPerson person = asset.people.elementAt(index);
+                        final String url = person.thumbnailUrl(ImmichConfig.baseUrl);
+                  
+                        return Column(
+                          children: [
+                            Container(
+                              width: 70,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                              ),
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: url,
+                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                  fit: BoxFit.contain,
+                                  placeholder: (context, url) => const Padding(
+                                    padding: EdgeInsets.all(16.0),
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                  errorWidget: (context, url, error) => Center(
+                                    child: Icon(
+                                      Icons.error_outline,
+                                      color: Theme.of(context).colorScheme.error,
+                                      size: 24,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Text(person.name)
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                 ),
                 Text('Details'),
                 infoBox(
