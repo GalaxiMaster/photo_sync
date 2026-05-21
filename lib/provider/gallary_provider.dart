@@ -506,10 +506,10 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     final downloaded = await ref.read(downloadedPhotosProvider.future);
     if (downloaded.isEmpty) return assets;
 
-    final dir = getLocalPhotoDirectory();
+    final dir = await getLocalPhotoDirectory();
     return assets.map((asset) {
       if (!downloaded.contains(asset.originalFileName)) return asset;
-      final localPath = '$dir/${asset.originalFileName}';
+      final localPath = '${dir.path}\\${asset.originalFileName}';
       return asset.copyWith(
         localPath: localPath,
         imageSources: {...asset.imageSources, ImageSource.local},
