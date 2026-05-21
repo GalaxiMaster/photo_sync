@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_sync/services/tools.dart';
 
@@ -12,7 +11,7 @@ import 'package:photo_sync/services/tools.dart';
 //   ref.invalidate(settingsProvider);
 // }
 
-Future<Set<String>> setupPhotoCache(Ref ref) async {
+Future<Set<String>> setupPhotoCache() async {
   Directory? dir = await getLocalPhotoDirectory();
 
   final downloadedPhotos = dir

@@ -18,7 +18,7 @@ final downloadedPhotosProvider = AsyncNotifierProvider<DownloadedPhotosNotifier,
 
 class DownloadedPhotosNotifier extends AsyncNotifier<Set<String>> {
   @override
-  Future<Set<String>> build() => setupPhotoCache(ref);
+  Future<Set<String>> build() => setupPhotoCache();
 
   void add(String filename) => state = AsyncData({...state.value ?? {}, filename});
   void remove(String filename) => state = AsyncData({...state.value ?? {}}..remove(filename));

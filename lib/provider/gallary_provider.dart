@@ -237,7 +237,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
         _replaceBucket(
           newIdx,
           state.buckets[newIdx].copyWith(
-            assets: _groupAssets(raw),
+            assets: _groupAssets(await _applyLocalPaths(raw)),
             loading: false,
           ),
         );
