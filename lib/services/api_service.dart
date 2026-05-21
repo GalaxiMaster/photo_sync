@@ -373,7 +373,8 @@ class ImmichService {
     }
     return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
   }
-  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken}) async {
+
+  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken, F}) async {
     // timeBucket: e.g. "2025-04-01T00:00:00.000Z"
     final dt = DateTime.parse(timeBucket);
     final start = DateTime(dt.year, dt.month, 1);
@@ -391,6 +392,22 @@ class ImmichService {
     } while (nextPage != null);
 
     return all;
+  }
+
+  Future<File> downloadAsset(String id, String savePath, {Function(int, int)? onProgress}) async {
+    await _dio.download(
+      '/assets/$id/original',
+      savePath,
+      queryParameters: {
+        'id': id,
+      },
+      onReceiveProgress: (received, total) {
+        if (total != -1) {
+          onProgress?.call(received, total);
+        }
+      },
+    );
+    return File(savePath);
   }
 }
 

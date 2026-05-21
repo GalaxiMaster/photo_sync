@@ -34,6 +34,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   bool _showInfo = false;
   final GlobalKey deleteKey = GlobalKey();
   final GlobalKey uploadKey = GlobalKey();
+  final GlobalKey downloadKey = GlobalKey();
 
   List<GalleryItem> _flatAssets(GalleryBucketState state) {
     return [
@@ -383,18 +384,19 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             IconButton(
                               key: uploadKey,
                               onPressed: () async {
-                                final uploadController = UploadProgressController(
+                                final uploadController = ProgressController(
                                   onComplete: () => Navigator.pop(context),
                                 );
                                 showProgressPopup(
                                   context: context,
                                   anchorKey: uploadKey,
                                   controller: uploadController,
+                                  downloadMode: false,
                                 );
                                 await ref.read(galleryBucketProvider.notifier).uploadToImmich(
-                                      currentImage,
-                                      popupController: uploadController,
-                                    );
+                                  currentImage,
+                                  popupController: uploadController,
+                                );
                                 uploadController.complete();
                                 uploadController.dispose();
                               },
@@ -442,8 +444,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 }
 
                                 setState(() => _onAfterDelete(updatedAssets));
-                                showSuccessSnackbar(
-                                    'Successfully sent selected asset(s) to the trash');
+                                showSuccessSnackbar('Successfully sent selected asset(s) to the trash');
                               } catch (e, st) {
                                 debugPrint('Delete error: $e\n$st');
                                 if (mounted) showErrorSnackbar('Delete failed: $e');
@@ -455,7 +456,35 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           ),
 
                           IconButton(
-                            onPressed: () {},
+                            key: downloadKey,
+                            onPressed: () async {
+                              final selected = await showMenu(
+                                context: context,
+                                position: const RelativeRect.fromLTRB(100, 50, 0, 0),
+                                items: [
+                                  const PopupMenuItem(
+                                    value: 'download',
+                                    child: Text('Download Photo'),
+                                  ),
+                                ],
+                              );
+                              if (selected == 'download') {
+                                final downloadController = ProgressController(
+                                  onComplete: () => Navigator.pop(context),
+                                );
+                                if (!context.mounted) return;
+                                showProgressPopup(
+                                  context: context,
+                                  anchorKey: downloadKey,
+                                  controller: downloadController,
+                                  downloadMode: true,
+                                );
+                                await ref.read(galleryBucketProvider.notifier).downloadAsset(currentImage, downloadController);
+
+                                downloadController.complete();
+                                downloadController.dispose();
+                              }
+                            },
                             mouseCursor: SystemMouseCursors.click,
                             iconSize: iconSize,
                             icon: const Icon(Icons.more_vert, color: Colors.white),

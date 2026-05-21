@@ -8,7 +8,7 @@ Future<T?> showPositionedPopup<T>({
   required BuildContext context,
   required GlobalKey anchorKey,
   required Widget child,
-  double width = 280,
+  double? width = 280,
 }) async {
   final box = anchorKey.currentContext?.findRenderObject() as RenderBox?;
   if (box == null) return null;
@@ -22,19 +22,20 @@ Future<T?> showPositionedPopup<T>({
     barrierLabel: "dismiss",
     barrierColor: Colors.black54,
     pageBuilder: (context, _, _) {
+      final screenWidth = MediaQuery.of(context).size.width;
+
       return Stack(
         children: [
           Positioned(
-            left: pos.dx - width + size.width,
+            right: screenWidth - (pos.dx + size.width),
             top: pos.dy + size.height + 8,
             child: Material(
               color: const Color(0xFF2B2B2B),
               borderRadius: BorderRadius.circular(16),
               elevation: 8,
-              child: SizedBox(
-                width: width,
-                child: child,
-              ),
+              child: width != null
+                ? SizedBox(width: width, child: child)
+                : IntrinsicWidth(child: child),
             ),
           ),
         ],

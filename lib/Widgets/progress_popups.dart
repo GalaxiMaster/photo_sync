@@ -2,20 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/services/api_service.dart';
 
-class UploadProgressController {
+class ProgressController {
   final VoidCallback? onComplete;
+  final bool downloadMode;
   
-  UploadProgressController({this.onComplete});
-  final _notifier = ValueNotifier<_UploadState>(
-    _UploadState(filename: '', progress: 0, sent: 0, total: 1),
+  ProgressController({this.onComplete, this.downloadMode = false});
+  final _notifier = ValueNotifier<_ProgressState>(
+    _ProgressState(filename: '', progress: 0, sent: 0, total: 1, downloadMode: false),
   );
 
   void update({required String filename, required int sent, required int total}) {
-    _notifier.value = _UploadState(
+    _notifier.value = _ProgressState(
       filename: filename,
       progress: sent / total,
       sent: sent,
       total: total,
+      downloadMode: downloadMode,
     );
   }
   void complete() => onComplete?.call();
@@ -23,40 +25,44 @@ class UploadProgressController {
   void dispose() => _notifier.dispose();
 }
 
-class _UploadState {
+class _ProgressState {
   final String filename;
   final double progress;
   final int sent;
   final int total;
-  const _UploadState({required this.filename, required this.progress, required this.sent, required this.total});
+  final bool downloadMode;
+  const _ProgressState({required this.filename, required this.progress, required this.sent, required this.total, required this.downloadMode});
 }
 
 Future<bool?> showProgressPopup({
   required BuildContext context,
   required GlobalKey anchorKey,
-  required UploadProgressController controller,
+  required ProgressController controller,
+  required bool downloadMode,
   Set<ImageSource> sources = const {ImageSource.immich},
 }) {
   return showPositionedPopup<bool>(
     context: context,
     anchorKey: anchorKey,
+    width: null,
     child: Padding(
       padding: const EdgeInsets.only(bottom: 12, top: 8, left: 8, right: 8),
-      child: UploadProgressBar(controller: controller),
+      child: UploadProgressBar(controller: controller, downloadMode: downloadMode),
     ),
   );
 }
 
 class UploadProgressBar extends StatelessWidget {
-  final UploadProgressController controller;
+  final ProgressController controller;
+  final bool downloadMode;
 
-  const UploadProgressBar({super.key, required this.controller});
+  const UploadProgressBar({super.key, required this.controller, required this.downloadMode});
 
   String _formatBytes(int bytes) => '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<_UploadState>(
+    return ValueListenableBuilder<_ProgressState>(
       valueListenable: controller._notifier,
       builder: (context, state, _) => Container(
         padding: const EdgeInsets.all(16),
@@ -76,7 +82,10 @@ class UploadProgressBar extends StatelessWidget {
                   children: [
                     Text(state.filename, style: const TextStyle(fontWeight: FontWeight.w500)),
                     const SizedBox(height: 2),
-                    Text('Uploading to Immich', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                    Text(
+                      state.downloadMode ? 'Downloading from Immich' : 'Uploading to Immich',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
                   ],
                 ),
                 Text('${(state.progress * 100).toStringAsFixed(0)}%',

@@ -4,11 +4,13 @@ import 'package:collection/collection.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path/path.dart' as p;
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
+import 'package:photo_sync/services/tools.dart';
 
 class MonthBucket {
   final String timeBucket;
@@ -371,7 +373,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
 
   Future<void> uploadToImmich(
     ImmichAsset asset, {
-    UploadProgressController? popupController,
+    ProgressController? popupController,
   }) async {
     final cleanPath = asset.localPath?.replaceAll(r'\\', r'\');
     if (cleanPath == null || uploadQueue.contains(asset)) return;
@@ -380,12 +382,12 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       final newId = await _service.uploadToImmich(
         cleanPath,
         onProgress: popupController != null
-            ? (sent, total) => popupController.update(
-                  filename: asset.originalFileName.split('/').last,
-                  sent: sent,
-                  total: total,
-                )
-            : null,
+          ? (sent, total) => popupController.update(
+                filename: asset.originalFileName.split('/').last,
+                sent: sent,
+                total: total,
+              )
+          : null,
       );
       if (newId != null) {
         updateAsset(asset.copyWith(
@@ -572,5 +574,29 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _cancelToken.cancel();
     _cancelToken = CancelToken();
     _inflight.clear();
+  }
+
+  Future<File> downloadAsset(ImmichAsset asset, ProgressController? popupController) async {
+    // 1. Resolve target directory path
+    Directory? baseDir = await getSystemPicturesDirectory();
+
+    final String saveDirPath = p.join(baseDir.path, 'MyGalleryApp');
+    final Directory saveDir = Directory(saveDirPath);
+    if (!await saveDir.exists()) {
+      await saveDir.create(recursive: true);
+    }
+
+    // 2. Sanitize output path
+    final String sanitizedName = asset.originalFileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+    final String fullSavePath = p.join(saveDir.path, sanitizedName);
+    
+    return await _service.downloadAsset(asset.id, fullSavePath, onProgress: popupController != null
+      ? (received, total) => popupController.update(
+            filename: asset.originalFileName.split('/').last,
+            sent: received,
+            total: total,
+          )
+      : null,
+    );
   }
 }
