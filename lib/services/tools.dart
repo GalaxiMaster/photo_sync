@@ -2,7 +2,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-Future<Directory> getSystemPicturesDirectory() async {
+Future<Directory> _getSystemPicturesDirectory() async {
   final Map<String, String> env = Platform.environment;
   
   if (Platform.isWindows) {
@@ -23,6 +23,18 @@ Future<Directory> getSystemPicturesDirectory() async {
   }
   
   return await getDownloadsDirectory() ?? await getApplicationDocumentsDirectory();
+}
+
+Future<Directory> getLocalPhotoDirectory() async {
+  final baseDir = await _getSystemPicturesDirectory();
+  final saveDirPath = p.join(baseDir.path, 'MyGalleryApp');
+  final saveDir = Directory(saveDirPath);
+  
+  if (!await saveDir.exists()) {
+    await saveDir.create(recursive: true);
+  }
+  
+  return saveDir;
 }
 
 extension EnumeratedIterable<T> on Iterable<T> {

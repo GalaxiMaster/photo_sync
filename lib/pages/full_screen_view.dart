@@ -458,15 +458,21 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                           IconButton(
                             key: downloadKey,
                             onPressed: () async {
+                              final options = [
+                                if (currentImage.imageSources.contains(ImageSource.immich) && currentImage.localPath == null)
+                                const PopupMenuItem(
+                                  value: 'download',
+                                  child: Text('Download Photo'),
+                                ),
+                              ];
+                              if (options.isEmpty) {
+                                showErrorSnackbar('No available options');
+                                return;
+                              }
                               final selected = await showMenu(
                                 context: context,
                                 position: const RelativeRect.fromLTRB(100, 50, 0, 0),
-                                items: [
-                                  const PopupMenuItem(
-                                    value: 'download',
-                                    child: Text('Download Photo'),
-                                  ),
-                                ],
+                                items: options,
                               );
                               if (selected == 'download') {
                                 final downloadController = ProgressController(

@@ -10,7 +10,6 @@ class ImmichConfig {
   static String apiKey = dotenv.env['immich_api_key'] ?? '';
 }
 
-
 class ImmichAsset {
   final String id;
   final String type;
@@ -44,7 +43,6 @@ class ImmichAsset {
     final localPath = (json['deviceAssetId'] ?? '').contains('.')
         ? json['deviceAssetId'] as String?
         : null;
-    final people = json['people'];
 
     return ImmichAsset(
       id: json['id'] as String,
@@ -61,7 +59,7 @@ class ImmichAsset {
         ImageSource.immich,
         if (localPath != null) ImageSource.local,
       },
-    people: (people)
+    people: (json['people'])
       .map<ImmichPerson>((e) => ImmichPerson.fromJson(e))
       .toSet(),
     );
@@ -131,6 +129,9 @@ class ImmichAsset {
   String? get pixelPairKey { // TODO fix to not break with other naming conventions
     return originalFileName.split('-').first;
   }
+
+  bool get isLocal => !imageSources.contains(ImageSource.immich);
+
   String get baseName {
     final dot = originalFileName.lastIndexOf('.');
     return dot != -1

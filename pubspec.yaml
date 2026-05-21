@@ -9,10 +9,8 @@ environment:
 dependencies:
   cached_network_image: ^3.4.1
   dio: ^5.9.2
-  exif: ^3.3.0
   exif_reader: ^4.1.0
   ffi: ^2.2.0
-  ffmpeg_kit_flutter: ^6.0.3
   ffmpeg_kit_flutter_new: ^4.1.0
   flutter:
     sdk: flutter
@@ -24,17 +22,20 @@ dependencies:
   latlong2: ^0.9.1
   path: ^1.9.1
   path_provider: ^2.1.5
-  pool: ^1.5.2
   random_access_source: ^4.2.1
   win32: ^6.0.1
   flutter_video_thumbnail_plus: ^1.0.6
   collection: ^1.19.1
   flutter_svg: ^2.3.0
+  drift: ^2.26.1
+  sqlite3_flutter_libs: ^0.5.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  drift_dev: ^2.26.1
+  build_runner: ^2.4.0
 
 flutter:
   uses-material-design: true

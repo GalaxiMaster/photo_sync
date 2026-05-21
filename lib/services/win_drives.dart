@@ -7,7 +7,7 @@ import 'package:photo_sync/services/api_service.dart';
 import 'package:win32/win32.dart';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:exif/exif.dart';
+import 'package:exif_reader/exif_reader.dart';
 
 List<String> getWindowsDrives() {
   final drives = <String>[];
@@ -144,7 +144,7 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
     final raf = await file.open();
     final bytes = await raf.read(65536); // first 64KB only
     await raf.close();
-    final exif = await readExifFromBytes(bytes);
+    final exif = (await readExifFromBytes(bytes)).tags;
     final dateStr = exif['EXIF DateTimeOriginal']?.toString() ??
       exif['Image DateTime']?.toString();
     if (dateStr != null) {

@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
+import 'package:photo_sync/provider/database_providers.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/tools.dart';
@@ -128,6 +129,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       state = GalleryBucketState(buckets: _bucketiseLocal(fullLocal));
     } else {
       await _initRemote();
+      ref.invalidate(downloadedPhotosProvider);
     }
   }
 
@@ -159,7 +161,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     final results = await smartSearch(options, force: force);
     if (results == null) return;
     _hasMore = results.length >= pulledItems;
-    _setFlatBucket(_groupAssets(results), hasMore: _hasMore);
+    _setFlatBucket(_groupAssets(await _applyLocalPaths(results)), hasMore: _hasMore);
   }
 
   Future<List<ImmichAsset>?> smartSearch(
@@ -169,7 +171,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   }) async {
     ref.read(searchOptionsProvider.notifier).updateState(options);
 
-    // Empty context search → restore prior
+    // Empty context search -> restore prior
     if (options.isEmpty() && !force) {
       _restorePrior();
       return null;
@@ -274,7 +276,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
 
     _hasMore = results.length >= pulledItems;
-    final newItems = _groupAssets(results);
+    final newItems = _groupAssets(await _applyLocalPaths(results));
     final existing =
         state.buckets.isNotEmpty ? (state.buckets.first.assets ?? []) : <GalleryItem>[];
     _setFlatBucket([...existing, ...newItems], hasMore: _hasMore);
@@ -500,7 +502,20 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     );
     _hasMore = hasMore;
   }
+  Future<List<ImmichAsset>> _applyLocalPaths(List<ImmichAsset> assets) async {
+    final downloaded = await ref.read(downloadedPhotosProvider.future);
+    if (downloaded.isEmpty) return assets;
 
+    final dir = getLocalPhotoDirectory();
+    return assets.map((asset) {
+      if (!downloaded.contains(asset.originalFileName)) return asset;
+      final localPath = '$dir/${asset.originalFileName}';
+      return asset.copyWith(
+        localPath: localPath,
+        imageSources: {...asset.imageSources, ImageSource.local},
+      );
+    }).toList();
+  }
   void _restorePrior() {
     if (_priorBuckets != null) {
       state = GalleryBucketState(buckets: _priorBuckets!);
@@ -577,20 +592,12 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   }
 
   Future<File> downloadAsset(ImmichAsset asset, ProgressController? popupController) async {
-    // 1. Resolve target directory path
-    Directory? baseDir = await getSystemPicturesDirectory();
+    Directory? dir = await getLocalPhotoDirectory();
 
-    final String saveDirPath = p.join(baseDir.path, 'MyGalleryApp');
-    final Directory saveDir = Directory(saveDirPath);
-    if (!await saveDir.exists()) {
-      await saveDir.create(recursive: true);
-    }
-
-    // 2. Sanitize output path
     final String sanitizedName = asset.originalFileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-    final String fullSavePath = p.join(saveDir.path, sanitizedName);
+    final String fullSavePath = p.join(dir.path, sanitizedName);
     
-    return await _service.downloadAsset(asset.id, fullSavePath, onProgress: popupController != null
+    final File file =  await _service.downloadAsset(asset.id, fullSavePath, onProgress: popupController != null
       ? (received, total) => popupController.update(
             filename: asset.originalFileName.split('/').last,
             sent: received,
@@ -598,5 +605,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
           )
       : null,
     );
+    updateSources(asset.id, ImageSource.local);
+    return file;
   }
 }
