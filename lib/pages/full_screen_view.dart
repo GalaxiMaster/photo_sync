@@ -140,30 +140,30 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               ),
                               child: active.imageSources.contains(ImageSource.immich)
                                 ? CachedNetworkImage(
+                                  imageUrl: currentImage.thumbnailUrl(size: 'preview'),
+                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                  fit: BoxFit.contain,
+                                  placeholder: (_, _) => CachedNetworkImage(
                                     imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                     httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                    fit: BoxFit.contain,
-                                    placeholder: (_, _) => CachedNetworkImage(
-                                      imageUrl: currentImage.thumbnailUrl(size: 'preview'),
-                                      httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                      fit: BoxFit.cover,
-                                      errorWidget: (_, _, _) => const Icon(
-                                        Icons.broken_image,
-                                        color: Colors.white38,
-                                        size: 32,
-                                      ),
-                                    ),
+                                    fit: BoxFit.cover,
                                     errorWidget: (_, _, _) => const Icon(
                                       Icons.broken_image,
                                       color: Colors.white38,
-                                      size: 64,
+                                      size: 32,
                                     ),
-                                  )
-                                : LocalAssetTile(
-                                    key: ValueKey(currentImage.id),
-                                    asset: currentImage,
-                                    preview: false,
                                   ),
+                                  errorWidget: (_, _, _) => const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.white38,
+                                    size: 64,
+                                  ),
+                                )
+                              : LocalAssetTile(
+                                key: ValueKey(currentImage.id),
+                                asset: currentImage,
+                                preview: false,
+                              ),
                             ),
                           ),
                         ),

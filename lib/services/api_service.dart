@@ -77,6 +77,7 @@ class ImmichAsset {
     Set<ImageSource>? imageSources,
     String? deviceId,
     bool? isTrashed,
+    Set<ImmichPerson>? people,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -90,6 +91,7 @@ class ImmichAsset {
       imageSources: imageSources ?? this.imageSources,
       deviceId: deviceId ?? this.deviceId,
       isTrashed: isTrashed ?? this.isTrashed,
+      people: people ?? this.people,
     );
   }
 
