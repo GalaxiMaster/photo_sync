@@ -9,22 +9,72 @@ import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
 
-final placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
+final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
   return getPlaceName(lat, lng);
 });
 
-class InfoPanel extends ConsumerWidget {
+class InfoPanel extends ConsumerStatefulWidget {
   final ImmichAsset asset;
   final ({VoidCallback close, VoidCallback addFace}) functions;
   const InfoPanel({super.key, required this.asset, required this.functions});
+
+  @override
+  ConsumerState<InfoPanel> createState() => _InfoPanelState();
+}
+
+class _InfoPanelState extends ConsumerState<InfoPanel> {
+  final _pageController = PageController();
+
+  void _goTo(int index) => _pageController.animateToPage(
+    index,
+    duration: const Duration(milliseconds: 250),
+    curve: Curves.easeInOutCubic,
+  );
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: const Color.fromRGBO(19, 19, 20, 1),
+      padding: const EdgeInsets.all(8),
+      width: 400,
+      child: PageView(
+        controller: _pageController,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _InfoView(
+            asset: widget.asset,
+            functions: widget.functions,
+            onEditPeople: () => _goTo(1),
+          ),
+          EditPeoplePanel(
+            asset: widget.asset,
+            onBack: () => _goTo(0),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoView extends ConsumerWidget {
+  final ImmichAsset asset;
+  final ({VoidCallback close, VoidCallback addFace}) functions;
+  final VoidCallback onEditPeople;
+  const _InfoView({required this.asset, required this.functions, required this.onEditPeople});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exif = asset.exifInfo;
     final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
-    final placeName = ref.watch(placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
+    final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
 
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
@@ -65,7 +115,7 @@ class InfoPanel extends ConsumerWidget {
                     Spacer(),
                     IconButton(onPressed: () => functions.addFace(), icon: Icon(Icons.add)),
                     if (asset.people.isNotEmpty)
-                    IconButton(onPressed: (){}, icon: Icon(Icons.edit))
+                    IconButton(onPressed: () => onEditPeople(), icon: Icon(Icons.edit))
                   ],
                 ),
                 if (asset.people.isNotEmpty)
@@ -248,4 +298,53 @@ List<String> formatAssetDate(DateTime date) {
   final timeLine = DateFormat('EEE, h:mm:ss a').format(date);
 
   return [dateLine, '$timeLine GMT$sign$hours:$minutes'];
+}
+
+
+class EditPeoplePanel extends ConsumerWidget {
+  final ImmichAsset asset;
+  final VoidCallback onBack;
+  const EditPeoplePanel({super.key, required this.asset, required this.onBack});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          spacing: 10,
+          children: [
+            IconButton(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back),
+            ),
+            const Text('Edit People', style: TextStyle(fontSize: 24)),
+          ],
+        ),
+        Expanded(
+          child: ListView.builder(
+            itemCount: asset.people.length,
+            itemBuilder: (context, i) {
+              final person = asset.people.elementAt(i);
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: CachedNetworkImageProvider(
+                    person.thumbnailUrl(ImmichConfig.baseUrl),
+                    headers: {'x-api-key': ImmichConfig.apiKey},
+                  ),
+                ),
+                title: Text(person.name),
+                trailing: IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    // inline rename, show dialog, etc.
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
 }
