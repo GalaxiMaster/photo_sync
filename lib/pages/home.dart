@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/Side_Panels/menu_panel.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
-import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
