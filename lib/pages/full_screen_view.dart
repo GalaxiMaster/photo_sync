@@ -486,10 +486,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                   value: 'download',
                                   child: Text('Download Photo'),
                                 ),
-                                const PopupMenuItem(
-                                  value: 'edit',
-                                  child: Text('edit'),
-                                ),
                               ];
                               if (options.isEmpty) {
                                 showErrorSnackbar('No available options');
@@ -516,9 +512,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 downloadController.complete();
                                 downloadController.dispose();
                               }
-                              else if (selected == 'edit') {
-                                setState(() => _tagging = true);
-                              }
                             },
                             mouseCursor: SystemMouseCursors.click,
                             iconSize: iconSize,
@@ -540,7 +533,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
               decoration: const BoxDecoration(),
               child: InfoPanel(
                 asset: currentImage,
-                close: () => setState(() => _showInfo = false),
+                functions:(close: () => setState(() => _showInfo = false), addFace: () => setState(() => _tagging = true)),
               ),
             ),
           ],

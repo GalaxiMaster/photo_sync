@@ -19,8 +19,8 @@ final placeNameProvider = FutureProvider.family<String?, (double, double)>((ref,
 
 class InfoPanel extends ConsumerWidget {
   final ImmichAsset asset;
-  final VoidCallback close;
-  const InfoPanel({super.key, required this.asset, required this.close});
+  final ({VoidCallback close, VoidCallback addFace}) functions;
+  const InfoPanel({super.key, required this.asset, required this.functions});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -41,7 +41,7 @@ class InfoPanel extends ConsumerWidget {
             spacing: 10,
             children: [
               IconButton(
-                onPressed: close,
+                onPressed: functions.close,
                 mouseCursor: SystemMouseCursors.click, 
                 icon: Icon(Icons.close)
               ),
@@ -66,7 +66,7 @@ class InfoPanel extends ConsumerWidget {
                   children: [
                     Text('People'),
                     Spacer(),
-                    IconButton(onPressed: (){}, icon: Icon(Icons.add)),
+                    IconButton(onPressed: () => functions.addFace(), icon: Icon(Icons.add)),
                     if (asset.people.isNotEmpty)
                     IconButton(onPressed: (){}, icon: Icon(Icons.edit))
                   ],
