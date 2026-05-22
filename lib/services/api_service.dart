@@ -412,6 +412,24 @@ class ImmichService {
     );
     return File(savePath);
   }
+
+  Future<void> addFace({
+    required String assetId, 
+    required String personId,
+    required Map<String, double> boundingBox,
+    required (int, int) imageSize,
+  }) async {
+    await _dio.post('/faces', data: {
+      'assetId': assetId,
+      'imageWidth': imageSize.$1,
+      'imageHeight': imageSize.$2,
+      'personId': personId,
+      'width': ((boundingBox['x2']! - boundingBox['x1']!) * imageSize.$1).round(),  // ✅
+      'height': ((boundingBox['y2']! - boundingBox['y1']!) * imageSize.$2).round(), // ✅
+      'x': (boundingBox['x1']! * imageSize.$1).round(),
+      'y': (boundingBox['y1']! * imageSize.$2).round(),
+    });
+  }
 }
 
 sealed class GalleryItem {

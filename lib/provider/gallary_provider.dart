@@ -631,4 +631,18 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     updateSources(asset.id, ImageSource.local);
     return file;
   }
+
+  Future<void> addFace({
+    required String assetId, 
+    required String personId,
+    required Map<String, double> boundingBox,
+    required (int, int) imageSize,
+  }) async {
+    await _service.addFace(
+      assetId: assetId,
+      personId: personId,
+      boundingBox: boundingBox,
+      imageSize: imageSize,
+    );
+  }
 }

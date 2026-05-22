@@ -63,10 +63,12 @@ class InfoPanel extends ConsumerWidget {
               children: [
                 TextFormField(),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('People'),
-                    IconButton(onPressed: (){}, icon: Icon(Icons.add))
+                    Spacer(),
+                    IconButton(onPressed: (){}, icon: Icon(Icons.add)),
+                    if (asset.people.isNotEmpty)
+                    IconButton(onPressed: (){}, icon: Icon(Icons.edit))
                   ],
                 ),
                 if (asset.people.isNotEmpty)

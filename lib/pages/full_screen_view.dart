@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
+import 'package:photo_sync/Widgets/face_tagging.dart';
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/side_panels.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
@@ -35,6 +36,8 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   final GlobalKey deleteKey = GlobalKey();
   final GlobalKey uploadKey = GlobalKey();
   final GlobalKey downloadKey = GlobalKey();
+  final _imageKey = GlobalKey();
+  bool _tagging = false;
 
   List<GalleryItem> _flatAssets(GalleryBucketState state) {
     return [
@@ -140,6 +143,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               ),
                               child: active.imageSources.contains(ImageSource.immich)
                                 ? CachedNetworkImage(
+                                  key: _imageKey,
                                   imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                   httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                                   fit: BoxFit.contain,
@@ -160,7 +164,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                   ),
                                 )
                               : LocalAssetTile(
-                                key: ValueKey(currentImage.id),
+                                key: _imageKey,
                                 asset: currentImage,
                                 preview: false,
                               ),
@@ -229,7 +233,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               )
                             : const SizedBox.shrink(),
                         ),
-
                         if (active is StackedAssets)
                           Positioned(
                             bottom: 15,
@@ -301,6 +304,13 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                 );
                               }).toList(),
                             ),
+                          ),
+                        if (_tagging)
+                          FaceTagOverlay(
+                            imageKey: _imageKey,
+                            assetId: currentImage.id,
+                            onClose: () => setState(() => _tagging = false),
+                            imageSize: (currentImage.exifInfo['exifImageWidth'], currentImage.exifInfo['exifImageHeight']),
                           ),
                       ],
                     ),
@@ -464,6 +474,10 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                                   value: 'download',
                                   child: Text('Download Photo'),
                                 ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Text('edit'),
+                                ),
                               ];
                               if (options.isEmpty) {
                                 showErrorSnackbar('No available options');
@@ -489,6 +503,9 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
 
                                 downloadController.complete();
                                 downloadController.dispose();
+                              }
+                              else if (selected == 'edit') {
+                                setState(() => _tagging = true);
                               }
                             },
                             mouseCursor: SystemMouseCursors.click,
