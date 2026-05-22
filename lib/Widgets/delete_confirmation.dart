@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
-import 'package:photo_sync/services/api_service.dart';
+import 'package:photo_sync/models/immich_models.dart';
 
 Future<T?> showPositionedPopup<T>({
   required BuildContext context,

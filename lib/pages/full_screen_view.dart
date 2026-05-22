@@ -9,6 +9,7 @@ import 'package:photo_sync/Widgets/delete_confirmation.dart';
 import 'package:photo_sync/Widgets/face_tagging.dart';
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/api_service.dart';

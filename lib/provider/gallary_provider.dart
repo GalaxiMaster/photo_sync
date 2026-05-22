@@ -9,7 +9,6 @@ import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/database_providers.dart';
-import 'package:photo_sync/provider/people_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/tools.dart';
@@ -635,9 +634,22 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     );
 
     if (!result) return;
-    ImmichPerson addedPerson = await ref.read(peopleStoreProvider.notifier).getPersonById(personId);
     await updateAsset(assetId, (a) => a.copyWith(
-      people: {...a.people, addedPerson},
+      people: {...a.people, personId},
+    ));
+  }
+  void removeFace({
+    required String assetId, 
+    required String personId,
+  }) async {
+    final result = await _service.removeFace(
+      assetId: assetId,
+      personId: personId,
+    );
+
+    if (!result) return;
+    await updateAsset(assetId, (a) => a.copyWith(
+      people: a.people.where((p) => p != personId).toSet(),
     ));
   }
 }

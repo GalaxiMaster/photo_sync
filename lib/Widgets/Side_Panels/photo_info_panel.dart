@@ -6,8 +6,8 @@ import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
-import 'package:photo_sync/services/api_service.dart';
 import 'package:intl/intl.dart';
+import 'package:photo_sync/provider/people_provider.dart';
 
 final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
@@ -128,39 +128,45 @@ class _InfoView extends ConsumerWidget {
                       itemCount: asset.people.length,
                       separatorBuilder: (context, index) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
-                        final ImmichPerson person = asset.people.elementAt(index);
-                        final String url = person.thumbnailUrl(ImmichConfig.baseUrl);
-                  
-                        return Column(
-                          children: [
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                              ),
-                              child: ClipOval(
-                                child: CachedNetworkImage(
-                                  imageUrl: url,
-                                  httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                  fit: BoxFit.contain,
-                                  placeholder: (context, url) => const Padding(
-                                    padding: EdgeInsets.all(16.0),
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                        final String personId = asset.people.elementAt(index);
+                        final personAsync = ref.watch(personByIdProvider(personId));
+                        return personAsync.when(
+                          data: (person) {
+                            if (person == null) return const SizedBox.shrink();
+                            return Column(
+                              children: [
+                                Container(
+                                  width: 70,
+                                  height: 70,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
                                   ),
-                                  errorWidget: (context, url, error) => Center(
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      color: Theme.of(context).colorScheme.error,
-                                      size: 24,
+                                  child: ClipOval(
+                                    child: CachedNetworkImage(
+                                      imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
+                                      httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                      fit: BoxFit.contain,
+                                      placeholder: (context, url) => const Padding(
+                                        padding: EdgeInsets.all(16.0),
+                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                      ),
+                                      errorWidget: (context, url, error) => Center(
+                                        child: Icon(
+                                          Icons.error_outline,
+                                          color: Theme.of(context).colorScheme.error,
+                                          size: 24,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ),
-                            Text(person.name)
-                          ],
+                                Text(person.name)
+                              ],
+                            );
+                          }, 
+                          error: (error, stack) => const SizedBox.shrink(),
+                          loading: () => const SizedBox.shrink()
                         );
                       },
                     ),
@@ -325,21 +331,39 @@ class EditPeoplePanel extends ConsumerWidget {
           child: ListView.builder(
             itemCount: asset.people.length,
             itemBuilder: (context, i) {
-              final person = asset.people.elementAt(i);
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: CachedNetworkImageProvider(
-                    person.thumbnailUrl(ImmichConfig.baseUrl),
-                    headers: {'x-api-key': ImmichConfig.apiKey},
-                  ),
-                ),
-                title: Text(person.name),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    // inline rename, show dialog, etc.
-                  },
-                ),
+              final personAsync = ref.watch(personByIdProvider(asset.people.elementAt(i)));
+              return personAsync.when(
+                data: (person) {
+                  if (person == null) return const SizedBox.shrink();
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundImage: CachedNetworkImageProvider(
+                        person.thumbnailUrl(ImmichConfig.baseUrl),
+                        headers: {'x-api-key': ImmichConfig.apiKey},
+                      ),
+                    ),
+                    title: Text(person.name, style: TextStyle(fontSize: 18, color: Colors.white)),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () {
+                            // inline rename, show dialog, etc.
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.redAccent),
+                          onPressed: () {
+                            // ref.read(galleryBucketProvider.notifier).removePersonFromAsset(asset, person.id);
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                }, 
+                error: (error, stack) => const SizedBox.shrink(),
+                loading: () => const SizedBox.shrink()
               );
             },
           ),

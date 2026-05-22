@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/people_provider.dart';
-import 'package:photo_sync/services/api_service.dart';
 
 const _kHandleHit  = 24.0;  // hit test radius around each corner handle
 const _kHandleDraw =  6.0;  // visual radius of corner dots

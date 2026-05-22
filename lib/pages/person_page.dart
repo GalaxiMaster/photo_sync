@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
-import 'package:photo_sync/services/api_service.dart';
 
 final galleryAssetCountProvider = Provider<int>((ref) {
   final buckets = ref.watch(galleryBucketProvider.select((s) => s.buckets));
