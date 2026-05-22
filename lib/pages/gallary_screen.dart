@@ -577,7 +577,7 @@ class _TileState extends ConsumerState<_Tile> {
           children: [
             Positioned.fill(
               child: RepaintBoundary(
-                child: !widget.asset.isLocal
+                child: widget.asset.imageSources.contains(ImageSource.immich)
                     ? CachedNetworkImage(
                         imageUrl: widget.asset.thumbnailUrl(),
                         httpHeaders: {'x-api-key': ImmichConfig.apiKey},

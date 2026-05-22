@@ -138,7 +138,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                               constraints: BoxConstraints(
                                 maxWidth: MediaQuery.of(context).size.width * 0.85,
                               ),
-                              child: !active.isLocal
+                              child: active.imageSources.contains(ImageSource.immich)
                                 ? CachedNetworkImage(
                                     imageUrl: currentImage.thumbnailUrl(size: 'preview'),
                                     httpHeaders: {'x-api-key': ImmichConfig.apiKey},

@@ -445,7 +445,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Computer',
+                    'Computer $_scanStatus',
                     style: TextStyle(
                       fontSize: 16,
                     ),
