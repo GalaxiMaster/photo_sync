@@ -418,9 +418,32 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       if (idx == -1) return b;
       final asset = b.assets![idx].leadAsset;
       final list = List<GalleryItem>.of(b.assets!);
-      list[idx] = SingleAsset(
-        asset.copyWith(imageSources: {...asset.imageSources, newSource}),
-      );
+      if (list[idx] is StackedAssets) {
+        final stacked = list[idx] as StackedAssets;
+        if (stacked.primary.id == assetId) {
+          list[idx] = StackedAssets(
+            primary: asset.copyWith(imageSources: {...asset.imageSources, newSource}),
+            containsRaw: stacked.containsRaw,
+            children: stacked.children,
+          );
+          return b.copyWith(assets: list);
+        } else {
+          final newChildren = stacked.children.map((child) {
+            if (child.id != assetId) return child;
+            return child.copyWith(imageSources: {...child.imageSources, newSource});
+          }).toList();
+          list[idx] = StackedAssets(
+            primary: stacked.primary,
+            containsRaw: stacked.containsRaw,
+            children: newChildren,
+          );
+          return b.copyWith(assets: list);
+        }
+      } else {
+        list[idx] = SingleAsset(
+          asset.copyWith(imageSources: {...asset.imageSources, newSource}),
+        );
+      }
       return b.copyWith(assets: list);
     }).toList();
     state = state.copyWith(buckets: newBuckets);
