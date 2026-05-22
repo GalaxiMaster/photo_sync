@@ -123,7 +123,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
             case LogicalKeyboardKey.arrowRight:
               _switchPhoto(1, assets);
             case LogicalKeyboardKey.escape:
-              Navigator.of(context).pop();
+              if (_tagging) {
+                setState(() => _tagging = false);
+              } else{
+                Navigator.of(context).pop();
+              }
           }
         },
         child: Row(
@@ -325,12 +329,20 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                       child: Row(
                         children: [
                           const SizedBox(width: 5),
-                          IconButton(
-                            onPressed: () => Navigator.pop(context),
-                            mouseCursor: SystemMouseCursors.click,
-                            iconSize: iconSize,
-                            icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          ),
+                          if (_tagging)
+                            IconButton(
+                              onPressed: () => setState(() => _tagging = false),
+                              mouseCursor: SystemMouseCursors.click,
+                              iconSize: iconSize,
+                              icon: const Icon(Icons.close, color: Colors.white),
+                            )
+                          else
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              mouseCursor: SystemMouseCursors.click,
+                              iconSize: iconSize,
+                              icon: const Icon(Icons.arrow_back, color: Colors.white),
+                            ),
                           const Spacer(),
                           IconButton(
                             onPressed: () {},

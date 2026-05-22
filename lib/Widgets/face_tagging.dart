@@ -207,7 +207,6 @@ class _FaceTagOverlayState extends State<FaceTagOverlay>
             child: _TopBar(
               hasBox: _hasBox,
               onClose: _dismiss,
-              onRedraw: () => setState(() => _box = null),
             ),
           ),
 
@@ -288,8 +287,7 @@ class _OverlayPainter extends CustomPainter {
 class _TopBar extends StatelessWidget {
   final bool hasBox;
   final VoidCallback onClose;
-  final VoidCallback onRedraw;
-  const _TopBar({required this.hasBox, required this.onClose, required this.onRedraw});
+  const _TopBar({required this.hasBox, required this.onClose});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -300,10 +298,6 @@ class _TopBar extends StatelessWidget {
     ),
     child: Row(
       children: [
-        IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
-          onPressed: onClose,
-        ),
         const Expanded(
           child: Text(
             'Draw a box around the face',
@@ -315,13 +309,6 @@ class _TopBar extends StatelessWidget {
             ),
           ),
         ),
-        if (hasBox)
-          TextButton(
-            onPressed: onRedraw,
-            child: const Text('Redraw', style: TextStyle(color: Colors.blueAccent, fontSize: 13)),
-          )
-        else
-          const SizedBox(width: 72),
       ],
     ),
   );
