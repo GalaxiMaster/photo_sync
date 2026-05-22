@@ -11,6 +11,13 @@ class PeopleStoreNotifier extends AsyncNotifier<List<ImmichPerson>> {
   Future<List<ImmichPerson>> build() {
     return _service.getPeople();
   }
+  Future<ImmichPerson> getPersonById(String id) async {
+    final people = state.hasValue
+        ? state.value!
+        : await future;
+
+    return people.firstWhere((person) => person.id == id);
+  }
 
 }
 

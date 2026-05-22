@@ -9,6 +9,7 @@ import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/database_providers.dart';
+import 'package:photo_sync/provider/people_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/tools.dart';
@@ -293,21 +294,47 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     fullLocal.removeWhere(toRemove.contains);
   }
 
-  void updateAsset(ImmichAsset updated) {
+  Future<void> updateAsset(
+    String assetId,
+    ImmichAsset Function(ImmichAsset asset) updater,
+  ) async {
     final newBuckets = state.buckets.map((b) {
       if (b.assets == null) return b;
-      final idx = b.assets!.indexWhere((i) => i.leadAsset.id == updated.id);
+      final idx = b.assets!.indexWhere((i) => i.leadAsset.id == assetId);
       if (idx == -1) return b;
+
       final list = List<GalleryItem>.of(b.assets!);
-      list[idx] = SingleAsset(updated);
+
+      if (list[idx] is StackedAssets) {
+        final stacked = list[idx] as StackedAssets;
+        if (stacked.primary.id == assetId) {
+          list[idx] = StackedAssets(
+            primary: updater(stacked.primary),
+            containsRaw: stacked.containsRaw,
+            children: stacked.children,
+          );
+        } else {
+          list[idx] = StackedAssets(
+            primary: stacked.primary,
+            containsRaw: stacked.containsRaw,
+            children: stacked.children
+                .map((c) => c.id == assetId ? updater(c) : c)
+                .toList(),
+          );
+        }
+      } else {
+        list[idx] = SingleAsset(updater(list[idx].leadAsset));
+      }
+
       return b.copyWith(assets: list);
     }).toList();
+
     state = state.copyWith(buckets: newBuckets);
   }
 
   void toggleFavorite(ImmichAsset asset) async {
     final newValue = !asset.isFavorite;
-    updateAsset(asset.copyWith(isFavorite: newValue));
+    await updateAsset(asset.id, (a) => a.copyWith(isFavorite: newValue));
     await _service.favoriteImmichAsset(asset.id, newValue);
   }
 
@@ -392,8 +419,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
           : null,
       );
       if (newId != null) {
-        updateAsset(asset.copyWith(
-          imageSources: {...asset.imageSources, ImageSource.immich},
+        await updateAsset(asset.id, (a) => a.copyWith(
+          imageSources: {...a.imageSources, ImageSource.immich},
           id: newId,
         ));
       }
@@ -411,46 +438,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     return result;
   }
 
-  Future<void> updateSources(String assetId, ImageSource newSource) async {
-    final newBuckets = state.buckets.map((b) {
-      if (b.assets == null) return b;
-      final idx = b.assets!.indexWhere((i) => i.leadAsset.id == assetId);
-      if (idx == -1) return b;
-      final asset = b.assets![idx].leadAsset;
-      final list = List<GalleryItem>.of(b.assets!);
-      if (list[idx] is StackedAssets) {
-        final stacked = list[idx] as StackedAssets;
-        if (stacked.primary.id == assetId) {
-          list[idx] = StackedAssets(
-            primary: asset.copyWith(imageSources: {...asset.imageSources, newSource}),
-            containsRaw: stacked.containsRaw,
-            children: stacked.children,
-          );
-          return b.copyWith(assets: list);
-        } else {
-          final newChildren = stacked.children.map((child) {
-            if (child.id != assetId) return child;
-            return child.copyWith(imageSources: {...child.imageSources, newSource});
-          }).toList();
-          list[idx] = StackedAssets(
-            primary: stacked.primary,
-            containsRaw: stacked.containsRaw,
-            children: newChildren,
-          );
-          return b.copyWith(assets: list);
-        }
-      } else {
-        list[idx] = SingleAsset(
-          asset.copyWith(imageSources: {...asset.imageSources, newSource}),
-        );
-      }
-      return b.copyWith(assets: list);
-    }).toList();
-    state = state.copyWith(buckets: newBuckets);
-  }
-
   Future<void> changeAssetDate(ImmichAsset asset, String dateString) async {
-    updateAsset(asset.copyWith(fileCreatedAt: DateTime.parse(dateString)));
+    await updateAsset(asset.id, (a) => a.copyWith(fileCreatedAt: DateTime.parse(dateString)));
     await _service.changeAssetDate(asset.id, dateString);
   }
 
@@ -474,7 +463,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
         final li =
             fullLocal.indexWhere((a) => a.localPath == asset.localPath);
         if (li != -1) fullLocal[li] = enriched;
-        updateAsset(enriched);
+        await updateAsset(enriched.id, (a) => enriched);
       }
     }
   }
@@ -628,7 +617,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
           )
       : null,
     );
-    updateSources(asset.id, ImageSource.local);
+    updateAsset(asset.id, (a) => a.copyWith(imageSources: {...a.imageSources, ImageSource.local}));
     return file;
   }
 
@@ -638,11 +627,17 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     required Map<String, double> boundingBox,
     required (int, int) imageSize,
   }) async {
-    await _service.addFace(
+    final result = await _service.addFace(
       assetId: assetId,
       personId: personId,
       boundingBox: boundingBox,
       imageSize: imageSize,
     );
+
+    if (!result) return;
+    ImmichPerson addedPerson = await ref.read(peopleStoreProvider.notifier).getPersonById(personId);
+    await updateAsset(assetId, (a) => a.copyWith(
+      people: {...a.people, addedPerson},
+    ));
   }
 }

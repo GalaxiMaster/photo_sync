@@ -388,9 +388,6 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                             IconButton(
                               onPressed: () {
                                 ref.read(galleryBucketProvider.notifier).toggleFavorite(currentImage);
-                                ref.read(galleryBucketProvider.notifier).updateAsset(
-                                  currentImage.copyWith(isFavorite: !currentImage.isFavorite),
-                                );
                               },
                               mouseCursor: SystemMouseCursors.click,
                               iconSize: iconSize,
