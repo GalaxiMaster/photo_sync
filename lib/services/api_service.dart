@@ -424,12 +424,12 @@ class ImmichService {
       'imageWidth': imageSize.$1,
       'imageHeight': imageSize.$2,
       'personId': personId,
-      'width': ((boundingBox['x2']! - boundingBox['x1']!) * imageSize.$1).round(),  // ✅
-      'height': ((boundingBox['y2']! - boundingBox['y1']!) * imageSize.$2).round(), // ✅
+      'width': ((boundingBox['x2']! - boundingBox['x1']!) * imageSize.$1).round(),
+      'height': ((boundingBox['y2']! - boundingBox['y1']!) * imageSize.$2).round(),
       'x': (boundingBox['x1']! * imageSize.$1).round(),
       'y': (boundingBox['y1']! * imageSize.$2).round(),
     });
-    return response.statusCode == 200;
+    return {200, 201}.contains(response.statusCode);
   }
 }
 
