@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
@@ -25,6 +26,7 @@ class InfoPanel extends ConsumerStatefulWidget {
 
 class _InfoPanelState extends ConsumerState<InfoPanel> {
   final _pageController = PageController();
+  AssetFace? _selectedFaceId;
 
   void _goTo(int index) => _pageController.animateToPage(
     index,
@@ -32,10 +34,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     curve: Curves.easeInOutCubic,
   );
 
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
+  void _goToPersonList(AssetFace faceId) {
+    setState(() {
+      _selectedFaceId = faceId;
+    });
+    _goTo(2);
   }
 
   @override
@@ -56,6 +59,12 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
           EditPeoplePanel(
             asset: widget.asset,
             onBack: () => _goTo(0),
+            onEditPerson: (faceId) => _goToPersonList(faceId),
+          ),
+          PeopleListPanel(
+            asset: widget.asset,
+            face: _selectedFaceId,
+            onBack: () => _goTo(1),
           ),
         ],
       ),
@@ -75,7 +84,8 @@ class _InfoView extends ConsumerWidget {
     final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
-
+    final assetFaces = ref.watch(assetFacesProvider(asset.id));
+    
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
       padding: const EdgeInsets.all(8),
@@ -294,6 +304,7 @@ class _InfoView extends ConsumerWidget {
     );
   }
 }
+
 List<String> formatAssetDate(DateTime date) {
   final offset = date.timeZoneOffset;
   final sign = offset.isNegative ? '-' : '+';
@@ -306,14 +317,16 @@ List<String> formatAssetDate(DateTime date) {
   return [dateLine, '$timeLine GMT$sign$hours:$minutes'];
 }
 
-
 class EditPeoplePanel extends ConsumerWidget {
   final ImmichAsset asset;
   final VoidCallback onBack;
-  const EditPeoplePanel({super.key, required this.asset, required this.onBack});
+  final void Function(AssetFace face) onEditPerson;
+  const EditPeoplePanel({super.key, required this.asset, required this.onBack, required this.onEditPerson});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final assetFaces = ref.watch(assetFacesProvider(asset.id));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -349,8 +362,9 @@ class EditPeoplePanel extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.edit),
                           onPressed: () {
-                            // inline rename, show dialog, etc.
-                          },
+                            final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
+                            if (face != null) onEditPerson(face);
+                          }
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -367,6 +381,67 @@ class EditPeoplePanel extends ConsumerWidget {
               );
             },
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class PeopleListPanel extends ConsumerWidget {
+  final ImmichAsset asset;
+  final VoidCallback onBack;
+  final AssetFace? face;
+  const PeopleListPanel({super.key, required this.asset, required this.onBack, required this.face});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final peopleAsync = ref.watch(peopleStoreProvider);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          spacing: 10,
+          children: [
+            IconButton(
+              onPressed: onBack,
+              icon: const Icon(Icons.arrow_back),
+            ),
+            Text('Edit People', style: TextStyle(fontSize: 24)),
+          ],
+        ),
+        Expanded(
+          child: peopleAsync.when(
+            data: (people) {
+              return GridView.builder(
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: .9),
+                itemCount: people.length,
+                itemBuilder: (context, index) {
+                  final person = people[index];
+                  return GestureDetector(
+                    onTap: () {
+                      if (face == null) return;
+                      ref.read(galleryBucketProvider.notifier).reAssignFace(assetId: asset.id, face: face!, newPersonId: person.id);
+                      onBack();
+                    },
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundImage: CachedNetworkImageProvider(
+                            person.thumbnailUrl(ImmichConfig.baseUrl),
+                            headers: {'x-api-key': ImmichConfig.apiKey},
+                          ),
+                        ),
+                        Text(person.name, style: TextStyle(fontSize: 16, color: Colors.white)),
+                      ],
+                    ),
+                  );
+                }
+              );
+            }, 
+            error: (error, stack) => const SizedBox.shrink(),
+            loading: () => const CircularProgressIndicator()
+            ),
         ),
       ],
     );

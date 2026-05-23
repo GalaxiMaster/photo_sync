@@ -213,3 +213,39 @@ class ImmichPlace {
       '$baseUrl/api/places/${Uri.encodeComponent(city)}/thumbnail';
 }
 
+class AssetFace {
+  final String id; 
+  final String? personId;
+  final int boundingBoxX1, boundingBoxY1, boundingBoxX2, boundingBoxY2;
+  final int imageWidth, imageHeight;
+
+  AssetFace({
+    required this.id,
+    required this.personId, 
+    required this.boundingBoxX1, 
+    required this.boundingBoxY1, 
+    required this.boundingBoxX2, 
+    required this.boundingBoxY2, 
+    required this.imageWidth, 
+    required this.imageHeight
+  });
+
+  // normalised helpers for rendering overlays
+  double get left => boundingBoxX1 / imageWidth;
+  double get top => boundingBoxY1 / imageHeight;
+  double get width => (boundingBoxX2 - boundingBoxX1) / imageWidth;
+  double get height => (boundingBoxY2 - boundingBoxY1) / imageHeight;
+
+  factory AssetFace.fromJson(Map<String, dynamic> json) {
+    return AssetFace(
+      id: json['id'],
+      personId: json['person']['id'],
+      boundingBoxX1: json['boundingBoxX1'],
+      boundingBoxY1: json['boundingBoxY1'],
+      boundingBoxX2: json['boundingBoxX2'],
+      boundingBoxY2: json['boundingBoxY2'],
+      imageWidth: json['imageWidth'],
+      imageHeight: json['imageHeight'],
+    );
+  }
+}

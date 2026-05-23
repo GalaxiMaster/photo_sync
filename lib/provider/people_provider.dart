@@ -30,3 +30,7 @@ final personByIdProvider = FutureProvider.family<ImmichPerson?, String>((ref, id
   final people = await ref.watch(peopleStoreProvider.future);
   return people.firstWhereOrNull((p) => p.id == id);
 });
+
+final assetFacesProvider = FutureProvider.family<List<AssetFace>, String>((ref, assetId) async {
+  return ref.read(immichServiceProvider).getFaces(assetId: assetId);
+});

@@ -287,13 +287,34 @@ class ImmichService {
     });
     return {200, 201}.contains(response.statusCode);
   }
+  
   Future<bool> removeFace({
     required String assetId, 
     required String personId,
   }) async {
     final response = await _dio.post('/faces', data: {
       'assetId': assetId,
- 
+    });
+    return {200, 201}.contains(response.statusCode);
+  }
+
+  Future<List<AssetFace>> getFaces({
+    required String assetId, 
+  }) async {
+    final response = await _dio.get('/faces', queryParameters: {
+      'id': assetId,
+    });
+    final data = response.data as List;
+    return data.map((d) => AssetFace.fromJson(d)).toList();
+  }
+
+  Future<bool> reAssignFace({
+    required String faceId,
+    required String assetId,
+    required String newPersonId,
+  }) async {
+    final response = await _dio.put('/faces/$newPersonId', data: {
+      'id': faceId,
     });
     return {200, 201}.contains(response.statusCode);
   }

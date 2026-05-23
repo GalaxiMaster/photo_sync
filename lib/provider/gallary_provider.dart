@@ -9,6 +9,7 @@ import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/database_providers.dart';
+import 'package:photo_sync/provider/people_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/tools.dart';
@@ -651,5 +652,22 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     await updateAsset(assetId, (a) => a.copyWith(
       people: a.people.where((p) => p != personId).toSet(),
     ));
+  }
+  void reAssignFace({
+    required String assetId, 
+    required AssetFace face,
+    required String newPersonId,
+  }) async {
+    final result = await _service.reAssignFace(
+      faceId: face.id,
+      assetId: assetId,
+      newPersonId: newPersonId,
+    );
+
+    if (!result) return;
+    await updateAsset(assetId, (a) => a.copyWith(
+      people: (a.people.where((p) => p != face.personId).toSet())..add(newPersonId),
+    ));
+    ref.invalidate(assetFacesProvider(assetId));
   }
 }
