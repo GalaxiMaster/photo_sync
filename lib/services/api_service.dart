@@ -318,6 +318,10 @@ class ImmichService {
     });
     return {200, 201}.contains(response.statusCode);
   }
+  Future<ServerStorageInfo> getServerStorage() async {
+    final response = await _dio.get('/server/storage');
+    return ServerStorageInfo.fromJson(response.data);
+  }
 }
 
 sealed class GalleryItem {

@@ -250,7 +250,27 @@ class AssetFace {
       imageHeight: json['imageHeight'],
     );
   }
-}
-extension AssetFaceRect on AssetFace {
   Rect toNormalizedRect() => Rect.fromLTWH(left, top, width, height);
+}
+
+class ServerStorageInfo {
+  final String diskSize;
+  final int diskSizeRaw;
+  final String diskUsed;
+  final int diskUsedRaw;
+
+  ServerStorageInfo({
+    required this.diskSize,
+    required this.diskSizeRaw,
+    required this.diskUsed,
+    required this.diskUsedRaw,
+  });
+  factory ServerStorageInfo.fromJson(Map<String, dynamic> json) {
+    return ServerStorageInfo(
+      diskSize: json['diskSize'] as String,
+      diskSizeRaw: json['diskSizeRaw'] as int,
+      diskUsed: json['diskUse'] as String,
+      diskUsedRaw: json['diskUseRaw'] as int,
+    );
+  }
 }

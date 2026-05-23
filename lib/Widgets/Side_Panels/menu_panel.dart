@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/body_provider.dart';
+import 'package:photo_sync/provider/database_providers.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/services/win_drives.dart';
 
@@ -159,6 +160,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
   }
   @override
   Widget build(BuildContext context) {
+    final storageAsync = ref.watch(serverInfoProvider);
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.only(right: 50, top: 30),
@@ -221,6 +223,47 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
                   scanDrive(drive['letter']!);
                 }
               ),
+            Spacer(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Color.fromARGB(255, 17, 20, 25),
+                  borderRadius: BorderRadius.circular(10)
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                width: double.infinity,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 5,
+                  children: [
+                    Text('Storage Space', style: TextStyle(fontSize: 14, color: Color.fromARGB(255, 218, 219, 219), fontWeight: FontWeight.bold)),
+                    ...storageAsync.when(
+                      data: (storage) {
+                        final usedPercent = storage.diskUsedRaw / storage.diskSizeRaw;
+                        return [
+                          Text('${storage.diskUsed} / ${storage.diskSize}', style: TextStyle(color: Color.fromARGB(255, 218, 219, 219))),
+                          SizedBox(height: 5),
+                          SizedBox(
+                            height: 7.5,
+                            child: LinearProgressIndicator(
+                              value: usedPercent,
+                              color: usedPercent > 0.9 ? Colors.red : Color.fromARGB(255, 169, 204, 248),
+                              backgroundColor: Color.fromARGB(255, 54, 65, 83),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                          SizedBox(height: 5),
+                        ];
+                      },
+                      loading: () => [CircularProgressIndicator()], 
+                      error: (e, st) => [Text('Error loading storage info $e')]
+                    )
+                  ],
+                ),
+              ),
+            )
           ]
         ),
       )
