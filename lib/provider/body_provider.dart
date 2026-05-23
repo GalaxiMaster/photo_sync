@@ -14,7 +14,7 @@ class AppBodyNotifier extends Notifier<AppBody> {
   
   void goToPerson(ImmichPerson person) {
     previousPage = state;
-    ref.read(selectedPersonProvider.notifier).state = person;
+    ref.read(selectedPersonProvider.notifier).select(person);
     state = AppBody.person;
   }
 

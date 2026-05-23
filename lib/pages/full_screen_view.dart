@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/Side_Panels/photo_info_panel.dart';
 import 'package:photo_sync/Widgets/delete_confirmation.dart';
+import 'package:photo_sync/Widgets/face_box_painter_overlay.dart';
 import 'package:photo_sync/Widgets/face_tagging.dart';
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
@@ -39,7 +40,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
   final GlobalKey downloadKey = GlobalKey();
   final _imageKey = GlobalKey();
   bool _tagging = false;
-
+  AssetFace? _hoveredFace;
   List<GalleryItem> _flatAssets(GalleryBucketState state) {
     return [
       for (final bucket in state.buckets)
@@ -320,7 +321,13 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
                       ],
                     ),
                   ),
-
+                  if (_hoveredFace != null)
+                    Positioned.fill(
+                      child: FaceHoverOverlay(
+                        imageKey: _imageKey,
+                        normalizedBox: _hoveredFace!.toNormalizedRect(),
+                      ),
+                    ),
                   Positioned(
                     top: 0,
                     right: 0,
@@ -531,7 +538,11 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
               decoration: const BoxDecoration(),
               child: InfoPanel(
                 asset: currentImage,
-                functions:(close: () => setState(() => _showInfo = false), addFace: () => setState(() => _tagging = true)),
+                functions:(
+                  close: () => setState(() => _showInfo = false), 
+                  addFace: () => setState(() => _tagging = true),
+                  onFaceHover: (AssetFace? face) => setState(() => _hoveredFace = face),
+                ),
               ),
             ),
           ],

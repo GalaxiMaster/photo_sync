@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 
@@ -248,4 +250,7 @@ class AssetFace {
       imageHeight: json['imageHeight'],
     );
   }
+}
+extension AssetFaceRect on AssetFace {
+  Rect toNormalizedRect() => Rect.fromLTWH(left, top, width, height);
 }

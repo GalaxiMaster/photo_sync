@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
 import 'package:photo_sync/models/immich_models.dart';
+import 'package:photo_sync/pages/person_page.dart';
+import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_sync/provider/people_provider.dart';
@@ -17,7 +19,7 @@ final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref
 
 class InfoPanel extends ConsumerStatefulWidget {
   final ImmichAsset asset;
-  final ({VoidCallback close, VoidCallback addFace}) functions;
+  final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
   const InfoPanel({super.key, required this.asset, required this.functions});
 
   @override
@@ -74,7 +76,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
 class _InfoView extends ConsumerWidget {
   final ImmichAsset asset;
-  final ({VoidCallback close, VoidCallback addFace}) functions;
+  final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
   final VoidCallback onEditPeople;
   const _InfoView({required this.asset, required this.functions, required this.onEditPeople});
 
@@ -143,38 +145,53 @@ class _InfoView extends ConsumerWidget {
                         return personAsync.when(
                           data: (person) {
                             if (person == null) return const SizedBox.shrink();
-                            return MouseRegion(
-                              cursor: SystemMouseCursors.click,
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 70,
-                                    height: 70,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                    ),
-                                    child: ClipOval(
-                                      child: CachedNetworkImage(
-                                        imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
-                                        httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                        fit: BoxFit.contain,
-                                        placeholder: (context, url) => const Padding(
-                                          padding: EdgeInsets.all(16.0),
-                                          child: CircularProgressIndicator(strokeWidth: 2),
-                                        ),
-                                        errorWidget: (context, url, error) => Center(
-                                          child: Icon(
-                                            Icons.error_outline,
-                                            color: Theme.of(context).colorScheme.error,
-                                            size: 24,
+                            return GestureDetector(
+                              onTap: () {
+                                ref.read(selectedPersonProvider.notifier).select(person);
+                                Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(
+                                  appBar: AppBar(title: Text(person.name)),
+                                  body: PersonPage(),
+                                )));
+                              },
+                              child: MouseRegion(
+                                onHover: (_) {
+                                  final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
+                                  if (face == null) return;
+                                  functions.onFaceHover(face);
+                                },
+                                onExit: (event) => functions.onFaceHover(null),
+                                cursor: SystemMouseCursors.click,
+                                child: Column(
+                                  children: [
+                                    Container(
+                                      width: 70,
+                                      height: 70,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                      ),
+                                      child: ClipOval(
+                                        child: CachedNetworkImage(
+                                          imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
+                                          httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                          fit: BoxFit.contain,
+                                          placeholder: (context, url) => const Padding(
+                                            padding: EdgeInsets.all(16.0),
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          ),
+                                          errorWidget: (context, url, error) => Center(
+                                            child: Icon(
+                                              Icons.error_outline,
+                                              color: Theme.of(context).colorScheme.error,
+                                              size: 24,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  Text(person.name)
-                                ],
+                                    Text(person.name)
+                                  ],
+                                ),
                               ),
                             );
                           }, 
