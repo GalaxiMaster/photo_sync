@@ -638,21 +638,24 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     await updateAsset(assetId, (a) => a.copyWith(
       people: {...a.people, personId},
     ));
+    ref.invalidate(assetFacesProvider(assetId));
   }
+  
   void removeFace({
     required String assetId, 
-    required String personId,
+    required AssetFace face,
   }) async {
     final result = await _service.removeFace(
-      assetId: assetId,
-      personId: personId,
+      faceId: face.id,
     );
 
     if (!result) return;
     await updateAsset(assetId, (a) => a.copyWith(
-      people: a.people.where((p) => p != personId).toSet(),
+      people: a.people.where((p) => p != face.personId).toSet(),
     ));
+    ref.invalidate(assetFacesProvider(assetId));
   }
+
   void reAssignFace({
     required String assetId, 
     required AssetFace face,

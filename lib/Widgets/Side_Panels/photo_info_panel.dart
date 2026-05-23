@@ -143,36 +143,39 @@ class _InfoView extends ConsumerWidget {
                         return personAsync.when(
                           data: (person) {
                             if (person == null) return const SizedBox.shrink();
-                            return Column(
-                              children: [
-                                Container(
-                                  width: 70,
-                                  height: 70,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                  ),
-                                  child: ClipOval(
-                                    child: CachedNetworkImage(
-                                      imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
-                                      httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                      fit: BoxFit.contain,
-                                      placeholder: (context, url) => const Padding(
-                                        padding: EdgeInsets.all(16.0),
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                      errorWidget: (context, url, error) => Center(
-                                        child: Icon(
-                                          Icons.error_outline,
-                                          color: Theme.of(context).colorScheme.error,
-                                          size: 24,
+                            return MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: 70,
+                                    height: 70,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                    ),
+                                    child: ClipOval(
+                                      child: CachedNetworkImage(
+                                        imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
+                                        httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                        fit: BoxFit.contain,
+                                        placeholder: (context, url) => const Padding(
+                                          padding: EdgeInsets.all(16.0),
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                        errorWidget: (context, url, error) => Center(
+                                          child: Icon(
+                                            Icons.error_outline,
+                                            color: Theme.of(context).colorScheme.error,
+                                            size: 24,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Text(person.name)
-                              ],
+                                  Text(person.name)
+                                ],
+                              ),
                             );
                           }, 
                           error: (error, stack) => const SizedBox.shrink(),
@@ -369,7 +372,13 @@ class EditPeoplePanel extends ConsumerWidget {
                         IconButton(
                           icon: const Icon(Icons.delete, color: Colors.redAccent),
                           onPressed: () {
-                            // ref.read(galleryBucketProvider.notifier).removePersonFromAsset(asset, person.id);
+                            final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
+                            if (face != null) {
+                              ref.read(galleryBucketProvider.notifier).removeFace(
+                                assetId: asset.id, 
+                                face: face
+                              );
+                            }
                           },
                         ),
                       ],
@@ -425,14 +434,39 @@ class PeopleListPanel extends ConsumerWidget {
                     },
                     child: Column(
                       children: [
-                        CircleAvatar(
-                          radius: 50,
-                          backgroundImage: CachedNetworkImageProvider(
-                            person.thumbnailUrl(ImmichConfig.baseUrl),
-                            headers: {'x-api-key': ImmichConfig.apiKey},
+                        Container(
+                          width: 90,
+                          height: 90,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          ),
+                          child: ClipOval(
+                            child: MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: CachedNetworkImage(
+                                imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
+                                httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                fit: BoxFit.contain,
+                                placeholder: (context, url) => const Padding(
+                                  padding: EdgeInsets.all(16.0),
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                                errorWidget: (context, url, error) => Center(
+                                  child: Icon(
+                                    Icons.error_outline,
+                                    color: Theme.of(context).colorScheme.error,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                        Text(person.name, style: TextStyle(fontSize: 16, color: Colors.white)),
+                        MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          child: Text(person.name)
+                        )
                       ],
                     ),
                   );

@@ -289,13 +289,13 @@ class ImmichService {
   }
   
   Future<bool> removeFace({
-    required String assetId, 
-    required String personId,
+    required String faceId,
+    bool force = true,
   }) async {
-    final response = await _dio.post('/faces', data: {
-      'assetId': assetId,
+    final response = await _dio.delete('/faces/$faceId', data: {
+      'force': force,
     });
-    return {200, 201}.contains(response.statusCode);
+    return {200, 201, 204}.contains(response.statusCode);
   }
 
   Future<List<AssetFace>> getFaces({
