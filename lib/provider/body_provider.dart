@@ -2,7 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 
-enum AppBody { gallery, explore, person}
+enum AppBody { gallery, explore, person, tags}
 
 class AppBodyNotifier extends Notifier<AppBody> {
   AppBody? previousPage;

@@ -1,7 +1,9 @@
 import 'dart:ui';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
+import 'package:photo_sync/services/tools.dart';
 
 class ImmichConfig {
   static String baseUrl = dotenv.env['immich_url'] ?? '';
@@ -273,4 +275,36 @@ class ServerStorageInfo {
       diskUsedRaw: json['diskUseRaw'] as int,
     );
   }
+}
+
+class ImmichTag {
+  final String id;
+  final String name;
+  final Color color;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? parentId;
+  final String? value;
+
+
+
+  ImmichTag({
+    required this.id,
+    required this.name, 
+    required this.color, 
+    required this.createdAt, 
+    required this.updatedAt, 
+    this.parentId, 
+    this.value,
+  });
+
+  factory ImmichTag.fromJson(Map<String, dynamic> json) => ImmichTag(
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '', 
+    color: hexToColor(json['color'] as String?) ?? Colors.white,
+    createdAt: DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now(),
+    updatedAt: DateTime.tryParse(json['updatedAt'] as String) ?? DateTime.now(),
+    parentId: json['parentId'] as String?,
+    value: json['value'] as String?,
+  );
 }

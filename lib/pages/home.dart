@@ -8,6 +8,7 @@ import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/pages/person_page.dart';
+import 'package:photo_sync/pages/tags_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import '../provider/gallary_provider.dart';
@@ -33,6 +34,7 @@ class _MainAppState extends ConsumerState<MainApp> {
     AppBody.gallery: const GalleryScreen(),
     AppBody.explore: const ExplorePage(),
     AppBody.person: const PersonPage(),
+    AppBody.tags: const TagsScreen(),
   };
   
   @override

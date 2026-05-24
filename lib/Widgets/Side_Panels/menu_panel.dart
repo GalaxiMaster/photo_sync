@@ -163,7 +163,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
     final storageAsync = ref.watch(serverInfoProvider);
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.only(right: 50, top: 30),
+        padding: const EdgeInsets.only(right: 35, top: 30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -188,7 +188,9 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
               await ref.read(galleryBucketProvider.notifier).loadCloud(isFavorite: true);
             }),
             menuItem('Albums', Icons.photo_album_rounded),
-            menuItem('Tags', Icons.label),
+            menuItem('Tags', Icons.label, onClick: () {
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.tags);
+            }),
             menuItem('Trash', Icons.delete_outline, onClick: () async{
               ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
               await ref.read(galleryBucketProvider.notifier).loadCloud(isTrashed: true);

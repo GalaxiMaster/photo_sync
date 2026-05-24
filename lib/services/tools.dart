@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -44,4 +45,11 @@ extension EnumeratedIterable<T> on Iterable<T> {
       yield (i++, item);
     }
   }
+}
+
+Color? hexToColor(String? hex) {
+  if (hex == null || hex.isEmpty) return null;
+  hex = hex.replaceAll('#', '');
+  if (hex.length == 6) hex = 'FF$hex';
+  return Color(int.parse(hex, radix: 16));
 }

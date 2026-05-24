@@ -6,7 +6,7 @@ import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 
-final galleryAssetCountProvider = Provider<int>((ref) {
+final _galleryAssetCountProvider = Provider<int>((ref) {
   final buckets = ref.watch(galleryBucketProvider.select((s) => s.buckets));
   return buckets.fold<int>(0, (sum, b) => sum + b.count);
 });
@@ -29,7 +29,7 @@ class _PersonPageState extends ConsumerState<PersonPage> {
     final person = ref.watch(selectedPersonProvider);
     if (person == null) return const SizedBox.shrink();
 
-    final assetCount = ref.watch(galleryAssetCountProvider);
+    final assetCount = ref.watch(_galleryAssetCountProvider);
 
     return GalleryScreen(
       header: Padding(

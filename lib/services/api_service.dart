@@ -318,9 +318,15 @@ class ImmichService {
     });
     return {200, 201}.contains(response.statusCode);
   }
+
   Future<ServerStorageInfo> getServerStorage() async {
     final response = await _dio.get('/server/storage');
     return ServerStorageInfo.fromJson(response.data);
+  }
+
+  Future<List<ImmichTag>> getAllTags() async {
+    final response = await _dio.get('/tags');
+    return (response.data as List).map((d) => ImmichTag.fromJson(d)).toList();
   }
 }
 
