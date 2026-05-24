@@ -37,7 +37,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
-                  ...tags.map(_tagBox),
+                  ...tags.map(_tagElement),
                 ]
               ),
             ),
@@ -111,7 +111,24 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
       error: (e, st) => Text('Error loading tags: $e'),
     );
   }
-  Widget _tagBox(ImmichTag tag) {
+  Widget _tagElement(ImmichTag tag, {int indentLevel = 0}) {
+    if (tag.children.isEmpty) {
+      return _tagBox(tag);
+    }
+    return Column(
+      children: [
+        _tagBox(tag),
+        Padding(
+          padding: const EdgeInsets.only(left: 20),
+          child: Column(
+            children: tag.children.map((child) => _tagElement(child, indentLevel: indentLevel + 1)).toList(),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _tagBox(ImmichTag tag, {int indentLevel = 0}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
@@ -129,6 +146,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SizedBox(width: indentLevel * 10),
               Icon(Icons.local_offer, size: 20, color: tag.color),
               const SizedBox(width: 10),
               Text(tag.name),
