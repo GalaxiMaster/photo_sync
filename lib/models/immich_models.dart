@@ -285,8 +285,7 @@ class ImmichTag {
   final DateTime updatedAt;
   final String? parentId;
   final String? value;
-
-
+  final List<ImmichTag> children;
 
   ImmichTag({
     required this.id,
@@ -296,6 +295,7 @@ class ImmichTag {
     required this.updatedAt, 
     this.parentId, 
     this.value,
+    this.children = const [],
   });
 
   factory ImmichTag.fromJson(Map<String, dynamic> json) => ImmichTag(
@@ -307,4 +307,27 @@ class ImmichTag {
     parentId: json['parentId'] as String?,
     value: json['value'] as String?,
   );
+
+  ImmichTag copyWith({
+    String? id,
+    String? name,
+    Color? color,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? parentId,
+    String? value,
+    List<ImmichTag>? children,
+  }) {
+    return ImmichTag(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      color: color ?? this.color,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      parentId: parentId ?? this.parentId,
+      value: value ?? this.value,
+      children: children ?? this.children,
+    );
+  }
+  ImmichTag withChild(ImmichTag child) => copyWith(children: [...children, child]);
 }
