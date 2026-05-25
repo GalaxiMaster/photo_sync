@@ -78,7 +78,9 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                   Row(
                     children: [
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          selectTag(tags.expand((t) => t.flatten()).toList().firstWhere((t) => t.id == selectedTag?.parentId, orElse: () => selectedTag!)); // Go up in tree (could just store a flattened list in the storeProvider to avoid expanding every time but probably doesnt matter much)
+                        },
                         icon: const Icon(Icons.arrow_back_rounded),
                       ),
                       Expanded(
@@ -112,10 +114,10 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                       )
                     ],
                   ),
-                  Expanded(
-                    child: selectedTag != null
-                      ? GalleryScreen()
-                      : GridView.builder(
+                  selectedTag != null
+                    ? GalleryScreen()
+                    : Expanded(
+                      child: GridView.builder(
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 10,
                           mainAxisSpacing: 10,
@@ -141,7 +143,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                           );
                         }
                       ),
-                  ),
+                    ),
                 ]
               ),
             ),
