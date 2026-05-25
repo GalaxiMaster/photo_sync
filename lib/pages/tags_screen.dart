@@ -116,34 +116,48 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                   ),
                   selectedTag != null
                     ? GalleryScreen()
-                    : Expanded(
-                      child: GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 10,
-                          mainAxisSpacing: 10,
-                          crossAxisSpacing: 10,
+                    : Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+                      child: Material(
+                        color: Color.fromARGB(255, 17, 17, 17),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                          side: BorderSide(color: Color.fromARGB(255, 15, 24, 39), width: 1.5),
                         ),
-                        shrinkWrap: true,
-                        itemCount: tags.length,
-                        itemBuilder: (context, index) {
-                          final tag = tags[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: tag.color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: tag.color, width: 1.5),
-                            ),
-                            child: Center(
-                              child: Text(
-                                tag.name,
-                                style: TextStyle(fontSize: 12, color: tag.color),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          );
-                        }
+                        clipBehavior: Clip.antiAlias,
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: Wrap(
+                            children: tags.map((tag) {
+                              return InkWell(
+                                onTap: () => selectTag(tag),
+                                hoverColor: Color.fromARGB(255, 34, 44, 79),
+                                child: MouseRegion(
+                                  cursor: SystemMouseCursors.click,
+                                  child: Container(
+                                    height: 132,
+                                    width: 150,
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.local_offer, size: 80, color: tag.color),
+                                        Text(
+                                          tag.name,
+                                          style: TextStyle(fontSize: 14, color: tag.color),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          ).toList()
+                        ),
+                        ),
                       ),
-                    ),
+                  ),
                 ]
               ),
             ),
