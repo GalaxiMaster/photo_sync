@@ -20,10 +20,11 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
     super.initState();
   }
 
-  void selectTag(ImmichTag tag) {
+  void selectTag(ImmichTag? tag) {
     setState(() {
       selectedTag = tag;
     });
+    if (tag == null) return;
     ref.read(galleryBucketProvider.notifier).loadCloud(tags: {tag.id});
   }
 
@@ -79,6 +80,10 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                     children: [
                       IconButton(
                         onPressed: () {
+                          if (selectedTag?.parentId == null) {
+                            selectTag(null);
+                            return;
+                          }
                           selectTag(tags.expand((t) => t.flatten()).toList().firstWhere((t) => t.id == selectedTag?.parentId, orElse: () => selectedTag!)); // Go up in tree (could just store a flattened list in the storeProvider to avoid expanding every time but probably doesnt matter much)
                         },
                         icon: const Icon(Icons.arrow_back_rounded),
