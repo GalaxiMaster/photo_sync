@@ -150,6 +150,7 @@ class ImmichService {
       'withExif': true,
       'withPeople': true,
       if (searchOptions.personIds.isNotEmpty) 'personIds': searchOptions.personIds.toList(),
+      if (searchOptions.tags != null && searchOptions.tags!.isNotEmpty) 'tagIds': searchOptions.tags!.toList(),
     };
     if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {
       searchOptions = searchOptions.copyWith(searchType: SearchType.fileName);
@@ -215,13 +216,14 @@ class ImmichService {
     return assets.isEmpty ? null : assets.first;
   }
 
-  Future<Map<String, int>> fetchMonthBuckets({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId, CancelToken? cancelToken}) async {
+  Future<Map<String, int>> fetchMonthBuckets({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId, Set<String>? tags, CancelToken? cancelToken}) async {
     final response = await _dio.get('/timeline/buckets', queryParameters: {
       'size': 'MONTH',
       'isArchived': isArchived ?? false,
       'isTrashed': isTrashed ?? false,
       'isFavorite': ?isFavorite,
       'personId': ?personId,
+      'tagId': ?tags?.first,
     });
 
     final result = <String, int>{};

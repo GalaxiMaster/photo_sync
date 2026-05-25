@@ -307,7 +307,6 @@ class _MonthHeaderDelegate extends SliverPersistentHeaderDelegate {
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       height: _kHeaderHeight,
-      color: const Color(0xFF121212),
       padding: const EdgeInsets.symmetric(horizontal: 12),
       alignment: Alignment.centerLeft,
       child: Row(
@@ -425,7 +424,7 @@ class _TimelineScrubberState extends State<_TimelineScrubber> {
           .onTapPixelOffset(_fractionAt(d.localPosition.dy) * widget.stableMax),
       child: Container(
         key: _trackKey,
-        color: const Color(0xFF0D0D0D),
+        color: Colors.transparent,
         child: LayoutBuilder(
           builder: (context, constraints) {
             const thumbH = 20.0;

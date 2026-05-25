@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
+import 'package:photo_sync/pages/gallary_screen.dart';
+import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/tag_provider.dart';
 
 class TagsScreen extends ConsumerStatefulWidget {
@@ -18,90 +20,133 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
     super.initState();
   }
 
+  void selectTag(ImmichTag tag) {
+    setState(() {
+      selectedTag = tag;
+    });
+    ref.read(galleryBucketProvider.notifier).loadCloud(tags: {tag.id});
+  }
+
   @override
   Widget build(BuildContext context) {
     final tagsAsync = ref.watch(tagStoreProvider);
 
     return tagsAsync.when(
-      data: (tags) => Row(
-        spacing: 10,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 300,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 16),
+      data: (tags) => Expanded(
+        child: Row(
+          spacing: 10,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: 300,
+              child: Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Explorer',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    ...tags.map(_tagElement),
+                  ]
+                ),
+              ),
+            ),
+            Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Explorer',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  Row(
+                    children: [
+                      Text(
+                        'Tags',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      Spacer(),
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.add_rounded),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 10),
-                  ...tags.map(_tagElement),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Divider(height: 0.1, color: Colors.grey.withValues(alpha: 0.2)),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {},
+                        icon: const Icon(Icons.arrow_back_rounded),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Color.fromARGB(255, 17, 17, 17),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(color: Color.fromARGB(255, 15, 24, 39), width: 1.5),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        selectedTag = null;
+                                      });
+                                    },
+                                    icon: Icon(Icons.sell, size: 20, color: Colors.white.withValues(alpha: 0.8)),
+                                  ),
+                                  ...selectedTag != null ? _pathSegment(selectedTag!, tags.expand((t) => t.flatten()).toList()) : [],
+                                ],
+                              ),
+                            )
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                  Expanded(
+                    child: selectedTag != null
+                      ? GalleryScreen()
+                      : GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 10,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
+                        ),
+                        shrinkWrap: true,
+                        itemCount: tags.length,
+                        itemBuilder: (context, index) {
+                          final tag = tags[index];
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: tag.color.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: tag.color, width: 1.5),
+                            ),
+                            child: Center(
+                              child: Text(
+                                tag.name,
+                                style: TextStyle(fontSize: 12, color: tag.color),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          );
+                        }
+                      ),
+                  ),
                 ]
               ),
             ),
-          ),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Tags',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    Spacer(),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_rounded),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(height: 0.1, color: Colors.grey.withValues(alpha: 0.2)),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.arrow_back_rounded),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Color.fromARGB(255, 17, 17, 17),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: Color.fromARGB(255, 15, 24, 39), width: 1.5),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Row(
-                              children: [
-                                IconButton(
-                                  onPressed: () {},
-                                  icon: Icon(Icons.sell, size: 20, color: Colors.white.withValues(alpha: 0.8)),
-                                ),
-                                ...(selectedTag?.value ?? '').split('/').where((s) => s.isNotEmpty).map(_pathSegment).expand((widget) => widget),
-                              ],
-                            ),
-                          )
-                        ),
-                      ),
-                    )
-                  ],
-                )
-              ]
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
       loading: () => const CircularProgressIndicator(),
       error: (e, st) => Text('Error loading tags: $e'),
@@ -149,11 +194,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () {
-          setState(() {
-            selectedTag = tag;
-          });
-        },
+        onTap: () => selectTag(tag),
         hoverColor: Colors.grey.withValues(alpha: 0.2),
         child: Container(
           decoration: BoxDecoration(
@@ -184,14 +225,24 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
     );
   }
 
-  List<Widget> _pathSegment(String segment){
+  List<Widget> _pathSegment(ImmichTag tag, List<ImmichTag> tags) {
     return [
+      if (tag.parentId != null) ..._pathSegment(tags.where((t) => t.id == tag.parentId).first, tags),
       SizedBox(width: 10),
       Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white.withValues(alpha: 0.6)),
       SizedBox(width: 10),
-      Text(
-        segment,
-        style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8)),
+      GestureDetector(
+        onTap: () {
+          if (selectedTag == tag) return;
+          selectTag(tag);
+        },
+        child: MouseRegion(
+          cursor: selectedTag == tag ? SystemMouseCursors.basic : SystemMouseCursors.click,
+          child: Text(
+            tag.name,
+            style: TextStyle(fontSize: 16, color: Color.fromARGB(255, 164, 210, 255)),
+          ),
+        ),
       ),
     ];
   }

@@ -330,4 +330,11 @@ class ImmichTag {
     );
   }
   ImmichTag withChild(ImmichTag child) => copyWith(children: [...children, child]);
+  
+  Iterable<ImmichTag> flatten() sync* {
+    yield this;
+    for (final child in children) {
+      yield* child.flatten();
+    }
+  }
 }

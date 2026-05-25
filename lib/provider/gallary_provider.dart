@@ -134,13 +134,13 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<void> loadCloud({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId}) async {
+  Future<void> loadCloud({bool? isFavorite, bool? isTrashed, bool? isArchived, String? personId, Set<String>? tags}) async {
     cancel();
     isLocal = false;
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    final newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId});
+    final newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId}, tags: tags);
     ref.read(searchOptionsProvider.notifier).updateState(newOptions);
     await _initRemote();
   }
@@ -477,6 +477,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
         isFavorite: _activeOptions.isFavorite, 
         isTrashed: _activeOptions.isTrashed, 
         personId: _activeOptions.personIds.elementAtOrNull(0), 
+        tags: _activeOptions.tags,
         cancelToken: _cancelToken
       );
 
