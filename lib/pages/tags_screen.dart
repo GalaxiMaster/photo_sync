@@ -67,9 +67,21 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                       ),
                       Spacer(),
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          
+                        },
                         icon: const Icon(Icons.add_rounded),
                       ),
+                      if (selectedTag != null) ...[
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.edit),
+                        ),
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.delete),
+                        ),    
+                      ],
                     ],
                   ),
                   Padding(

@@ -33,6 +33,18 @@ class TagStoreNotifier extends AsyncNotifier<List<ImmichTag>> {
 
     return rootTags.map(buildTree).toList();
   }
+  void addTag(ImmichTag tag) {
+    final flat = (state.value ?? []).expand((t) => t.flatten()).toList();
+    state = AsyncData(nestChildren([...flat, tag]));
+  }
+  void removeTag(String tagId) {
+    final flat = (state.value ?? []).expand((t) => t.flatten()).toList();
+    state = AsyncData(nestChildren(flat.where((t) => t.id != tagId).toList()));
+  }
+  void updateTag(ImmichTag updatedTag) {
+    final flat = (state.value ?? []).expand((t) => t.flatten()).toList();
+    state = AsyncData(nestChildren(flat.map((t) => t.id == updatedTag.id ? updatedTag : t).toList()));
+  }
 }
 
 final tagStoreProvider = AsyncNotifierProvider<TagStoreNotifier, List<ImmichTag>>(
