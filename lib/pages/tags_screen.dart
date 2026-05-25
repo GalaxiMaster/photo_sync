@@ -11,6 +11,8 @@ class TagsScreen extends ConsumerStatefulWidget {
 }
 
 class _TagsScreenState extends ConsumerState<TagsScreen> {
+  ImmichTag? selectedTag;
+
   @override
   void initState() {
     super.initState();
@@ -87,13 +89,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                                   onPressed: () {},
                                   icon: Icon(Icons.sell, size: 20, color: Colors.white.withValues(alpha: 0.8)),
                                 ),
-                                SizedBox(width: 10),
-                                Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white.withValues(alpha: 0.6)),
-                                SizedBox(width: 10),
-                                Text(
-                                  'Tags',
-                                  style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8)),
-                                ),
+                                ...(selectedTag?.value ?? '').split('/').where((s) => s.isNotEmpty).map(_pathSegment).expand((widget) => widget),
                               ],
                             ),
                           )
@@ -115,29 +111,53 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
     if (tag.children.isEmpty) {
       return _tagBox(tag);
     }
-    return Column(
-      children: [
-        _tagBox(tag),
-        Padding(
-          padding: const EdgeInsets.only(left: 20),
-          child: Column(
-            children: tag.children.map((child) => _tagElement(child, indentLevel: indentLevel + 1)).toList(),
-          ),
-        )
-      ],
+    final Map<String, bool> expanded = {};
+
+    return StatefulBuilder(
+      builder: (context, setState) {
+        int depth = (selectedTag?.value ?? '').split('/').length;
+
+        bool isExpanded = expanded[tag.id] ?? depth >= (indentLevel + 1) ? true : false;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            _tagBox(tag, isExpanded: isExpanded, onToggle: () => setState(() => expanded[tag.id] = !isExpanded)),
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                child: SizedBox(
+                  height: isExpanded ? null : 0,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 20),
+                    child: Column(
+                      children: tag.children.map((child) => _tagElement(child, indentLevel: indentLevel + 1)).toList(),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _tagBox(ImmichTag tag, {int indentLevel = 0}) {
+  Widget _tagBox(ImmichTag tag, {int indentLevel = 0, bool isExpanded = false, VoidCallback? onToggle}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(8),
-        onTap: () {},
+        onTap: () {
+          setState(() {
+            selectedTag = tag;
+          });
+        },
         hoverColor: Colors.grey.withValues(alpha: 0.2),
         child: Container(
           decoration: BoxDecoration(
-            color: tag.color.withValues(alpha: 0.1),
+            color: selectedTag?.id == tag.id ? tag.color.withValues(alpha: 0.1) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           width: double.infinity,
@@ -147,13 +167,32 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(width: indentLevel * 10),
+              if (onToggle != null) ...[
+                GestureDetector(
+                  onTap: onToggle,
+                  child: Icon(isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, size: 16)
+                ),
+                const SizedBox(width: 4),
+              ],
               Icon(Icons.local_offer, size: 20, color: tag.color),
               const SizedBox(width: 10),
-              Text(tag.name),
+              Text(tag.name, style: TextStyle(fontSize: 14, color: selectedTag?.name == tag.name ? Color.fromARGB(255, 145, 198, 250) : Colors.white.withValues(alpha: 0.8))),
             ],
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _pathSegment(String segment){
+    return [
+      SizedBox(width: 10),
+      Icon(Icons.arrow_forward_ios_rounded, size: 10, color: Colors.white.withValues(alpha: 0.6)),
+      SizedBox(width: 10),
+      Text(
+        segment,
+        style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.8)),
+      ),
+    ];
   }
 }
