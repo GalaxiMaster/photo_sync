@@ -191,7 +191,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                 child: SizedBox(
                   height: isExpanded ? null : 0,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 20),
+                    padding: const EdgeInsets.only(left: 10),
                     child: Column(
                       children: tag.children.map((child) => _tagElement(child, indentLevel: indentLevel + 1)).toList(),
                     ),
@@ -230,7 +230,8 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                   child: Icon(isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right, size: 16)
                 ),
                 const SizedBox(width: 4),
-              ],
+              ]
+              else SizedBox(width: 20), // Placeholder for alignment with toggled items
               Icon(Icons.local_offer, size: 20, color: tag.color),
               const SizedBox(width: 10),
               Text(tag.name, style: TextStyle(fontSize: 14, color: selectedTag?.name == tag.name ? Color.fromARGB(255, 145, 198, 250) : Colors.white.withValues(alpha: 0.8))),
