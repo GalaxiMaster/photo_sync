@@ -29,6 +29,7 @@ dependencies:
   flutter_svg: ^2.3.0
   drift: ^2.26.1
   sqlite3_flutter_libs: ^0.5.0
+  flex_color_picker: ^3.8.0
 
 dev_dependencies:
   flutter_test:

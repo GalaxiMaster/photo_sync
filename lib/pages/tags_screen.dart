@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/tag_dialogue_popups.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
@@ -71,75 +72,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                           ImmichTag? result = await showDialog(
                             context: context, 
                             builder: (context) {
-                              final TextEditingController nameController = TextEditingController(
-                                text: selectedTag != null
-                                  ? '${selectedTag!.value ?? selectedTag!.name}/'
-                                  : '',
-                              );
-                              return AlertDialog(
-                                title: Text(
-                                  "Create Tag",
-                                  style: TextStyle(fontSize: 18),
-                                ),
-                                content: SizedBox(
-                                  width: 400,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('Create a new tag. For nested tags, please enter the full path of the tag including forward slashes'),
-                                      TextFormField(
-                                        controller: nameController,
-                                      )
-                                    ],
-                                  ),
-                                ),
-                                actions: [
-                                  ElevatedButton(
-                                    onPressed: () => Navigator.pop(context), 
-                                    style: ButtonStyle(
-                                      backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      child: Text(
-                                        'Cancel',
-                                        style: TextStyle(
-                                          fontSize: 16
-                                        ),
-                                      ),
-                                    )
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: (){
-                                      final List<String> path = nameController.text.split('/');
-                                      final String name = path.last;
-                                      final String? parentId = ref.read(tagStoreProvider.notifier).getIdFromPath(path.sublist(0, path.length - 1).join('/'))?.id;
-                                      final ImmichTag newTag = ImmichTag(
-                                        id: '', 
-                                        name: name, 
-                                        color: Colors.white, 
-                                        createdAt: DateTime.now(), 
-                                        updatedAt: DateTime.now(),
-                                        parentId: parentId,
-                                        value: path.join('/')
-                                      );
-                                      Navigator.pop(context, newTag);
-                                    },
-                                    style: ButtonStyle(
-                                      backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
-                                    ),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                      child: Text(
-                                        'Create',
-                                        style: TextStyle(
-                                          fontSize: 16
-                                        ),
-                                      ),
-                                    )
-                                  )
-                                ],
-                              );
+                              return TagPopup(selectedTag: selectedTag);
                             }
                           );
                           if (result != null) {
@@ -150,7 +83,18 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                       ),
                       if (selectedTag != null) ...[
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () async{
+                            ImmichTag? result = await showDialog(
+                              context: context, 
+                              builder: (context) {
+                                return TagPopup(selectedTag: selectedTag, editingMode: true,);
+                              }
+                            );
+                            if (result != null) {
+                              selectedTag = selectedTag!.copyWith(color: result.color);
+                              ref.read(tagStoreProvider.notifier).updateTag(selectedTag!);
+                            }
+                          },
                           icon: const Icon(Icons.edit),
                         ),
                         IconButton(
