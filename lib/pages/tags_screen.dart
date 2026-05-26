@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/tag_dialogue_popups.dart';
@@ -217,9 +218,7 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
     return StatefulBuilder(
       builder: (context, setState) {
         int depth = (selectedTag?.value ?? '').split('/').length;
-
-        bool isExpanded = expanded[tag.id] ?? depth >= (indentLevel + 1) 
-          && (selectedTag == null || (selectedTag!.value ?? '').split('/').first == (tag.value ?? '').split('/').first) // keep it to the same root
+        bool isExpanded = expanded[tag.id] ?? depth >= (indentLevel + 1) && isSameBranch(tag, selectedTag)
             ? true : false;
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -304,5 +303,16 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
         ),
       ),
     ];
+  }
+  bool isSameBranch(ImmichTag tag, ImmichTag? selectedTag) {
+    if (selectedTag == null) return true;
+
+    final tagParts = (tag.value ?? '').split('/');
+    final selectedParts = (selectedTag.value ?? '').split('/');
+
+    return const IterableEquality().equals(
+      tagParts,
+      selectedParts.take(tagParts.length),
+    );
   }
 }

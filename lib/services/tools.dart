@@ -53,3 +53,7 @@ Color? hexToColor(String? hex) {
   if (hex.length == 6) hex = 'FF$hex';
   return Color(int.parse(hex, radix: 16));
 }
+
+extension Let<T> on T {
+  R let<R>(R Function(T) block) => block(this);
+}
