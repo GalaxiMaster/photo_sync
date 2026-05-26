@@ -347,7 +347,7 @@ class ImmichService {
 
   Future<ImmichTag> updateTag(ImmichTag tag) async {
     final response = await _dio.put('/tags/${tag.id}', data: {
-      'color': tag.color.toARGB32().toRadixString(16).padLeft(8, '0'),
+      'color': tag.color.toARGB32().toRadixString(16).substring(2),
     });
     return ImmichTag.fromJson(response.data);
   }
