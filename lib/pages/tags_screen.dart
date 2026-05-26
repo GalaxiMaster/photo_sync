@@ -218,7 +218,9 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
       builder: (context, setState) {
         int depth = (selectedTag?.value ?? '').split('/').length;
 
-        bool isExpanded = expanded[tag.id] ?? depth >= (indentLevel + 1) ? true : false;
+        bool isExpanded = expanded[tag.id] ?? depth >= (indentLevel + 1) 
+          && (selectedTag == null || (selectedTag!.value ?? '').split('/').first == (tag.value ?? '').split('/').first) // keep it to the same root
+            ? true : false;
         return Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.start,
