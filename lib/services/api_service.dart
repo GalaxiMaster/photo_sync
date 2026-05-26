@@ -330,6 +330,27 @@ class ImmichService {
     final response = await _dio.get('/tags');
     return (response.data as List).map((d) => ImmichTag.fromJson(d)).toList();
   }
+
+  Future<ImmichTag> createTag(ImmichTag tag) async {
+    final response = await _dio.post('/tags', data: {
+      'color': tag.color.toARGB32().toRadixString(16).padLeft(8, '0'),
+      'name': tag.name,
+      if (tag.parentId != null) 'parentId': tag.parentId,
+    });
+    return ImmichTag.fromJson(response.data);
+  }
+
+  Future<ImmichTag> deleteTag(String tag) async {
+    final response = await _dio.delete('/tags/$tag');
+    return ImmichTag.fromJson(response.data);
+  }
+
+  Future<ImmichTag> updateTag(ImmichTag tag) async {
+    final response = await _dio.put('/tags/${tag.id}', data: {
+      'color': tag.color.toARGB32().toRadixString(16).padLeft(8, '0'),
+    });
+    return ImmichTag.fromJson(response.data);
+  }
 }
 
 sealed class GalleryItem {
