@@ -67,8 +67,84 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                       ),
                       Spacer(),
                       IconButton(
-                        onPressed: () {
-                          
+                        onPressed: () async {
+                          ImmichTag? result = await showDialog(
+                            context: context, 
+                            builder: (context) {
+                              final TextEditingController nameController = TextEditingController(
+                                text: selectedTag != null
+                                  ? '${selectedTag!.value ?? selectedTag!.name}/'
+                                  : '',
+                              );
+                              return AlertDialog(
+                                title: Text(
+                                  "Create Tag",
+                                  style: TextStyle(fontSize: 18),
+                                ),
+                                content: SizedBox(
+                                  width: 400,
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('Create a new tag. For nested tags, please enter the full path of the tag including forward slashes'),
+                                      TextFormField(
+                                        controller: nameController,
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                actions: [
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(context), 
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(
+                                          fontSize: 16
+                                        ),
+                                      ),
+                                    )
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: (){
+                                      final List<String> path = nameController.text.split('/');
+                                      final String name = path.last;
+                                      final String? parentId = ref.read(tagStoreProvider.notifier).getIdFromPath(path.sublist(0, path.length - 1).join('/'))?.id;
+                                      final ImmichTag newTag = ImmichTag(
+                                        id: '', 
+                                        name: name, 
+                                        color: Colors.white, 
+                                        createdAt: DateTime.now(), 
+                                        updatedAt: DateTime.now(),
+                                        parentId: parentId,
+                                        value: path.join('/')
+                                      );
+                                      Navigator.pop(context, newTag);
+                                    },
+                                    style: ButtonStyle(
+                                      backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                      child: Text(
+                                        'Create',
+                                        style: TextStyle(
+                                          fontSize: 16
+                                        ),
+                                      ),
+                                    )
+                                  )
+                                ],
+                              );
+                            }
+                          );
+                          if (result != null) {
+                            ref.read(tagStoreProvider.notifier).createTag(result);
+                          }
                         },
                         icon: const Icon(Icons.add_rounded),
                       ),
@@ -78,7 +154,10 @@ class _TagsScreenState extends ConsumerState<TagsScreen> {
                           icon: const Icon(Icons.edit),
                         ),
                         IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            if (selectedTag == null) return;
+                            ref.read(tagStoreProvider.notifier).deleteTag(selectedTag!.id);
+                          },
                           icon: const Icon(Icons.delete),
                         ),    
                       ],
