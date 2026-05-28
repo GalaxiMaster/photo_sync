@@ -165,3 +165,28 @@ class _TagPopupState extends ConsumerState<TagPopup> {
   }
 
 }
+
+class AddTagPopup extends StatefulWidget {
+  const AddTagPopup({super.key});
+  @override
+  // ignore: library_private_types_in_public_api
+  _AddTagPopupState createState() => _AddTagPopupState();
+}
+
+class _AddTagPopupState extends State<AddTagPopup> {
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add Tag to Assets'),
+      content: SizedBox(
+        width: 400,
+        child: Column(
+          children: [
+            
+          ],
+        ),
+      ),
+    );
+  }
+
+}

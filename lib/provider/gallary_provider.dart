@@ -140,7 +140,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     fullLocal = [];
     _priorBuckets = null;
     _flatFetcher = null;
-    final newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId}, tags: tags);
+    final newOptions = SearchOptions(query: '', searchType: SearchType.context, isFavorite: isFavorite, isTrashed: isTrashed, personIds: {?personId}, tags: {...?tags});
     ref.read(searchOptionsProvider.notifier).updateState(newOptions);
     await _initRemote();
   }

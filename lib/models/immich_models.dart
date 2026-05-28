@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
@@ -23,6 +21,7 @@ class ImmichAsset {
   final String? deviceId;
   final bool? isTrashed;
   final Set<String> people;
+  final Set<String> tags;
   
   const ImmichAsset({
     required this.id,
@@ -37,6 +36,7 @@ class ImmichAsset {
     this.deviceId,
     this.isTrashed,
     this.people = const {},
+    this.tags = const {},
   });
   
   factory ImmichAsset.fromJson(Map<String, dynamic> json) {
@@ -44,7 +44,7 @@ class ImmichAsset {
         ? json['deviceAssetId'] as String?
         : null;
 
-    return ImmichAsset(
+    return ImmichAsset( // 'unnasignedFaces' to add and use later? as well as live photos
       id: json['id'] as String,
       type: json['type'] as String,
       originalFileName: json['originalFileName'] as String? ?? '',
@@ -59,9 +59,12 @@ class ImmichAsset {
         ImageSource.immich,
         if (localPath != null) ImageSource.local,
       },
-    people: (json['people'])
-      .map<String>((e) => e['id'] as String)
-      .toSet(),
+      tags: (json['tags'])
+        ?.map<String>((e) => e['id'] as String)
+        ?.toSet() ?? {},
+      people: (json['people'])
+        ?.map<String>((e) => e['id'] as String)
+        ?.toSet() ?? {},
     );
   }
 

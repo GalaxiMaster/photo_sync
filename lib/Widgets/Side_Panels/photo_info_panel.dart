@@ -11,6 +11,7 @@ import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_sync/provider/people_provider.dart';
+import 'package:photo_sync/provider/tag_provider.dart';
 
 final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
@@ -87,188 +88,231 @@ class _InfoView extends ConsumerWidget {
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
     final assetFaces = ref.watch(assetFacesProvider(asset.id));
+    final tagsAsync = ref.watch(tagStoreProvider);
     
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
       padding: const EdgeInsets.all(8),
       width: 400,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            spacing: 10,
-            children: [
-              IconButton(
-                onPressed: functions.close,
-                mouseCursor: SystemMouseCursors.click, 
-                icon: Icon(Icons.close)
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Info',
-                  style: TextStyle(
-                    fontSize: 24,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 10,
+              children: [
+                IconButton(
+                  onPressed: functions.close,
+                  mouseCursor: SystemMouseCursors.click, 
+                  icon: Icon(Icons.close)
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    'Info',
+                    style: TextStyle(
+                      fontSize: 24,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(),
-                Row(
-                  children: [
-                    Text('People'),
-                    Spacer(),
-                    IconButton(onPressed: () => functions.addFace(), icon: Icon(Icons.add)),
-                    if (asset.people.isNotEmpty)
-                    IconButton(onPressed: () => onEditPeople(), icon: Icon(Icons.edit))
-                  ],
-                ),
-                if (asset.people.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: SizedBox(
-                    height: 90,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: asset.people.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final String personId = asset.people.elementAt(index);
-                        final personAsync = ref.watch(personByIdProvider(personId));
-                        return personAsync.when(
-                          data: (person) {
-                            if (person == null) return const SizedBox.shrink();
-                            return GestureDetector(
-                              onTap: () {
-                                ref.read(selectedPersonProvider.notifier).select(person);
-                                Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(
-                                  appBar: AppBar(title: Text(person.name)),
-                                  body: PersonPage(),
-                                )));
-                              },
-                              child: MouseRegion(
-                                onHover: (_) {
-                                  final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
-                                  if (face == null) return;
-                                  functions.onFaceHover(face);
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(),
+                  Row(
+                    children: [
+                      Text('People'),
+                      Spacer(),
+                      IconButton(onPressed: () => functions.addFace(), icon: Icon(Icons.add)),
+                      if (asset.people.isNotEmpty)
+                      IconButton(onPressed: () => onEditPeople(), icon: Icon(Icons.edit))
+                    ],
+                  ),
+                  if (asset.people.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: SizedBox(
+                      height: 90,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: asset.people.length,
+                        separatorBuilder: (context, index) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final String personId = asset.people.elementAt(index);
+                          final personAsync = ref.watch(personByIdProvider(personId));
+                          return personAsync.when(
+                            data: (person) {
+                              if (person == null) return const SizedBox.shrink();
+                              return GestureDetector(
+                                onTap: () {
+                                  ref.read(selectedPersonProvider.notifier).select(person);
+                                  Navigator.of(context).push(MaterialPageRoute(builder: (context) => Scaffold(
+                                    appBar: AppBar(title: Text(person.name)),
+                                    body: PersonPage(),
+                                  )));
                                 },
-                                onExit: (event) => functions.onFaceHover(null),
-                                cursor: SystemMouseCursors.click,
-                                child: Column(
-                                  children: [
-                                    Container(
-                                      width: 70,
-                                      height: 70,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      ),
-                                      child: ClipOval(
-                                        child: CachedNetworkImage(
-                                          imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
-                                          httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                                          fit: BoxFit.contain,
-                                          placeholder: (context, url) => const Padding(
-                                            padding: EdgeInsets.all(16.0),
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                          errorWidget: (context, url, error) => Center(
-                                            child: Icon(
-                                              Icons.error_outline,
-                                              color: Theme.of(context).colorScheme.error,
-                                              size: 24,
+                                child: MouseRegion(
+                                  onHover: (_) {
+                                    final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
+                                    if (face == null) return;
+                                    functions.onFaceHover(face);
+                                  },
+                                  onExit: (event) => functions.onFaceHover(null),
+                                  cursor: SystemMouseCursors.click,
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 70,
+                                        height: 70,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                        ),
+                                        child: ClipOval(
+                                          child: CachedNetworkImage(
+                                            imageUrl: person.thumbnailUrl(ImmichConfig.baseUrl),
+                                            httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+                                            fit: BoxFit.contain,
+                                            placeholder: (context, url) => const Padding(
+                                              padding: EdgeInsets.all(16.0),
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            ),
+                                            errorWidget: (context, url, error) => Center(
+                                              child: Icon(
+                                                Icons.error_outline,
+                                                color: Theme.of(context).colorScheme.error,
+                                                size: 24,
+                                              ),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Text(person.name)
+                                      Text(person.name)
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }, 
+                            error: (error, stack) => const SizedBox.shrink(),
+                            loading: () => const SizedBox.shrink()
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Text('Details'),
+                  infoBox(
+                    leadingIcon: Icons.calendar_month_outlined,
+                    centerContent: _infoColumn(context, formatAssetDate(asset.fileCreatedAt.toLocal())),
+                    trailingIcon: Icons.edit,
+                    onClick: () async {
+                      final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
+                      if (picked != null) {
+                        await ref.read(galleryBucketProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
+                      }
+                    },
+                  ),
+                  infoBox(
+                    leadingIcon: Icons.image_outlined,
+                    centerContent: _infoColumn(
+                      context,
+                      [
+                        asset.originalFileName,
+                        '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
+                      ]
+                    ),
+                  ),
+                  infoBox(
+                    leadingIcon: Icons.camera_alt,
+                    centerContent: _infoColumn(
+                      context,
+                      [
+                        '${exif['make']} ${exif['model']}',
+                        '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
+                      ]
+                    ),
+                  ),
+                  infoBox(
+                    leadingIcon: Icons.camera,
+                    centerContent: _infoColumn(
+                      context,
+                      [
+                        '${exif['lensModel']}',
+                        '${exif['focalLength']} mm',
+                      ]
+                    ),
+                  ),
+                  infoBox(
+                    leadingIcon: Icons.location_on,
+                    centerContent: exif['latitude'] != null
+                        ? placeName.when(
+                          data: (name) => Text(name ?? 'Unknown location'),
+                          loading: () => const Text('Loading...'),
+                          error: (e, _) => const Text('Unknown location'),
+                        )
+                        : const Text('Add a location'),
+                    trailingIcon: Icons.edit,
+                  ),
+                ],
+              ),
+            ),
+            if (exif['latitude'] != null) 
+              AspectRatio(
+                aspectRatio: 1, 
+                child: ClipRRect(
+                  borderRadius: BorderRadiusGeometry.circular(20),
+                  child: PhotoMapView(
+                    lat: exif['latitude'], lng: exif['longitude'],
+                  ),
+                )
+              ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Tags', style: TextStyle(fontSize: 18),),
+                  tagsAsync.when(
+                    data: (tags) {
+                      return Wrap(
+                        children: [
+                          ...asset.tags.map((tagId) {
+                            final tag = tags.firstWhere((tag)=>tag.id == tagId);
+                            return Chip(label: Text(tag.id),);
+                          }),
+                          Material(
+                            child: InkWell(
+                              onTap: (){},
+                              borderRadius: BorderRadius.circular(10),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  spacing: 10,
+                                  children: [
+                                    Icon(Icons.sell_outlined, size: 20,),
+                                    Text('Add tag', style: TextStyle(fontSize: 16),),
                                   ],
                                 ),
                               ),
-                            );
-                          }, 
-                          error: (error, stack) => const SizedBox.shrink(),
-                          loading: () => const SizedBox.shrink()
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Text('Details'),
-                infoBox(
-                  leadingIcon: Icons.calendar_month_outlined,
-                  centerContent: _infoColumn(context, formatAssetDate(asset.fileCreatedAt.toLocal())),
-                  trailingIcon: Icons.edit,
-                  onClick: () async {
-                    final picked = await showEditDateTimeDialog(context, asset.fileCreatedAt.toLocal());
-                    if (picked != null) {
-                      await ref.read(galleryBucketProvider.notifier).changeAssetDate(asset, picked.toUtc().toIso8601String());
-                    }
-                  },
-                ),
-                infoBox(
-                  leadingIcon: Icons.image_outlined,
-                  centerContent: _infoColumn(
-                    context,
-                    [
-                      asset.originalFileName,
-                      '$mp MP  ${exif['exifImageWidth']} x ${exif['exifImageHeight']}  $sizeMiB MiB',
-                    ]
-                  ),
-                ),
-                infoBox(
-                  leadingIcon: Icons.camera_alt,
-                  centerContent: _infoColumn(
-                    context,
-                    [
-                      '${exif['make']} ${exif['model']}',
-                      '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
-                    ]
-                  ),
-                ),
-                infoBox(
-                  leadingIcon: Icons.camera,
-                  centerContent: _infoColumn(
-                    context,
-                    [
-                      '${exif['lensModel']}',
-                      '${exif['focalLength']} mm',
-                    ]
-                  ),
-                ),
-                infoBox(
-                  leadingIcon: Icons.location_on,
-                  centerContent: exif['latitude'] != null
-                      ? placeName.when(
-                        data: (name) => Text(name ?? 'Unknown location'),
-                        loading: () => const Text('Loading...'),
-                        error: (e, _) => const Text('Unknown location'),
-                      )
-                      : const Text('Add a location'),
-                  trailingIcon: Icons.edit,
-                ),
-              ],
-            ),
-          ),
-          if (exif['latitude'] != null) 
-            AspectRatio(
-              aspectRatio: 1, 
-              child: ClipRRect(
-                borderRadius: BorderRadiusGeometry.circular(20),
-                child: PhotoMapView(
-                  lat: exif['latitude'], lng: exif['longitude'],
-                ),
-              )
+                            ),
+                          )
+                        ],
+                      );
+                    }, 
+                    error: (error, stack) => Text ('An error was encountered when fetching tags'), 
+                    loading: () => CircularProgressIndicator()
+                  )
+                ],
+              ),
             )
-        ],
+          ],
+        ),
       ),
     );
   }

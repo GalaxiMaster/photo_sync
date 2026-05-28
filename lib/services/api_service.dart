@@ -124,7 +124,6 @@ class ImmichService {
         MediaType.video => 'VIDEO',
         _ => null
       },
-      if (searchOptions.tags != null && searchOptions.tags!.isNotEmpty) 'tagIds': searchOptions.tags!.toList(),
       if (searchOptions.untagged != null) 'isNotInAlbum': searchOptions.untagged, // closest equivalent
       // Display options
       if (searchOptions.display != null) ...{
@@ -150,7 +149,7 @@ class ImmichService {
       'withExif': true,
       'withPeople': true,
       if (searchOptions.personIds.isNotEmpty) 'personIds': searchOptions.personIds.toList(),
-      if (searchOptions.tags != null && searchOptions.tags!.isNotEmpty) 'tagIds': searchOptions.tags!.toList(),
+      if (searchOptions.tags.isNotEmpty) 'tagIds': searchOptions.tags.toList(),
     };
     if (searchOptions.searchType == SearchType.context && searchOptions.query.trim().isEmpty) {
       searchOptions = searchOptions.copyWith(searchType: SearchType.fileName);
@@ -223,7 +222,7 @@ class ImmichService {
       'isTrashed': isTrashed ?? false,
       'isFavorite': ?isFavorite,
       'personId': ?personId,
-      'tagId': ?tags?.first,
+      'tagId': ?tags?.elementAtOrNull(0),
     });
 
     final result = <String, int>{};

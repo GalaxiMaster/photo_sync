@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
+import 'package:photo_sync/provider/tag_provider.dart';
 
 enum SearchType {
   context('Context', false),
@@ -101,7 +102,7 @@ class SearchOptions { // todo add device ID & image source
   final Set<DisplayOption>? display;
   final DateTime? startDate;
   final DateTime? endDate;
-  final Set<String>? tags;
+  final Set<String> tags;
   final PlaceFilter placeFilter;
   final CameraFilter cameraFilter;
   final bool? isFavorite;
@@ -118,11 +119,11 @@ class SearchOptions { // todo add device ID & image source
     this.display, 
     this.startDate, 
     this.endDate, 
-    this.tags, 
     this.placeFilter = const PlaceFilter(),
     this.cameraFilter = const CameraFilter(), 
     this.isFavorite, 
     this.isTrashed, 
+    this.tags = const {}, 
     this.personIds = const {},
   });
 
@@ -133,9 +134,9 @@ class SearchOptions { // todo add device ID & image source
       (display == null || display!.isEmpty) &&
       startDate == null &&
       endDate == null &&
-      (tags == null || tags!.isEmpty) &&
-      placeFilter == const PlaceFilter() &&
-      cameraFilter == const CameraFilter() &&
+      tags.isEmpty &&
+      placeFilter.isEmpty() &&
+      cameraFilter.isEmpty() &&
       isFavorite != true &&
       isTrashed != true;
   }
@@ -208,6 +209,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   Set<DisplayOption> _displayOptions = {};
   PlaceFilter _placeFilter = const PlaceFilter();
   CameraFilter _cameraFilter = const CameraFilter();
+  Set<String> _tags = {};
 
   // Date controllers
   final TextEditingController _startDateController = TextEditingController();
@@ -224,6 +226,8 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
     _placeFilter = widget.initialSettings?.placeFilter ?? _placeFilter;
     _cameraFilter = widget.initialSettings?.cameraFilter ?? _cameraFilter;
     _sortOrder = widget.initialSettings?.sortOrder ?? _sortOrder;
+    _tags = _tags = Set<String>.from(widget.initialSettings?.tags ?? _tags);
+
 
     if (widget.initialSettings?.startDate != null) {
       _startDateController.text = DateFormat("dd / mm / yyyy").format(widget.initialSettings!.startDate!);
@@ -394,6 +398,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
   }
 
   Widget _buildTagsSection() {
+    final tagsAsync = ref.watch(tagStoreProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -403,7 +408,36 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
-        _buildDropdown('Search tags...'),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C2F33),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: _buildDropdown(
+            'Search tags...', 
+            items: tagsAsync.asData?.value.expand((t) => t.flatten()).map((tag)=> tag.value).toList(),
+            onChange: (tag) {
+              if (tag != null) {
+                setState(() {
+                  if (_tags.contains(tag)) {
+                    _tags.remove(tag);
+                  } else {
+                    _tags.add(tag);
+                  }
+                });
+              }
+            }
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Wrap(
+            children: _tags.map((tag) {
+              return TagChip(tag: tag, onDelete: ()=> setState(()=>_tags.remove(tag)));
+            }).toList(),
+          ),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -437,7 +471,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         Row(
           children: [
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search country...', 
                 items: suggestionsAsync.value?[0],
                 intialValue: _placeFilter.country,
@@ -452,7 +486,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search state...', 
                 items: suggestionsAsync.value?[1],
                 intialValue: _placeFilter.state,
@@ -467,7 +501,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search city...', items: suggestionsAsync.value?[2],
                 intialValue: _placeFilter.city,
                 onChange: (value) {
@@ -502,7 +536,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
         Row(
           children: [
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search camera make...', 
                 items: suggestionsAsync.value?[0],
                 intialValue: _cameraFilter.make,
@@ -517,7 +551,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search camera model...', 
                 items: suggestionsAsync.value?[1],
                 intialValue: _cameraFilter.model,
@@ -532,7 +566,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildDropdown(
+              child: _buildDropdownField(
                 'Search lens model...', 
                 items: suggestionsAsync.value?[2],
                 intialValue: _cameraFilter.lens,
@@ -757,6 +791,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
                   placeFilter: _placeFilter,
                   cameraFilter: _cameraFilter,
                   sortOrder: _sortOrder,
+                  tags: _tags.map((e) => ref.read(tagStoreProvider.notifier).getIdFromPath(e)?.id).whereType<String>().toSet(),
                 ));
               },
               style: FilledButton.styleFrom(
@@ -805,7 +840,7 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
     );
   }
 
-  Widget _buildDropdown(String hint, {List? items, String? intialValue, Function(String? value)? onChange}) {
+  Widget _buildDropdownField(String hint, {List? items, String? intialValue, Function(String? value)? onChange}) {
     return DropdownButtonFormField<String>(
       isExpanded: true,
       decoration: InputDecoration(
@@ -824,9 +859,9 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
       items: items != null ? [
         const DropdownMenuItem(value: null, child: Text('Any')), // optional clear option
         ...items.map(
-          (country) => DropdownMenuItem(
-            value: country,
-            child: Text(country),
+          (item) => DropdownMenuItem(
+            value: item,
+            child: Text(item),
           ),
         ),
         const DropdownMenuItem(value: 'unknown', child: Text('Unknown')),
@@ -835,6 +870,21 @@ class _SearchOptionsDialogState extends ConsumerState<SearchOptionsDialog> {
       onChanged: (newValue) {
         onChange?.call(newValue);
       },
+    );
+  }
+
+  Widget _buildDropdown(String hint, {List? items, Function(String? value)? onChange}) {
+    return DropdownButton<String>(
+      isExpanded: true,
+      value: null,
+      hint: Text(hint, style: const TextStyle(color: Colors.white38)),
+      dropdownColor: const Color(0xFF2C2F33),
+      style: const TextStyle(color: Colors.white),
+      underline: const SizedBox(),
+      items: items != null ? [
+        ...items.map((item) => DropdownMenuItem(value: item, child: Text(item))),
+      ] : [],
+      onChanged: (newValue) => onChange?.call(newValue),
     );
   }
 
@@ -891,4 +941,67 @@ DateTime? parseDate(String input) {
   
   if (day == null || month == null || year == null) return null;
   return DateTime(year, month, day);
+}
+
+class TagChip extends StatefulWidget {
+  final String tag;
+  final VoidCallback onDelete;
+  const TagChip({required this.tag, required this.onDelete, super.key});
+
+  @override
+  State<TagChip> createState() => _TagChipState();
+}
+
+class _TagChipState extends State<TagChip> {
+  final _hovering = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _hovering.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 5),
+      child: Container(
+        height: 25,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadiusGeometry.only(topRight: Radius.circular(15), bottomRight: Radius.circular(15)),
+          color: Colors.blue.shade300,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(widget.tag, style: const TextStyle(color: Colors.black)),
+            ),
+            MouseRegion(
+              onEnter: (_) => _hovering.value = true,
+              onExit: (_) => _hovering.value = false,
+              child: ClipRRect(
+                child: GestureDetector(
+                  onTap: widget.onDelete,
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: _hovering,
+                    builder: (_, hovering, _) => Container(
+                      width: 25,
+                      height: 25,
+                      decoration: BoxDecoration(
+                        color: hovering ? Colors.blue.shade400 :Colors.blue.shade300,
+                        borderRadius: BorderRadiusGeometry.only(topRight: Radius.circular(15), bottomRight: Radius.circular(15)),
+                      ),
+                      child: Icon(Icons.close, size: 14, color: Colors.black),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
