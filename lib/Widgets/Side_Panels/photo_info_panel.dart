@@ -11,11 +11,14 @@ import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_sync/provider/people_provider.dart';
-import 'package:photo_sync/provider/tag_provider.dart';
 
 final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
   return getPlaceName(lat, lng);
+});
+
+final _assetTagProvider = FutureProvider.family<Set<ImmichTag>?, String>((ref, assetId) async {
+  return ref.read(galleryBucketProvider.notifier).getAssetTags(assetId);
 });
 
 class InfoPanel extends ConsumerStatefulWidget {
@@ -88,8 +91,8 @@ class _InfoView extends ConsumerWidget {
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
     final assetFaces = ref.watch(assetFacesProvider(asset.id));
-    final tagsAsync = ref.watch(tagStoreProvider);
-    
+    final assetTagsAsync = ref.watch(_assetTagProvider(asset.id));
+
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
       padding: const EdgeInsets.all(8),
@@ -277,37 +280,31 @@ class _InfoView extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Tags', style: TextStyle(fontSize: 18),),
-                  tagsAsync.when(
-                    data: (tags) {
-                      return Wrap(
-                        children: [
-                          ...asset.tags.map((tagId) {
-                            final tag = tags.firstWhere((tag)=>tag.id == tagId);
-                            return Chip(label: Text(tag.id),);
-                          }),
-                          Material(
-                            child: InkWell(
-                              onTap: (){},
-                              borderRadius: BorderRadius.circular(10),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  spacing: 10,
-                                  children: [
-                                    Icon(Icons.sell_outlined, size: 20,),
-                                    Text('Add tag', style: TextStyle(fontSize: 16),),
-                                  ],
-                                ),
-                              ),
+                  Wrap(
+                    children: [
+                      ...assetTagsAsync.maybeWhen(
+                        data: (assetTags) => assetTags?.map((tag)=> Chip(label: Text(tag.name),)) ?? [],
+                        orElse: ()=> [],
+                      ),
+                      Material(
+                        child: InkWell(
+                          onTap: (){},
+                          borderRadius: BorderRadius.circular(10),
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              spacing: 10,
+                              children: [
+                                Icon(Icons.sell_outlined, size: 20,),
+                                Text('Add tag', style: TextStyle(fontSize: 16),),
+                              ],
                             ),
-                          )
-                        ],
-                      );
-                    }, 
-                    error: (error, stack) => Text ('An error was encountered when fetching tags'), 
-                    loading: () => CircularProgressIndicator()
-                  )
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
                 ],
               ),
             )

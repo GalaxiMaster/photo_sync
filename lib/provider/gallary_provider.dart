@@ -515,6 +515,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     );
     _hasMore = hasMore;
   }
+  
   Future<List<ImmichAsset>> _applyLocalPaths(List<ImmichAsset> assets) async {
     final downloaded = await ref.read(downloadedPhotosProvider.future);
     if (downloaded.isEmpty) return assets;
@@ -673,5 +674,9 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
       people: (a.people.where((p) => p != face.personId).toSet())..add(newPersonId),
     ));
     ref.invalidate(assetFacesProvider(assetId));
+  }
+
+  Future<Set<ImmichTag>?> getAssetTags(String assetId) async{
+    return await _service.getAssetTags(assetId);
   }
 }

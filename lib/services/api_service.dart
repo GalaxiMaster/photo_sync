@@ -234,6 +234,26 @@ class ImmichService {
     return result; // e.g. {"2025-04": 120, "2025-03": 88, ...}
   }
 
+  // tried using timeline/bucket endpoint but it doesnt return information that i want
+  // Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken, F}) async {
+  //   final response = await _dio.get('/timeline/bucket', queryParameters: {
+  //     'timeBucket': timeBucket,
+  //     'isArchived': ?initOptions?.display?.contains(DisplayOption.archive),
+  //     'isTrashed': ?initOptions?.isTrashed,
+  //     'isFavorite': ?initOptions?.isFavorite,
+  //     'personId': ?initOptions?.personIds.elementAtOrNull(0),
+  //     'tagId': ?initOptions?.tags.elementAtOrNull(0),
+  //     'withStacked': true,
+  //   });
+  //   final data = response.data;
+  //   if (data == null) return []; // todo clean
+    
+  //   Map<String, List> flatImages = {};
+
+
+  //   return [];
+  // }
+
   Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken, F}) async {
     // timeBucket: e.g. "2025-04-01T00:00:00.000Z"
     final dt = DateTime.parse(timeBucket);
@@ -349,6 +369,11 @@ class ImmichService {
       'color': tag.color.toARGB32().toRadixString(16).substring(2),
     });
     return ImmichTag.fromJson(response.data);
+  }
+
+  Future<Set<ImmichTag>?> getAssetTags(String id) async {
+    final response = await _dio.get('/assets/$id');
+    return response.data['tags']?.map<ImmichTag>((e) => ImmichTag.fromJson(e)).toSet() ?? {};
   }
 }
 
