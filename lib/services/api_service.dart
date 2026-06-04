@@ -375,6 +375,14 @@ class ImmichService {
     final response = await _dio.get('/assets/$id');
     return response.data['tags']?.map<ImmichTag>((e) => ImmichTag.fromJson(e)).toSet() ?? {};
   }
+  
+  Future<bool> addAssetTags(Set<String> imageIds, Set<String> tags) async {
+    final response = await _dio.put('/tags/assets', data: {
+      'assetIds': imageIds.toList(),
+      'tagIds': tags.toList(),
+    });
+    return {200, 201}.contains(response.statusCode);
+  }
 }
 
 sealed class GalleryItem {
@@ -396,6 +404,11 @@ extension GalleryItemX on GalleryItem {
   DateTime get fileCreatedAt => leadAsset.fileCreatedAt;
   bool get isLocal => !leadAsset.imageSources.contains(ImageSource.immich);
   Set<ImageSource> get imageSources => leadAsset.imageSources;
+
+  List<ImmichAsset> get list => switch (this) {
+    SingleAsset(asset: var a) => [a],
+    StackedAssets(primary: var primary, children: var children) => [primary, ...children],
+  };
 }
 
 

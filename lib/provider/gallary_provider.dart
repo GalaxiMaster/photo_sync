@@ -679,4 +679,14 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   Future<Set<ImmichTag>?> getAssetTags(String assetId) async{
     return await _service.getAssetTags(assetId);
   }
+
+  Future<void> addAssetTags(Set<String> assetIds, Set<String> tags) async{
+    final result = await _service.addAssetTags(assetIds, tags);
+    if (!result) return;
+    for (final id in assetIds) {
+      await updateAsset(id, (a) => a.copyWith(
+        tags: {...a.tags, ...tags},
+      ));
+    }
+  }
 }

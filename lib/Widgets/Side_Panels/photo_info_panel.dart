@@ -5,20 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/date_popup.dart';
 import 'package:photo_sync/Widgets/map_view.dart';
+import 'package:photo_sync/Widgets/tag_dialogue_popups.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/pages/person_page.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:photo_sync/provider/people_provider.dart';
+import 'package:photo_sync/provider/tag_provider.dart';
+import 'package:photo_sync/services/api_service.dart';
 
 final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref, coords) async {
   final (lat, lng) = coords;
   return getPlaceName(lat, lng);
-});
-
-final _assetTagProvider = FutureProvider.family<Set<ImmichTag>?, String>((ref, assetId) async {
-  return ref.read(galleryBucketProvider.notifier).getAssetTags(assetId);
 });
 
 class InfoPanel extends ConsumerStatefulWidget {
@@ -34,7 +33,22 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
   final _pageController = PageController();
   AssetFace? _selectedFaceId;
 
-  void _goTo(int index) => _pageController.animateToPage(
+  @override
+  initState() {
+    super.initState();
+    loadAssetTags();
+  }
+  void loadAssetTags() async {
+    if (widget.asset.tags.isEmpty) {
+      final Set<String>? tags = (await ref.read(galleryBucketProvider.notifier).getAssetTags(widget.asset.id))?.map<String>((t) => t.id).toSet();
+      if (tags == null) return;
+      ref.read(galleryBucketProvider.notifier).updateAsset(widget.asset.id, (a) => a.copyWith(
+        tags: {...a.tags, ...tags},
+      ));
+    }
+  }
+
+  void _goTo(int index) => _pageController.animateToPage( 
     index,
     duration: const Duration(milliseconds: 250),
     curve: Curves.easeInOutCubic,
@@ -49,6 +63,11 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final asset = ref.watch(galleryBucketProvider.select((state) => state.buckets
+      .expand((b) => b.assets ?? [])
+      .expand((a) => (a as GalleryItem).list)
+      .firstWhereOrNull((a) => a.id == widget.asset.id)
+    )) ?? widget.asset;
     return Container(
       color: const Color.fromRGBO(19, 19, 20, 1),
       padding: const EdgeInsets.all(8),
@@ -58,17 +77,17 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           _InfoView(
-            asset: widget.asset,
+            asset: asset,
             functions: widget.functions,
             onEditPeople: () => _goTo(1),
           ),
           EditPeoplePanel(
-            asset: widget.asset,
+            asset: asset,
             onBack: () => _goTo(0),
             onEditPerson: (faceId) => _goToPersonList(faceId),
           ),
           PeopleListPanel(
-            asset: widget.asset,
+            asset: asset,
             face: _selectedFaceId,
             onBack: () => _goTo(1),
           ),
@@ -91,7 +110,7 @@ class _InfoView extends ConsumerWidget {
     final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
     final assetFaces = ref.watch(assetFacesProvider(asset.id));
-    final assetTagsAsync = ref.watch(_assetTagProvider(asset.id));
+    final tagList = ref.watch(tagStoreProvider);
 
     return Container(
       color: Color.fromRGBO(19, 19, 20, 1),
@@ -282,13 +301,25 @@ class _InfoView extends ConsumerWidget {
                   Text('Tags', style: TextStyle(fontSize: 18),),
                   Wrap(
                     children: [
-                      ...assetTagsAsync.maybeWhen(
-                        data: (assetTags) => assetTags?.map((tag)=> Chip(label: Text(tag.name),)) ?? [],
+                      ...tagList.maybeWhen(
+                        data: (_) {
+                          final flat = ref.read(tagStoreProvider.notifier).flat;
+                          return asset.tags.map((tag)=> Chip(label: Text(flat.firstWhere((t) => t.id == tag).name),));
+                        },
                         orElse: ()=> [],
                       ),
                       Material(
                         child: InkWell(
-                          onTap: (){},
+                          onTap: () async {
+                            final tagList = await showDialog(context: context, builder: (context) => AddTagPopup());
+                            if (tagList != null) {
+                              final allTags = ref.read(tagStoreProvider.notifier).flat;
+                              if (allTags.isEmpty) return; // todo visible error messages one day
+
+                              final Set<String> tagIds = tagList.map<String>((tag) => allTags.firstWhere((t) => t.value == tag).id).toSet();
+                              await ref.read(galleryBucketProvider.notifier).addAssetTags({asset.id}, tagIds);
+                            }
+                          },
                           borderRadius: BorderRadius.circular(10),
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),

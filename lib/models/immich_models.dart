@@ -81,6 +81,7 @@ class ImmichAsset {
     String? deviceId,
     bool? isTrashed,
     Set<String>? people,
+    Set<String>? tags,
   }) {
     return ImmichAsset(
       id: id ?? this.id,
@@ -95,6 +96,7 @@ class ImmichAsset {
       deviceId: deviceId ?? this.deviceId,
       isTrashed: isTrashed ?? this.isTrashed,
       people: people ?? this.people,
+      tags: tags ?? this.tags,
     );
   }
 

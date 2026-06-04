@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/general_widgets.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/provider/tag_provider.dart';
 import 'package:flex_color_picker/flex_color_picker.dart';
@@ -166,27 +167,107 @@ class _TagPopupState extends ConsumerState<TagPopup> {
 
 }
 
-class AddTagPopup extends StatefulWidget {
+class AddTagPopup extends ConsumerStatefulWidget {
   const AddTagPopup({super.key});
   @override
   // ignore: library_private_types_in_public_api
   _AddTagPopupState createState() => _AddTagPopupState();
 }
 
-class _AddTagPopupState extends State<AddTagPopup> {
+class _AddTagPopupState extends ConsumerState<AddTagPopup> {
+  final Set<String> _tags = {};
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Add Tag to Assets'),
+      title: Text('Tag Assets'),
       content: SizedBox(
         width: 400,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            
+            _buildTagsSection()
           ],
         ),
       ),
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context), 
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                fontSize: 16
+              ),
+            ),
+          )
+        ),
+        ElevatedButton(
+          onPressed: (){
+            Navigator.pop(context, _tags);
+          },
+          style: ButtonStyle(
+            backgroundColor: WidgetStateProperty.all(Color.fromARGB(255, 30, 30, 30)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Text(
+              'Tag Assets',
+              style: TextStyle(
+                fontSize: 16
+              ),
+            ),
+          )
+        )
+      ],
     );
   }
-
+  Widget _buildTagsSection() {
+    final tagsAsync = ref.watch(tagStoreProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        const Text(
+          'Tags',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xFF2C2F33),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: buildDropdown(
+            'Search tags...', 
+            items: tagsAsync.asData?.value.expand((t) => t.flatten()).map((tag)=> tag.value).toList(),
+            onChange: (tag) {
+              if (tag != null) {
+                setState(() {
+                  if (_tags.contains(tag)) {
+                    _tags.remove(tag);
+                  } else {
+                    _tags.add(tag);
+                  }
+                });
+              }
+            }
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Wrap(
+            children: _tags.map((tag) {
+              return TagChip(tag: tag, onDelete: ()=> setState(()=>_tags.remove(tag)));
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
 }

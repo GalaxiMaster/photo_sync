@@ -5,7 +5,7 @@ import 'package:photo_sync/services/api_service.dart';
 
 class TagStoreNotifier extends AsyncNotifier<List<ImmichTag>> {
   ImmichService get _service => ref.read(immichServiceProvider);
-  List<ImmichTag> get _flat => (state.value ?? []).expand((t) => t.flatten()).toList();
+  List<ImmichTag> get flat => (state.value ?? []).expand((t) => t.flatten()).toList();
 
   @override
   Future<List<ImmichTag>> build() async {
@@ -36,21 +36,21 @@ class TagStoreNotifier extends AsyncNotifier<List<ImmichTag>> {
   }
   
   void createTag(ImmichTag tag) async{
-    if (_flat.any((tag)=>tag.value == tag.value)) return;
+    if (flat.any((tag)=>tag.value == tag.value)) return;
     final completeTag = await _service.createTag(tag);
-    state = AsyncData(nestChildren([..._flat, completeTag]));
+    state = AsyncData(nestChildren([...flat, completeTag]));
   }
   void deleteTag(String tagId) {
     _service.deleteTag(tagId);
-    state = AsyncData(nestChildren(_flat.where((t) => t.id != tagId).toList()));
+    state = AsyncData(nestChildren(flat.where((t) => t.id != tagId).toList()));
   }
   void updateTag(ImmichTag updatedTag) {
     _service.updateTag(updatedTag);
-    state = AsyncData(nestChildren(_flat.map((t) => t.id == updatedTag.id ? updatedTag : t).toList()));
+    state = AsyncData(nestChildren(flat.map((t) => t.id == updatedTag.id ? updatedTag : t).toList()));
   }
 
   ImmichTag? getIdFromPath(String path) {
-    for (final t in _flat) {
+    for (final t in flat) {
       if (t.value == path) return t;
     }
     return null;
