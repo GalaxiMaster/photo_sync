@@ -197,6 +197,16 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
             }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text('PhotoRef'),
+            ),
+            menuItem('Home', Icons.home, onClick: () async{
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefHome);
+            }),
+              menuItem('Boards', Icons.dashboard, onClick: () async{
+              ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefBoards);
+            }),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 mainAxisSize: MainAxisSize.max,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,

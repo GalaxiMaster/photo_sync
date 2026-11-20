@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:path/path.dart' as p;
+import 'package:photo_sync/pages/ref_board/core/db/ref_dao.dart';
+import 'package:photo_sync/pages/ref_board/core/db/ref_paths.dart';
+import 'package:photo_sync/pages/ref_board/core/db/ref_tables.dart';
 
 part 'app_settings_models.g.dart';
 
@@ -15,7 +15,14 @@ class SettingsTable extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [SettingsTable])
+@DriftDatabase(
+  tables: [
+    SettingsTable,
+    // Photo Ref tables (defined in ref_board/core/db/ref_tables.dart)
+    RefItems, RefTags, RefItemTags, RefNotes, RefAnnotations, RefBoards,
+  ],
+  daos: [RefDao],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
@@ -42,10 +49,10 @@ class AppDatabase extends _$AppDatabase {
   // Future<void> clearCache() => delete(photoCacheTable).go();
 }
 
+/// %LOCALAPPDATA%\PhotoSync\app.db on Windows (see RefPaths for other platforms).
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dir.path, 'app.db'));
-    return NativeDatabase.createInBackground(file);
+    final paths = await RefPaths.get();
+    return NativeDatabase.createInBackground(paths.databaseFile);
   });
 }

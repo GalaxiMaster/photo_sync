@@ -8,6 +8,8 @@ import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/pages/person_page.dart';
+import 'package:photo_sync/pages/ref_board/features/boards/boards_page.dart';
+import 'package:photo_sync/pages/ref_board/features/library/library_page.dart';
 import 'package:photo_sync/pages/tags_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
@@ -29,13 +31,6 @@ class _MainAppState extends ConsumerState<MainApp> {
   late final SideBarContent sideBarContent;
 
   final TextEditingController queryController = TextEditingController();
-
-  static final _bodies = <AppBody, Widget>{
-    AppBody.gallery: const GalleryScreen(),
-    AppBody.explore: const ExplorePage(),
-    AppBody.person: const PersonPage(),
-    AppBody.tags: const TagsScreen(),
-  };
   
   @override
   void initState() {
@@ -223,8 +218,15 @@ class _MainAppState extends ConsumerState<MainApp> {
                 ],
               ),
             ),
-          ),
-           _bodies[current]!,
+          ),            
+          switch (current) {
+            AppBody.gallery => const GalleryScreen(),
+            AppBody.explore => const ExplorePage(),
+            AppBody.person => const PersonPage(),
+            AppBody.tags => const TagsScreen(),
+            AppBody.photoRefHome => LibraryPage(),
+            AppBody.photoRefBoards => BoardsPage()
+          }
         ],
       ),
     );

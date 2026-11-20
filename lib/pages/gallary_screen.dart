@@ -582,6 +582,7 @@ class _TileState extends ConsumerState<_Tile> {
                         imageUrl: widget.asset.thumbnailUrl(),
                         httpHeaders: {'x-api-key': ImmichConfig.apiKey},
                         fit: BoxFit.cover,
+                        errorWidget: (_, _, _) => _ErrorTile(),
                         placeholder: (_, _) =>
                             const ColoredBox(color: Color(0xFF1A1A1A)),
                       )
