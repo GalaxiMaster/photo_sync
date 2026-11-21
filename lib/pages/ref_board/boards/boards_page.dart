@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/ref_providers.dart';
+import '../../../provider/ref_providers.dart';
 
 Future<void> showCreateBoardDialog(BuildContext context, WidgetRef ref) async {
   final controller = TextEditingController();

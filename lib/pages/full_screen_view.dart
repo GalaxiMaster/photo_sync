@@ -105,7 +105,7 @@ class _FullscreenViewState extends ConsumerState<FullscreenView> {
       StackedAssets a => [a.primary, ...a.children],
     };
 
-    final ImmichAsset currentImage = _currentImageId != null
+    final ImageAsset currentImage = _currentImageId != null
         ? all.firstWhere(
             (a) => a.id == _currentImageId,
             orElse: () => active.leadAsset,

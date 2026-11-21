@@ -100,7 +100,7 @@ final searchOptionsProvider = NotifierProvider<SearchOptionsNotifier, SearchOpti
 class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   ImmichService get _service => ref.read(immichServiceProvider);
   bool isLocal = false;
-  List<ImmichAsset> fullLocal = [];
+  List<ImageAsset> fullLocal = [];
 
   SearchOptions get _activeOptions => ref.read(searchOptionsProvider);
   CancelToken _cancelToken = CancelToken();
@@ -108,7 +108,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   bool get hasMore => _hasMore;
   bool _hasMore = false;
 
-  Set<ImmichAsset> uploadQueue = {};
+  Set<ImageAsset> uploadQueue = {};
 
   int pulledItems = 80;
 
@@ -117,7 +117,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
 
   List<MonthBucket>? _priorBuckets;
   // The fetcher used by the current flat mode - kept so loadMore() can request the next page without knowing which mode is active.
-  Future<List<ImmichAsset>> Function(int page)? _flatFetcher;
+  Future<List<ImageAsset>> Function(int page)? _flatFetcher;
 
   @override
   GalleryBucketState build() {
@@ -145,7 +145,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     await _initRemote();
   }
 
-  Future<void> loadLocal(List<ImmichAsset> assets) async {
+  Future<void> loadLocal(List<ImageAsset> assets) async {
     isLocal = true;
     fullLocal = [...assets]
       ..sort((a, b) => b.fileCreatedAt.compareTo(a.fileCreatedAt));
@@ -165,7 +165,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _setFlatBucket(_groupAssets(await _applyLocalPaths(results)), hasMore: _hasMore);
   }
 
-  Future<List<ImmichAsset>?> smartSearch(
+  Future<List<ImageAsset>?> smartSearch(
     SearchOptions options, {
     bool fetchMore = false,
     bool force = false,
@@ -193,7 +193,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     return results;
   }
 
-  List<ImmichAsset> localSearch({
+  List<ImageAsset> localSearch({
     required SearchOptions searchOptions,
     required int page,
   }) {
@@ -266,7 +266,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   Future<void> loadMore() async {
     if (!_hasMore) return;
 
-    List<ImmichAsset> results;
+    List<ImageAsset> results;
     if (_flatFetcher != null) {
       _page++;
       results = await _flatFetcher!(_page);
@@ -283,7 +283,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _setFlatBucket([...existing, ...newItems], hasMore: _hasMore);
   }
 
-  void removeAssets(Set<ImmichAsset> toRemove) {
+  void removeAssets(Set<ImageAsset> toRemove) {
     final updated = state.buckets.map((b) {
       if (b.assets == null) return b;
       final filtered =
@@ -296,7 +296,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
 
   Future<void> updateAsset(
     String assetId,
-    ImmichAsset Function(ImmichAsset asset) updater,
+    ImageAsset Function(ImageAsset asset) updater,
   ) async {
     final newBuckets = state.buckets.map((b) {
       if (b.assets == null) return b;
@@ -332,23 +332,23 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     state = state.copyWith(buckets: newBuckets);
   }
 
-  void toggleFavorite(ImmichAsset asset) async {
+  void toggleFavorite(ImageAsset asset) async {
     final newValue = !asset.isFavorite;
     await updateAsset(asset.id, (a) => a.copyWith(isFavorite: newValue));
     await _service.favoriteImmichAsset(asset.id, newValue);
   }
 
-  Future<bool> restoreFromTrash(ImmichAsset asset) async {
+  Future<bool> restoreFromTrash(ImageAsset asset) async {
     removeAssets({asset});
     return _service.restoreFromTrash([asset.id]);
   }
 
   Future<void> deleteAssets(
-    Set<ImmichAsset> assets, {
+    Set<ImageAsset> assets, {
     bool isTrashed = false,
-    Function(List<ImmichAsset>)? deleteFromExternalSource,
+    Function(List<ImageAsset>)? deleteFromExternalSource,
   }) async {
-    List<ImmichAsset> externalSourceAssets = [];
+    List<ImageAsset> externalSourceAssets = [];
     try {
       if (isLocal) {
         final toDelete = fullLocal.where(assets.contains).toList();
@@ -401,7 +401,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
   }
 
   Future<void> uploadToImmich(
-    ImmichAsset asset, {
+    ImageAsset asset, {
     ProgressController? popupController,
   }) async {
     final cleanPath = asset.localPath?.replaceAll(r'\\', r'\');
@@ -429,7 +429,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     }
   }
 
-  Future<Map<String, Map>?> checkExisting(List<ImmichAsset> assets) async {
+  Future<Map<String, Map>?> checkExisting(List<ImageAsset> assets) async {
     final result = <String, Map>{};
     for (final a in assets) {
       final res = await _service.findExistingByMetadata(asset: a);
@@ -438,14 +438,14 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     return result;
   }
 
-  Future<void> changeAssetDate(ImmichAsset asset, String dateString) async {
+  Future<void> changeAssetDate(ImageAsset asset, String dateString) async {
     await updateAsset(asset.id, (a) => a.copyWith(fileCreatedAt: DateTime.parse(dateString)));
     await _service.changeAssetDate(asset.id, dateString);
   }
 
   Future<List<ImmichPerson>> getPeople() => _service.getPeople();
 
-  Future<void> checkImmichStatusInBackground(List<ImmichAsset> assets) async {
+  Future<void> checkImmichStatusInBackground(List<ImageAsset> assets) async {
     const batchSize = 50;
     for (var i = 0; i < assets.length; i += batchSize) {
       final batch = assets.sublist(i, min(i + batchSize, assets.length));
@@ -516,7 +516,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _hasMore = hasMore;
   }
   
-  Future<List<ImmichAsset>> _applyLocalPaths(List<ImmichAsset> assets) async {
+  Future<List<ImageAsset>> _applyLocalPaths(List<ImageAsset> assets) async {
     final downloaded = await ref.read(downloadedPhotosProvider.future);
     if (downloaded.isEmpty) return assets;
 
@@ -539,8 +539,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _hasMore = false;
   }
 
-  List<GalleryItem> _groupAssets(List<ImmichAsset> assets) {
-    final Map<String, List<ImmichAsset>> grouped = {};
+  List<GalleryItem> _groupAssets(List<ImageAsset> assets) {
+    final Map<String, List<ImageAsset>> grouped = {};
     for (final asset in assets) {
       grouped.putIfAbsent(asset.pixelPairKey ?? asset.baseName, () => [])
           .add(asset);
@@ -569,8 +569,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     return result;
   }
 
-  List<MonthBucket> _bucketiseLocal(List<ImmichAsset> sorted) {
-    final Map<String, List<ImmichAsset>> byMonth = {};
+  List<MonthBucket> _bucketiseLocal(List<ImageAsset> sorted) {
+    final Map<String, List<ImageAsset>> byMonth = {};
     for (final asset in sorted) {
       final d = asset.fileCreatedAt;
       final key = '${d.year}-${d.month.toString().padLeft(2, '0')}';
@@ -605,7 +605,7 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
     _inflight.clear();
   }
 
-  Future<File> downloadAsset(ImmichAsset asset, ProgressController? popupController) async {
+  Future<File> downloadAsset(ImageAsset asset, ProgressController? popupController) async {
     Directory? dir = await getLocalPhotoDirectory();
 
     final String sanitizedName = asset.originalFileName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');

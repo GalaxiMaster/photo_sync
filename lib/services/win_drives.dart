@@ -89,7 +89,7 @@ const _imageExtensions = {
   'raw', 'cr2', 'nef', 'arw', 'dng',
 };
 
-Future<List<ImmichAsset>> scanDriveAssets(
+Future<List<ImageAsset>> scanDriveAssets(
   String rootPath, {
   void Function(String currentPath, int found)? onProgress,
 }) async {
@@ -106,7 +106,7 @@ Future<List<ImmichAsset>> scanDriveAssets(
   }
 
   // Process in parallel - 8 at a time
-  final results = <ImmichAsset>[];
+  final results = <ImageAsset>[];
   const chunkSize = 8;
 
   for (int i = 0; i < files.length; i += chunkSize) {
@@ -122,13 +122,13 @@ Future<List<ImmichAsset>> scanDriveAssets(
         }
       }),
     );
-    results.addAll(chunkResults.whereType<ImmichAsset>());
+    results.addAll(chunkResults.whereType<ImageAsset>());
     onProgress?.call(files[i].$1.path, results.length);
   }
 
   return results;
 }
-Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
+Future<ImageAsset?> _assetFromImage(File file, String ext) async {
   final stat = await file.stat();
   final fileName = file.uri.pathSegments.last;
   final mimeType = _mimeType(ext);
@@ -179,7 +179,7 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
     print('Failed to read EXIF from ${file.path}: $e');
   }
 
-  return ImmichAsset(
+  return ImageAsset(
     id: _localId(file.path),
     type: 'IMAGE',
     originalFileName: fileName,
@@ -191,7 +191,7 @@ Future<ImmichAsset?> _assetFromImage(File file, String ext) async {
   );
 }
 
-Future<ImmichAsset?> _assetFromVideo(File file, String ext) async {
+Future<ImageAsset?> _assetFromVideo(File file, String ext) async {
   final stat = await file.stat();
   final fileName = file.uri.pathSegments.last;
   final mimeType = _mimeType(ext);
@@ -211,7 +211,7 @@ Future<ImmichAsset?> _assetFromVideo(File file, String ext) async {
     exifInfo.remove('height');
   } catch (_) {}
 
-  return ImmichAsset(
+  return ImageAsset(
     id: _localId(file.path),
     type: 'VIDEO',
     originalFileName: fileName,

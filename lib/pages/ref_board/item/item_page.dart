@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/app_settings_models.dart';
-import '../../core/ref_providers.dart';
+import '../../../provider/ref_providers.dart';
 import 'guide_painter.dart';
 
 const _kPanelColor = Color(0xFF1A1A1A);

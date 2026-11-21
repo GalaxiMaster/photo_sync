@@ -21,7 +21,7 @@ final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref
 });
 
 class InfoPanel extends ConsumerStatefulWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
   const InfoPanel({super.key, required this.asset, required this.functions});
 
@@ -98,7 +98,7 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 }
 
 class _InfoView extends ConsumerWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
   final VoidCallback onEditPeople;
   const _InfoView({required this.asset, required this.functions, required this.onEditPeople});
@@ -410,7 +410,7 @@ List<String> formatAssetDate(DateTime date) {
 }
 
 class EditPeoplePanel extends ConsumerWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final VoidCallback onBack;
   final void Function(AssetFace face) onEditPerson;
   const EditPeoplePanel({super.key, required this.asset, required this.onBack, required this.onEditPerson});
@@ -486,7 +486,7 @@ class EditPeoplePanel extends ConsumerWidget {
 }
 
 class PeopleListPanel extends ConsumerWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final VoidCallback onBack;
   final AssetFace? face;
   const PeopleListPanel({super.key, required this.asset, required this.onBack, required this.face});

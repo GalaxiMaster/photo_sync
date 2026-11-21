@@ -5,7 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
 
-import '../../core/ref_providers.dart';
+import '../../../provider/ref_providers.dart';
 
 Future<void> showAddItemSheet(BuildContext context, WidgetRef ref) {
   final capture = ref.read(refCaptureServiceProvider);
@@ -18,7 +18,7 @@ Future<void> showAddItemSheet(BuildContext context, WidgetRef ref) {
         _SheetTile(
           icon: Icons.add_photo_alternate_outlined,
           label: 'Photos',
-          onTap: () async {
+          onTap: () async { // todo add sheet that prevents clicking while the file dialog is up
             Navigator.pop(sheetContext);
             final result = await FilePicker.pickFiles(
                 type: FileType.image);

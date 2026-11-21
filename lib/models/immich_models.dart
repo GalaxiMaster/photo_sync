@@ -8,7 +8,7 @@ class ImmichConfig {
   static String apiKey = dotenv.env['immich_api_key'] ?? '';
 }
 
-class ImmichAsset {
+class ImageAsset {
   final String id;
   final String type;
   final String originalFileName;
@@ -23,7 +23,7 @@ class ImmichAsset {
   final Set<String> people;
   final Set<String> tags;
   
-  const ImmichAsset({
+  const ImageAsset({
     required this.id,
     required this.type,
     required this.originalFileName,
@@ -39,12 +39,12 @@ class ImmichAsset {
     this.tags = const {},
   });
   
-  factory ImmichAsset.fromJson(Map<String, dynamic> json) {
+  factory ImageAsset.fromJson(Map<String, dynamic> json) {
     final localPath = (json['deviceAssetId'] ?? '').contains('.')
         ? json['deviceAssetId'] as String?
         : null;
 
-    return ImmichAsset( // 'unnasignedFaces' to add and use later? as well as live photos
+    return ImageAsset( // 'unnasignedFaces' to add and use later? as well as live photos
       id: json['id'] as String,
       type: json['type'] as String,
       originalFileName: json['originalFileName'] as String? ?? '',
@@ -68,7 +68,7 @@ class ImmichAsset {
     );
   }
 
-  ImmichAsset copyWith({
+  ImageAsset copyWith({
     String? id,
     String? type,
     String? originalFileName,
@@ -83,7 +83,7 @@ class ImmichAsset {
     Set<String>? people,
     Set<String>? tags,
   }) {
-    return ImmichAsset(
+    return ImageAsset(
       id: id ?? this.id,
       type: type ?? this.type,
       originalFileName: originalFileName ?? this.originalFileName,

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/app_settings_models.dart';
-import 'package:photo_sync/pages/ref_board/core/db/ref_dao.dart';
+import 'package:photo_sync/models/db/ref_dao.dart';
 import 'package:photo_sync/provider/database_providers.dart';
 
-import 'services/capture_service.dart';
-import 'storage/blob_store.dart';
+import '../services/capture_service.dart';
+import '../models/blob_store.dart';
 
 /// Photo Ref queries, backed by the shared AppDatabase.
 final refDaoProvider = Provider<RefDao>((ref) => ref.watch(databaseProvider).refDao);

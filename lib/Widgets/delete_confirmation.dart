@@ -161,11 +161,11 @@ class DeletePopups {
   }
 }
 
-Future<List<ImmichAsset>> confirmExternalSourceDelete(
+Future<List<ImageAsset>> confirmExternalSourceDelete(
   BuildContext context,
-  List<ImmichAsset> assetsFound,
+  List<ImageAsset> assetsFound,
 ) async {
-  final result = await showDialog<List<ImmichAsset>>(
+  final result = await showDialog<List<ImageAsset>>(
     context: context,
     builder: (_) => _ExternalDeleteDialog(assets: assetsFound),
   );
@@ -173,7 +173,7 @@ Future<List<ImmichAsset>> confirmExternalSourceDelete(
 }
 
 class _ExternalDeleteDialog extends StatefulWidget {
-  final List<ImmichAsset> assets;
+  final List<ImageAsset> assets;
   const _ExternalDeleteDialog({required this.assets});
 
   @override
@@ -359,7 +359,7 @@ class _ExternalDeleteDialogState extends State<_ExternalDeleteDialog> {
                   Row(
                     children: [
                       TextButton(
-                        onPressed: () => Navigator.pop(context, <ImmichAsset>[]),
+                        onPressed: () => Navigator.pop(context, <ImageAsset>[]),
                         child: const Text('Keep', style: TextStyle(color: Colors.white54)),
                       ),
                       const SizedBox(width: 8),

@@ -1,8 +1,9 @@
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:photo_sync/pages/ref_board/core/db/ref_dao.dart';
-import 'package:photo_sync/pages/ref_board/core/db/ref_paths.dart';
-import 'package:photo_sync/pages/ref_board/core/db/ref_tables.dart';
+import 'package:flutter/foundation.dart';
+import 'package:photo_sync/models/db/ref_dao.dart';
+import 'package:photo_sync/models/db/ref_paths.dart';
+import 'package:photo_sync/models/db/ref_tables.dart';
 
 part 'app_settings_models.g.dart';
 
@@ -53,6 +54,8 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final paths = await RefPaths.get();
-    return NativeDatabase.createInBackground(paths.databaseFile);
+    return kDebugMode // Weird bug where .createInBackground causes the database to take almost a minute to load in debug mode specifically
+      ? NativeDatabase(paths.databaseFile)
+      : NativeDatabase.createInBackground(paths.databaseFile);
   });
 }

@@ -18,7 +18,7 @@ class ImmichService {
     ));
   }
 
-  Future<List<ImmichAsset>> fetchImages({int page = 1, int pageSize = 80}) async {
+  Future<List<ImageAsset>> fetchImages({int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/metadata', data: {
       'type': 'IMAGE',
       'page': page,
@@ -30,7 +30,7 @@ class ImmichService {
     });
 
     final items = response.data['assets']['items'] as List;
-    return items.map((e) => ImmichAsset.fromJson(e)).toList();
+    return items.map((e) => ImageAsset.fromJson(e)).toList();
   }
 
   Future<void> deleteAssets(List<String> assetIds, {force = false}) async {
@@ -61,7 +61,7 @@ class ImmichService {
       .toList();
   }
 
-  Future<List<ImmichAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
+  Future<List<ImageAsset>> smartSearch(String query, {int page = 1, int pageSize = 80}) async {
     final response = await _dio.post('/search/smart', data: {
       'query': query,
       'type': 'IMAGE',
@@ -72,7 +72,7 @@ class ImmichService {
     });
 
     final items = response.data['assets']['items'] as List;
-    return items.map((e) => ImmichAsset.fromJson(e)).toList();
+    return items.map((e) => ImageAsset.fromJson(e)).toList();
   }
 
   Future<Map<String, dynamic>> getAssetMetadata(String assetId) async {
@@ -108,7 +108,7 @@ class ImmichService {
     );
   }
 
-  Future<(List<ImmichAsset>, String?)> search({
+  Future<(List<ImageAsset>, String?)> search({
     required SearchOptions searchOptions,
     int page = 1,
     int size = 100,
@@ -169,7 +169,7 @@ class ImmichService {
     final response = await _dio.post(endpoint, data: body, cancelToken: cancelToken);
     final assets = response.data['assets'] as Map<String, dynamic>;
     return (
-      (assets['items'] as List).map((a) => ImmichAsset.fromJson(a)).toList(), 
+      (assets['items'] as List).map((a) => ImageAsset.fromJson(a)).toList(), 
       response.data['assets']['nextPage'] as String?
       );
   }
@@ -202,7 +202,7 @@ class ImmichService {
   }
 
   Future<Map?> findExistingByMetadata({
-    required ImmichAsset asset
+    required ImageAsset asset
   }) async {
     final createdAt = asset.fileCreatedAt.toUtc();
     final response = await _dio.post('/search/metadata', data: {
@@ -254,13 +254,13 @@ class ImmichService {
   //   return [];
   // }
 
-  Future<List<ImmichAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken, F}) async {
+  Future<List<ImageAsset>> fetchBucketAssets(String timeBucket, {SearchOptions? initOptions, CancelToken? cancelToken, F}) async {
     // timeBucket: e.g. "2025-04-01T00:00:00.000Z"
     final dt = DateTime.parse(timeBucket);
     final start = DateTime(dt.year, dt.month, 1);
     final end = DateTime(dt.year, dt.month + 1, 1); // rolls over correctly
 
-    List<ImmichAsset> all = [];
+    List<ImageAsset> all = [];
     String? nextPage;
 
     do {
@@ -390,7 +390,7 @@ sealed class GalleryItem {
 }
 
 extension GalleryItemX on GalleryItem {
-  ImmichAsset get leadAsset => switch (this) {
+  ImageAsset get leadAsset => switch (this) {
     SingleAsset(asset: var a) => a,
     StackedAssets(primary: var p) => p,
   };
@@ -405,7 +405,7 @@ extension GalleryItemX on GalleryItem {
   bool get isLocal => !leadAsset.imageSources.contains(ImageSource.immich);
   Set<ImageSource> get imageSources => leadAsset.imageSources;
 
-  List<ImmichAsset> get list => switch (this) {
+  List<ImageAsset> get list => switch (this) {
     SingleAsset(asset: var a) => [a],
     StackedAssets(primary: var primary, children: var children) => [primary, ...children],
   };
@@ -413,13 +413,13 @@ extension GalleryItemX on GalleryItem {
 
 
 class SingleAsset extends GalleryItem {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   const SingleAsset(this.asset);
 }
 
 class StackedAssets extends GalleryItem {
-  final ImmichAsset primary;
-  final List<ImmichAsset> children;
+  final ImageAsset primary;
+  final List<ImageAsset> children;
   final bool containsRaw;
   const StackedAssets({required this.primary, this.containsRaw = false, required this.children});
 }

@@ -9,7 +9,6 @@ import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
 import 'package:photo_sync/services/exiftool.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 // helpers
 const int _kCrossAxisCount = 8;
@@ -275,7 +274,7 @@ class _BucketSliverState extends ConsumerState<_BucketSliver> {
           delegate: SliverChildBuilderDelegate(
             (_, i) => assets == null
                 ? const _PlaceholderTile()
-                : _Tile(asset: assets[i]),
+                : ImageTile(asset: assets[i]),
             childCount: assets?.length ?? bucket.count,
           ),
         ),
@@ -542,151 +541,145 @@ class _PlaceholderTile extends StatelessWidget {
       const ColoredBox(color: Color(0xFF1A1A1A));
 }
 
-class _Tile extends ConsumerStatefulWidget {
-  final GalleryItem asset;
-  const _Tile({required this.asset});
+class TileShell extends StatefulWidget {
+  const TileShell({
+    super.key,
+    required this.child,
+    required this.isSelected,
+    required this.inSelectionMode,
+    required this.onTap,
+    required this.onToggleSelect,
+    this.badges = const [],
+  });
+
+  final Widget child;
+  final bool isSelected;
+  final bool inSelectionMode;
+  final VoidCallback onTap;
+  final VoidCallback onToggleSelect;
+  final List<Widget> badges; // Positioned widgets
 
   @override
-  ConsumerState<_Tile> createState() => _TileState();
+  State<TileShell> createState() => _TileShellState();
 }
 
-class _TileState extends ConsumerState<_Tile> {
+class _TileShellState extends State<TileShell> {
   final _isHovered = ValueNotifier(false);
 
   @override
-  Widget build(BuildContext context) {
-    final all = switch (widget.asset) {
-      SingleAsset a => [a.asset],
-      StackedAssets a => [a.primary, ...a.children],
-    };
-    final isSelected = ref.watch(
-      selectionProvider.select((s) => s.contains(widget.asset.leadAsset)),
-    );
-    final inSelectionMode = ref.watch(isSelectionModeProvider);
+  void dispose() {
+    _isHovered.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return MouseRegion(
       onEnter: (_) => _isHovered.value = true,
       onExit: (_) => _isHovered.value = false,
       child: GestureDetector(
-        onTap: () => inSelectionMode
-            ? _toggleSelection(all)
-            : _showFullscreen(context),
-        onLongPress: () => _toggleSelection(all),
+        onTap: () => widget.inSelectionMode ? widget.onToggleSelect() : widget.onTap(),
+        onLongPress: widget.onToggleSelect,
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Positioned.fill(
-              child: RepaintBoundary(
-                child: widget.asset.imageSources.contains(ImageSource.immich)
-                    ? CachedNetworkImage(
-                        imageUrl: widget.asset.thumbnailUrl(),
-                        httpHeaders: {'x-api-key': ImmichConfig.apiKey},
-                        fit: BoxFit.cover,
-                        errorWidget: (_, _, _) => _ErrorTile(),
-                        placeholder: (_, _) =>
-                            const ColoredBox(color: Color(0xFF1A1A1A)),
-                      )
-                    : LocalAssetTile(asset: widget.asset.leadAsset),
-              ),
-            ),
+            Positioned.fill(child: RepaintBoundary(child: widget.child)),
             ValueListenableBuilder<bool>(
               valueListenable: _isHovered,
-              builder: (context, hovered, _) {
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (hovered)
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: MediaQuery.of(context).size.height / 6,
-                        child: const DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              stops: [0.0, 0.6, 1.0],
-                              colors: [
-                                Colors.transparent,
-                                Colors.transparent,
-                                Color(0x99212121),
-                              ],
-                            ),
+              builder: (context, hovered, _) => Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (hovered)
+                    Positioned(
+                      left: 0, right: 0, bottom: 0,
+                      height: MediaQuery.of(context).size.height / 6,
+                      child: const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: [0.0, 0.6, 1.0],
+                            colors: [Colors.transparent, Colors.transparent, Color(0x99212121)],
                           ),
                         ),
                       ),
-                    if (hovered || inSelectionMode)
-                      Positioned(
-                        top: 10,
-                        left: 10,
-                        child: GestureDetector(
-                          onTap: () => _toggleSelection(all),
-                          child: Icon(
-                            Icons.check_circle,
-                            color: isSelected
-                                ? Colors.blueAccent
-                                : Colors.white38,
-                            size: 20,
-                          ),
+                    ),
+                  if (hovered || widget.inSelectionMode)
+                    Positioned(
+                      top: 10, left: 10,
+                      child: GestureDetector(
+                        onTap: widget.onToggleSelect,
+                        child: Icon(
+                          Icons.check_circle,
+                          color: widget.isSelected ? Colors.blueAccent : Colors.white38,
+                          size: 20,
                         ),
                       ),
-                  ],
-                );
-              },
+                    ),
+                ],
+              ),
             ),
-            if (widget.asset is StackedAssets)
-              const Positioned(
-                right: 10,
-                bottom: 10,
-                child: Icon(Icons.filter_none, size: 14, color: Colors.white70),
-              ),
-            if (widget.asset.isRaw)
-              const Positioned(
-                top: 10,
-                right: 12.5,
-                child: Text('RAW',
-                    style: TextStyle(color: Colors.white70, fontSize: 10)),
-              ),
-            if (widget.asset.imageSources.length > 1)
-              Positioned(
-                bottom: 10,
-                left: 12.5,
-                child: SvgPicture.asset(
-                  switch (widget.asset.imageSources.last) {
-                    ImageSource.local => 'assets/icons/local.svg',
-                    ImageSource.immich => 'assets/icons/immich.svg',
-                  },
-                  width: 15,
-                  height: 15,
-                  colorFilter: ColorFilter.mode(
-                      Colors.white.withAlpha(200), BlendMode.srcIn),
-                ),
-              ),
+            ...widget.badges,
           ],
         ),
       ),
     );
   }
+}
 
-  void _toggleSelection(List<ImmichAsset> all) {
-    for (final el in all) {
-      ref.read(selectionProvider.notifier).toggle(el);
+class ImageTile extends ConsumerWidget {
+  const ImageTile({super.key, required this.asset});
+  final GalleryItem asset;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final all = switch (asset) {
+      SingleAsset a => [a.asset],
+      StackedAssets a => [a.primary, ...a.children],
+    };
+    final isSelected = ref.watch(selectionProvider.select((s) => s.contains(asset.leadAsset)));
+    final inSelectionMode = ref.watch(isSelectionModeProvider);
+
+    void toggle() {
+      for (final el in all) {
+        ref.read(selectionProvider.notifier).toggle(el);
+      }
     }
-  }
 
-  void _showFullscreen(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => FullscreenView(asset: widget.asset)),
+    return TileShell(
+      isSelected: isSelected,
+      inSelectionMode: inSelectionMode,
+      onToggleSelect: toggle,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => FullscreenView(asset: asset)),
+      ),
+      badges: [
+        if (asset is StackedAssets)
+          const Positioned(right: 10, bottom: 10,
+              child: Icon(Icons.filter_none, size: 14, color: Colors.white70)),
+        if (asset.isRaw)
+          const Positioned(top: 10, right: 12.5,
+              child: Text('RAW', style: TextStyle(color: Colors.white70, fontSize: 10))),
+        // source icon badge as before
+      ],
+      child: asset.imageSources.contains(ImageSource.immich)
+          ? CachedNetworkImage(
+            imageUrl: asset.thumbnailUrl(),
+            httpHeaders: {'x-api-key': ImmichConfig.apiKey},
+            fit: BoxFit.cover,
+            errorWidget: (_, _, _) => _ErrorTile(),
+            placeholder: (_, _) =>
+                const ColoredBox(color: Color(0xFF1A1A1A)),
+          )
+          : LocalAssetTile(asset: asset.leadAsset),
     );
   }
 }
 
-
 class LocalAssetTile extends StatelessWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final bool preview;
-  final void Function(ImmichAsset asset)? onTap;
+  final void Function(ImageAsset asset)? onTap;
 
   const LocalAssetTile(
       {super.key, required this.asset, this.onTap, this.preview = true});
@@ -746,7 +739,7 @@ class _EmbeddedJpegImage extends StatelessWidget {
 }
 
 class LocalImage extends ConsumerStatefulWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   final bool preview;
   const LocalImage({super.key, required this.asset, this.preview = true});
 
@@ -802,7 +795,7 @@ class _LocalImageState extends ConsumerState<LocalImage> {
 }
 
 class _VideoTile extends ConsumerStatefulWidget {
-  final ImmichAsset asset;
+  final ImageAsset asset;
   const _VideoTile({required this.asset});
 
   @override

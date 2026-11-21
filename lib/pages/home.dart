@@ -8,8 +8,9 @@ import 'package:photo_sync/Widgets/snack_bars.dart';
 import 'package:photo_sync/pages/explore.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
 import 'package:photo_sync/pages/person_page.dart';
-import 'package:photo_sync/pages/ref_board/features/boards/boards_page.dart';
-import 'package:photo_sync/pages/ref_board/features/library/library_page.dart';
+import 'package:photo_sync/pages/ref_board/boards/boards_page.dart';
+import 'package:photo_sync/pages/ref_board/capture/add_item_sheet.dart';
+import 'package:photo_sync/pages/ref_board/library/library_page.dart';
 import 'package:photo_sync/pages/tags_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
@@ -211,10 +212,20 @@ class _MainAppState extends ConsumerState<MainApp> {
                     ],
                   ),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
-                    onPressed: () => ref.read(galleryBucketProvider.notifier).refresh(),
-                  ),
+                  switch (current) {
+                    AppBody.photoRefHome => IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () => showAddItemSheet(context, ref),
+                    ),
+                    AppBody.photoRefBoards => IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () => showCreateBoardDialog(context, ref),
+                    ),
+                    _ => IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      onPressed: () => ref.read(galleryBucketProvider.notifier).refresh(),
+                    ),
+                  }
                 ],
               ),
             ),

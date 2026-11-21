@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 
-class SelectionNotifier extends Notifier<Set<ImmichAsset>> {
+class SelectionNotifier extends Notifier<Set<ImageAsset>> {
   @override
-  Set<ImmichAsset> build() => {};
+  Set<ImageAsset> build() => {};
 
-  void toggle(ImmichAsset asset) {
+  void toggle(ImageAsset asset) {
     if (state.contains(asset)) {
       state = { ...state }..remove(asset);
     } else {
@@ -16,7 +16,7 @@ class SelectionNotifier extends Notifier<Set<ImmichAsset>> {
   void clear() => state = {};
 }
 
-final selectionProvider = NotifierProvider<SelectionNotifier, Set<ImmichAsset>>(
+final selectionProvider = NotifierProvider<SelectionNotifier, Set<ImageAsset>>(
   SelectionNotifier.new,
 );
 

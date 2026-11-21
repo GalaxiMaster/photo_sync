@@ -117,7 +117,7 @@ class SideBarContent extends ConsumerStatefulWidget {
 
 class _SideBarContentState extends ConsumerState<SideBarContent> {
   List drives = getRemovableDrives();
-  List<ImmichAsset> _localAssets = [];
+  List<ImageAsset> _localAssets = [];
   bool _isScanning = false;
   String _scanStatus = '';
   String selectedTab = 'Photos';
@@ -165,77 +165,84 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
       body: Padding(
         padding: const EdgeInsets.only(right: 35, top: 30),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            menuItem(
-              'Photos', 
-              Icons.photo_library_rounded, 
-              onClick: () {
-                ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-                ref.read(galleryBucketProvider.notifier).loadCloud();
-              }
-            ),
-            menuItem('Explore', Icons.search, onClick: () {
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.explore);
-            }),
-            menuItem('Map', Icons.map),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('Library'),
-            ),
-            menuItem('Favorites', Icons.favorite_outline, onClick: () async{
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-              await ref.read(galleryBucketProvider.notifier).loadCloud(isFavorite: true);
-            }),
-            menuItem('Albums', Icons.photo_album_rounded),
-            menuItem('Tags', Icons.label, onClick: () {
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.tags);
-            }),
-            menuItem('Trash', Icons.delete_outline, onClick: () async{
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-              await ref.read(galleryBucketProvider.notifier).loadCloud(isTrashed: true);
-            }),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text('PhotoRef'),
-            ),
-            menuItem('Home', Icons.home, onClick: () async{
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefHome);
-            }),
-              menuItem('Boards', Icons.dashboard, onClick: () async{
-              ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefBoards);
-            }),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisSize: MainAxisSize.max,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Computer $_scanStatus',
-                    style: TextStyle(
-                      fontSize: 16,
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    menuItem(
+                      'Photos', 
+                      Icons.photo_library_rounded, 
+                      onClick: () {
+                        ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                        ref.read(galleryBucketProvider.notifier).loadCloud();
+                      }
                     ),
-                  ),
-                  // Text(_scanStatus)
-                  if (_isScanning)
-                  SizedBox(
-                    height: 20, width: 20,
-                    child: CircularProgressIndicator()
-                  )
-                ],
+                    menuItem('Explore', Icons.search, onClick: () {
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.explore);
+                    }),
+                    menuItem('Map', Icons.map),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('Library'),
+                    ),
+                    menuItem('Favorites', Icons.favorite_outline, onClick: () async{
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                      await ref.read(galleryBucketProvider.notifier).loadCloud(isFavorite: true);
+                    }),
+                    menuItem('Albums', Icons.photo_album_rounded),
+                    menuItem('Tags', Icons.label, onClick: () {
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.tags);
+                    }),
+                    menuItem('Trash', Icons.delete_outline, onClick: () async{
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                      await ref.read(galleryBucketProvider.notifier).loadCloud(isTrashed: true);
+                    }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text('PhotoRef'),
+                    ),
+                    menuItem('Home', Icons.home, onClick: () async{
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefHome);
+                    }),
+                      menuItem('Boards', Icons.dashboard, onClick: () async{
+                      ref.read(appBodyProvider.notifier).switchTo(AppBody.photoRefBoards);
+                    }),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.max,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Computer $_scanStatus',
+                            style: TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                          // Text(_scanStatus)
+                          if (_isScanning)
+                          SizedBox(
+                            height: 20, width: 20,
+                            child: CircularProgressIndicator()
+                          )
+                        ],
+                      ),
+                    ),
+                    for (final drive in drives)
+                      menuItem(
+                        drive['label']!, 
+                        Icons.usb, 
+                        onClick: () {
+                          ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
+                          scanDrive(drive['letter']!);
+                        }
+                      ),                    
+                  ]
+                ),
               ),
             ),
-            for (final drive in drives)
-              menuItem(
-                drive['label']!, 
-                Icons.usb, 
-                onClick: () {
-                  ref.read(appBodyProvider.notifier).switchTo(AppBody.gallery);
-                  scanDrive(drive['letter']!);
-                }
-              ),
-            Spacer(),
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
@@ -276,7 +283,7 @@ class _SideBarContentState extends ConsumerState<SideBarContent> {
                 ),
               ),
             )
-          ]
+          ],
         ),
       )
     );

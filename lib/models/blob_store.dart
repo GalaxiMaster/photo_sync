@@ -3,7 +3,7 @@ import 'dart:isolate';
 import 'package:crypto/crypto.dart';
 import 'package:image/image.dart' as img;
 import 'package:path/path.dart' as p;
-import 'package:photo_sync/pages/ref_board/core/db/ref_paths.dart';
+import 'package:photo_sync/models/db/ref_paths.dart';
 
 class StoredImage {
   const StoredImage({required this.hash, required this.mime, this.width, this.height});

@@ -1,8 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/app_settings_models.dart';
+import 'package:photo_sync/pages/gallary_screen.dart';
 
-import '../../core/ref_providers.dart';
+import '../../../provider/ref_providers.dart';
 import '../item/item_page.dart';
 
 const double _kTileSpacing = 2.0;
@@ -35,14 +36,23 @@ class RefItemTile extends ConsumerWidget {
     final Widget content;
     if (item.kind == 'image' && item.blobHash != null) {
       final blobs = ref.watch(refBlobStoreProvider);
-      content = Image.file(
-        blobs.thumbFile(item.blobHash!),
-        fit: BoxFit.cover,
-        cacheWidth: 400, // never decode more pixels than the tile needs
-        frameBuilder: (_, child, frame, wasSync) =>
-            wasSync || frame != null ? child : const ColoredBox(color: _kTileColor),
-        errorBuilder: (_, _, _) => const Center(
-          child: Icon(Icons.broken_image, color: Colors.white38),
+      content = TileShell(
+        isSelected: false,
+        inSelectionMode: false,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => ItemPage(id: item.id)),
+        ),
+        onToggleSelect: (){},
+        badges: [],
+        child: Image.file(
+          blobs.thumbFile(item.blobHash!),
+          fit: BoxFit.cover,
+          cacheWidth: 400,
+          frameBuilder: (_, child, frame, wasSync) =>
+              wasSync || frame != null ? child : const ColoredBox(color: _kTileColor),
+          errorBuilder: (_, _, _) => const Center(
+            child: Icon(Icons.broken_image, color: Colors.white38),
+          ),
         ),
       );
     } else {
@@ -75,12 +85,7 @@ class RefItemTile extends ConsumerWidget {
 
     return Material(
       color: _kTileColor,
-      child: InkWell(
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => ItemPage(id: item.id)),
-        ),
-        child: content,
-      ),
+      child: content,
     );
   }
 }

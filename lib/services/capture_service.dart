@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:drift/drift.dart' show Value;
 import 'package:path/path.dart' as p;
 import 'package:photo_sync/models/app_settings_models.dart';
-import 'package:photo_sync/pages/ref_board/core/db/ref_dao.dart';
-import 'package:photo_sync/pages/ref_board/core/storage/blob_store.dart';
+import 'package:photo_sync/models/db/ref_dao.dart';
+import 'package:photo_sync/models/blob_store.dart';
 import 'package:uuid/uuid.dart';
 
 /// Single entry point for adding things to the reference library, whether they
