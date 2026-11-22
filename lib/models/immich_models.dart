@@ -42,7 +42,7 @@ class ImageAsset {
   factory ImageAsset.fromJson(Map<String, dynamic> json) {
     final localPath = (json['deviceAssetId'] ?? '').contains('.')
         ? json['deviceAssetId'] as String?
-        : null;
+        : json['localPath']; // ?? null
 
     return ImageAsset( // 'unnasignedFaces' to add and use later? as well as live photos
       id: json['id'] as String,

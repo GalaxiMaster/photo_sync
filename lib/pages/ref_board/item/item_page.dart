@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:photo_sync/Widgets/Side_Panels/photo_info_panel.dart';
 import 'package:photo_sync/models/app_settings_models.dart';
+import 'package:photo_sync/models/immich_models.dart';
 import '../../../provider/ref_providers.dart';
 import 'guide_painter.dart';
 
@@ -169,65 +171,65 @@ class _ItemPageState extends ConsumerState<ItemPage> {
   Widget _panel(RefItem it) {
     final tags = ref.watch(refItemTagsProvider(widget.id)).value ?? const <RefTag>[];
     final db = ref.read(refDaoProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (it.sourceUrl != null) ...[
-          SelectableText(it.sourceUrl!,
-              style: const TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(height: 12),
-        ],
-        if (it.kind == 'text' && it.bodyText != null) ...[
-          SelectableText(it.bodyText!,
-              style: const TextStyle(color: Colors.white, fontSize: 15)),
-          const SizedBox(height: 12),
-        ],
-        const Text('Tags', style: _kLabel),
-        const SizedBox(height: 8),
-        Wrap(spacing: 6, runSpacing: 6, children: [
-          for (final t in tags)
-            InputChip(
-              label: Text(t.name),
-              labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
-              backgroundColor: const Color(0xFF2B2B2B),
-              deleteIconColor: Colors.white54,
-              side: BorderSide.none,
-              onDeleted: () => db.removeTag(widget.id, t.id),
-            ),
-        ]),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _tagCtl,
-          style: const TextStyle(color: Colors.white),
-          decoration: _dec('Add a tag and press Enter'),
-          onSubmitted: (v) async {
-            await db.addTag(widget.id, v);
-            _tagCtl.clear();
-          },
-        ),
-        const SizedBox(height: 20),
-        const Text('Notes', style: _kLabel),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _noteCtl,
-          minLines: 5,
-          maxLines: 14,
-          style: const TextStyle(color: Colors.white),
-          onChanged: _onNoteChanged,
-          decoration: _dec('Why you saved this, what to study…'),
-        ),
-        const SizedBox(height: 20),
-        Text(
-          [
-            if (it.width != null && it.height != null) '${it.width} × ${it.height}',
-            'Added ${it.createdAt.toLocal().toString().split(' ').first}',
-            if (it.syncState == 'local_only') 'Not synced yet',
-          ].join('   '),
-          style: const TextStyle(color: Colors.white38, fontSize: 12),
-        ),
-      ],
-    );
+    return SizedBox(width: 400, height: 1000, child: InfoPanel(asset: it.toImageAsset(), functions: (close: (){}, addFace: null, onFaceHover: null)));
+    // return Column(
+    //   crossAxisAlignment: CrossAxisAlignment.start,
+    //   children: [
+    //     if (it.sourceUrl != null) ...[
+    //       SelectableText(it.sourceUrl!,
+    //           style: const TextStyle(color: Colors.white70, fontSize: 13)),
+    //       const SizedBox(height: 12),
+    //     ],
+    //     if (it.kind == 'text' && it.bodyText != null) ...[
+    //       SelectableText(it.bodyText!,
+    //           style: const TextStyle(color: Colors.white, fontSize: 15)),
+    //       const SizedBox(height: 12),
+    //     ],
+    //     const Text('Tags', style: _kLabel),
+    //     const SizedBox(height: 8),
+    //     Wrap(spacing: 6, runSpacing: 6, children: [
+    //       for (final t in tags)
+    //         InputChip(
+    //           label: Text(t.name),
+    //           labelStyle: const TextStyle(color: Colors.white70, fontSize: 12),
+    //           backgroundColor: const Color(0xFF2B2B2B),
+    //           deleteIconColor: Colors.white54,
+    //           side: BorderSide.none,
+    //           onDeleted: () => db.removeTag(widget.id, t.id),
+    //         ),
+    //     ]),
+    //     const SizedBox(height: 8),
+    //     TextField(
+    //       controller: _tagCtl,
+    //       style: const TextStyle(color: Colors.white),
+    //       decoration: _dec('Add a tag and press Enter'),
+    //       onSubmitted: (v) async {
+    //         await db.addTag(widget.id, v);
+    //         _tagCtl.clear();
+    //       },
+    //     ),
+    //     const SizedBox(height: 20),
+    //     const Text('Notes', style: _kLabel),
+    //     const SizedBox(height: 8),
+    //     TextField(
+    //       controller: _noteCtl,
+    //       minLines: 5,
+    //       maxLines: 14,
+    //       style: const TextStyle(color: Colors.white),
+    //       onChanged: _onNoteChanged,
+    //       decoration: _dec('Why you saved this, what to study…'),
+    //     ),
+    //     const SizedBox(height: 20),
+    //     Text(
+    //       [
+    //         if (it.width != null && it.height != null) '${it.width} × ${it.height}',
+    //         'Added ${it.createdAt.toLocal().toString().split(' ').first}',
+    //         if (it.syncState == 'local_only') 'Not synced yet',
+    //       ].join('   '),
+    //       style: const TextStyle(color: Colors.white38, fontSize: 12),
+    //     ),
+    //   ],
+    // );
   }
 }
 

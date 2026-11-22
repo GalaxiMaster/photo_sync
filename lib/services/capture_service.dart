@@ -18,8 +18,7 @@ class CaptureService {
   static const imageExts = {
     '.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp', '.heic', '.heif',
   };
-  static bool isImagePath(String path) =>
-      imageExts.contains(p.extension(path).toLowerCase());
+  static bool isImagePath(String path) => imageExts.contains(p.extension(path).toLowerCase());
 
   Future<int> addImageFiles(Iterable<File> files) async {
     var added = 0;

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:photo_sync/models/db/ref_dao.dart';
 import 'package:photo_sync/models/db/ref_paths.dart';
 import 'package:photo_sync/models/db/ref_tables.dart';
+import 'package:photo_sync/models/immich_models.dart';
 
 part 'app_settings_models.g.dart';
 

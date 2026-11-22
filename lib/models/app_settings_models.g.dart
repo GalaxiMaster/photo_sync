@@ -730,20 +730,36 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'kind': serializer.toJson<String>(kind),
+      'type': serializer.toJson<String>(kind),
       'title': serializer.toJson<String?>(title),
       'sourceUrl': serializer.toJson<String?>(sourceUrl),
       'bodyText': serializer.toJson<String?>(bodyText),
       'blobHash': serializer.toJson<String?>(blobHash),
       'mime': serializer.toJson<String?>(mime),
-      'width': serializer.toJson<int?>(width),
-      'height': serializer.toJson<int?>(height),
+      'exifInfo': {
+        'exifImageWidth': serializer.toJson<int?>(width),
+        'exifImageHeight': serializer.toJson<int?>(height),
+      },
       'itemType': serializer.toJson<String?>(itemType),
       'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
     };
+  }
+  ImageAsset toImageAsset() {
+    return ImageAsset(
+      id: id, 
+      type: kind, // what is this field for
+      originalFileName: '', 
+      fileCreatedAt: createdAt, 
+      exifInfo: { // todo expand?
+        'exifImageHeight': height,
+        'exifImageWidth': width
+      },
+      imageSources: {ImageSource.local}, 
+      mimeType: mime,
+  );
   }
 
   RefItem copyWith({

@@ -22,7 +22,7 @@ final _placeNameProvider = FutureProvider.family<String?, (double, double)>((ref
 
 class InfoPanel extends ConsumerStatefulWidget {
   final ImageAsset asset;
-  final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
+  final ({VoidCallback close, VoidCallback? addFace, void Function(AssetFace?)? onFaceHover}) functions;
   const InfoPanel({super.key, required this.asset, required this.functions});
 
   @override
@@ -39,7 +39,9 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
     loadAssetTags();
   }
   void loadAssetTags() async {
-    if (widget.asset.tags.isEmpty) {
+    if (widget.asset.tags.isEmpty && 
+      widget.asset.imageSources.contains(ImageSource.immich)
+    ) {
       final Set<String>? tags = (await ref.read(galleryBucketProvider.notifier).getAssetTags(widget.asset.id))?.map<String>((t) => t.id).toSet();
       if (tags == null) return;
       ref.read(galleryBucketProvider.notifier).updateAsset(widget.asset.id, (a) => a.copyWith(
@@ -99,15 +101,15 @@ class _InfoPanelState extends ConsumerState<InfoPanel> {
 
 class _InfoView extends ConsumerWidget {
   final ImageAsset asset;
-  final ({VoidCallback close, VoidCallback addFace, void Function(AssetFace?) onFaceHover}) functions;
+  final ({VoidCallback close, VoidCallback? addFace, void Function(AssetFace?)? onFaceHover}) functions;
   final VoidCallback onEditPeople;
   const _InfoView({required this.asset, required this.functions, required this.onEditPeople});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final exif = asset.exifInfo;
-    final mp = (exif['exifImageWidth'] * exif['exifImageHeight'] / pow(1000, 2)).toStringAsFixed(1);
-    final sizeMiB = (exif['fileSizeInByte'] / pow(1024, 2)).toStringAsFixed(2);
+    final mp = ((exif['exifImageWidth'] ?? 0) * (exif['exifImageHeight'] ?? 0) / pow(1000, 2)).toStringAsFixed(1);
+    final sizeMiB = ((exif['fileSizeInByte'] ?? 0) / pow(1024, 2)).toStringAsFixed(2);
     final placeName = ref.watch(_placeNameProvider((exif['latitude'] ?? 0, exif['longitude'] ?? 0)));
     final assetFaces = ref.watch(assetFacesProvider(asset.id));
     final tagList = ref.watch(tagStoreProvider);
@@ -150,7 +152,7 @@ class _InfoView extends ConsumerWidget {
                     children: [
                       Text('People'),
                       Spacer(),
-                      IconButton(onPressed: () => functions.addFace(), icon: Icon(Icons.add)),
+                      IconButton(onPressed: () => functions.addFace?.call(), icon: Icon(Icons.add)),
                       if (asset.people.isNotEmpty)
                       IconButton(onPressed: () => onEditPeople(), icon: Icon(Icons.edit))
                     ],
@@ -182,9 +184,9 @@ class _InfoView extends ConsumerWidget {
                                   onHover: (_) {
                                     final face = assetFaces.value?.firstWhereOrNull((f) => f.personId == person.id);
                                     if (face == null) return;
-                                    functions.onFaceHover(face);
+                                    functions.onFaceHover?.call(face);
                                   },
-                                  onExit: (event) => functions.onFaceHover(null),
+                                  onExit: (event) => functions.onFaceHover?.call(null),
                                   cursor: SystemMouseCursors.click,
                                   child: Column(
                                     children: [
@@ -249,23 +251,25 @@ class _InfoView extends ConsumerWidget {
                       ]
                     ),
                   ),
+                  if (exif['make'] != null)
                   infoBox(
                     leadingIcon: Icons.camera_alt,
                     centerContent: _infoColumn(
                       context,
                       [
                         '${exif['make']} ${exif['model']}',
-                        '${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
+                        if (exif['exposureTime'] != null)'${exif['exposureTime']} s  𝑓/${exif['fNumber']}  ISO ${exif['iso']}',
                       ]
                     ),
                   ),
+                  if (exif['lensModel'] != null)
                   infoBox(
                     leadingIcon: Icons.camera,
                     centerContent: _infoColumn(
                       context,
                       [
                         '${exif['lensModel']}',
-                        '${exif['focalLength']} mm',
+                        if (exif['focalLength'] != null)'${exif['focalLength']} mm',
                       ]
                     ),
                   ),
