@@ -407,6 +407,28 @@ class $RefItemsTable extends RefItems with TableInfo<$RefItemsTable, RefItem> {
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _sourceTimestampMsMeta = const VerificationMeta(
+    'sourceTimestampMs',
+  );
+  @override
+  late final GeneratedColumn<int> sourceTimestampMs = GeneratedColumn<int>(
+    'source_timestamp_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _textContentMeta = const VerificationMeta(
+    'textContent',
+  );
+  @override
+  late final GeneratedColumn<String> textContent = GeneratedColumn<String>(
+    'text_content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -423,6 +445,8 @@ class $RefItemsTable extends RefItems with TableInfo<$RefItemsTable, RefItem> {
     createdAt,
     updatedAt,
     deletedAt,
+    sourceTimestampMs,
+    textContent,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -525,6 +549,24 @@ class $RefItemsTable extends RefItems with TableInfo<$RefItemsTable, RefItem> {
         deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
       );
     }
+    if (data.containsKey('source_timestamp_ms')) {
+      context.handle(
+        _sourceTimestampMsMeta,
+        sourceTimestampMs.isAcceptableOrUnknown(
+          data['source_timestamp_ms']!,
+          _sourceTimestampMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('text_content')) {
+      context.handle(
+        _textContentMeta,
+        textContent.isAcceptableOrUnknown(
+          data['text_content']!,
+          _textContentMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -590,6 +632,14 @@ class $RefItemsTable extends RefItems with TableInfo<$RefItemsTable, RefItem> {
         DriftSqlType.dateTime,
         data['${effectivePrefix}deleted_at'],
       ),
+      sourceTimestampMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}source_timestamp_ms'],
+      ),
+      textContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}text_content'],
+      ),
     );
   }
 
@@ -614,6 +664,8 @@ class RefItem extends DataClass implements Insertable<RefItem> {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final int? sourceTimestampMs;
+  final String? textContent;
   const RefItem({
     required this.id,
     required this.kind,
@@ -629,6 +681,8 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     required this.createdAt,
     required this.updatedAt,
     this.deletedAt,
+    this.sourceTimestampMs,
+    this.textContent,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -665,6 +719,12 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
+    if (!nullToAbsent || sourceTimestampMs != null) {
+      map['source_timestamp_ms'] = Variable<int>(sourceTimestampMs);
+    }
+    if (!nullToAbsent || textContent != null) {
+      map['text_content'] = Variable<String>(textContent);
+    }
     return map;
   }
 
@@ -700,6 +760,12 @@ class RefItem extends DataClass implements Insertable<RefItem> {
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      sourceTimestampMs: sourceTimestampMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceTimestampMs),
+      textContent: textContent == null && nullToAbsent
+          ? const Value.absent()
+          : Value(textContent),
     );
   }
 
@@ -723,6 +789,8 @@ class RefItem extends DataClass implements Insertable<RefItem> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      sourceTimestampMs: serializer.fromJson<int?>(json['sourceTimestampMs']),
+      textContent: serializer.fromJson<String?>(json['textContent']),
     );
   }
   @override
@@ -730,36 +798,22 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'type': serializer.toJson<String>(kind),
+      'kind': serializer.toJson<String>(kind),
       'title': serializer.toJson<String?>(title),
       'sourceUrl': serializer.toJson<String?>(sourceUrl),
       'bodyText': serializer.toJson<String?>(bodyText),
       'blobHash': serializer.toJson<String?>(blobHash),
       'mime': serializer.toJson<String?>(mime),
-      'exifInfo': {
-        'exifImageWidth': serializer.toJson<int?>(width),
-        'exifImageHeight': serializer.toJson<int?>(height),
-      },
+      'width': serializer.toJson<int?>(width),
+      'height': serializer.toJson<int?>(height),
       'itemType': serializer.toJson<String?>(itemType),
       'syncState': serializer.toJson<String>(syncState),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'sourceTimestampMs': serializer.toJson<int?>(sourceTimestampMs),
+      'textContent': serializer.toJson<String?>(textContent),
     };
-  }
-  ImageAsset toImageAsset() {
-    return ImageAsset(
-      id: id, 
-      type: kind, // what is this field for
-      originalFileName: '', 
-      fileCreatedAt: createdAt, 
-      exifInfo: { // todo expand?
-        'exifImageHeight': height,
-        'exifImageWidth': width
-      },
-      imageSources: {ImageSource.local}, 
-      mimeType: mime,
-  );
   }
 
   RefItem copyWith({
@@ -777,6 +831,8 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     DateTime? createdAt,
     DateTime? updatedAt,
     Value<DateTime?> deletedAt = const Value.absent(),
+    Value<int?> sourceTimestampMs = const Value.absent(),
+    Value<String?> textContent = const Value.absent(),
   }) => RefItem(
     id: id ?? this.id,
     kind: kind ?? this.kind,
@@ -792,6 +848,10 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    sourceTimestampMs: sourceTimestampMs.present
+        ? sourceTimestampMs.value
+        : this.sourceTimestampMs,
+    textContent: textContent.present ? textContent.value : this.textContent,
   );
   RefItem copyWithCompanion(RefItemsCompanion data) {
     return RefItem(
@@ -809,6 +869,12 @@ class RefItem extends DataClass implements Insertable<RefItem> {
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      sourceTimestampMs: data.sourceTimestampMs.present
+          ? data.sourceTimestampMs.value
+          : this.sourceTimestampMs,
+      textContent: data.textContent.present
+          ? data.textContent.value
+          : this.textContent,
     );
   }
 
@@ -828,7 +894,9 @@ class RefItem extends DataClass implements Insertable<RefItem> {
           ..write('syncState: $syncState, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('deletedAt: $deletedAt')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('sourceTimestampMs: $sourceTimestampMs, ')
+          ..write('textContent: $textContent')
           ..write(')'))
         .toString();
   }
@@ -849,6 +917,8 @@ class RefItem extends DataClass implements Insertable<RefItem> {
     createdAt,
     updatedAt,
     deletedAt,
+    sourceTimestampMs,
+    textContent,
   );
   @override
   bool operator ==(Object other) =>
@@ -867,7 +937,9 @@ class RefItem extends DataClass implements Insertable<RefItem> {
           other.syncState == this.syncState &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.deletedAt == this.deletedAt);
+          other.deletedAt == this.deletedAt &&
+          other.sourceTimestampMs == this.sourceTimestampMs &&
+          other.textContent == this.textContent);
 }
 
 class RefItemsCompanion extends UpdateCompanion<RefItem> {
@@ -885,6 +957,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime?> deletedAt;
+  final Value<int?> sourceTimestampMs;
+  final Value<String?> textContent;
   final Value<int> rowid;
   const RefItemsCompanion({
     this.id = const Value.absent(),
@@ -901,6 +975,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.sourceTimestampMs = const Value.absent(),
+    this.textContent = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RefItemsCompanion.insert({
@@ -918,6 +994,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
     required DateTime createdAt,
     required DateTime updatedAt,
     this.deletedAt = const Value.absent(),
+    this.sourceTimestampMs = const Value.absent(),
+    this.textContent = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        kind = Value(kind),
@@ -938,6 +1016,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? deletedAt,
+    Expression<int>? sourceTimestampMs,
+    Expression<String>? textContent,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -955,6 +1035,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (sourceTimestampMs != null) 'source_timestamp_ms': sourceTimestampMs,
+      if (textContent != null) 'text_content': textContent,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -974,6 +1056,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime?>? deletedAt,
+    Value<int?>? sourceTimestampMs,
+    Value<String?>? textContent,
     Value<int>? rowid,
   }) {
     return RefItemsCompanion(
@@ -991,6 +1075,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       deletedAt: deletedAt ?? this.deletedAt,
+      sourceTimestampMs: sourceTimestampMs ?? this.sourceTimestampMs,
+      textContent: textContent ?? this.textContent,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1040,6 +1126,12 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (sourceTimestampMs.present) {
+      map['source_timestamp_ms'] = Variable<int>(sourceTimestampMs.value);
+    }
+    if (textContent.present) {
+      map['text_content'] = Variable<String>(textContent.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1063,6 +1155,8 @@ class RefItemsCompanion extends UpdateCompanion<RefItem> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('sourceTimestampMs: $sourceTimestampMs, ')
+          ..write('textContent: $textContent, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2640,7 +2734,16 @@ class $$SettingsTableTableTableManager
                 notificationsEnabled: notificationsEnabled,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$SettingsTableTable, SettingsTableData>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $SettingsTableTable,
+                    SettingsTableData
+                  >(db, table, e),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),
@@ -2680,6 +2783,8 @@ typedef $$RefItemsTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int?> sourceTimestampMs,
+      Value<String?> textContent,
       Value<int> rowid,
     });
 typedef $$RefItemsTableUpdateCompanionBuilder =
@@ -2698,6 +2803,8 @@ typedef $$RefItemsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime?> deletedAt,
+      Value<int?> sourceTimestampMs,
+      Value<String?> textContent,
       Value<int> rowid,
     });
 
@@ -2708,7 +2815,7 @@ final class $$RefItemsTableReferences
   static MultiTypedResultKey<$RefItemTagsTable, List<RefItemTag>>
   _refItemTagsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.refItemTags,
-    aliasName: $_aliasNameGenerator(db.refItems.id, db.refItemTags.itemId),
+    aliasName: 'ref_items__id__ref_item_tags__item_id',
   );
 
   $$RefItemTagsTableProcessedTableManager get refItemTagsRefs {
@@ -2727,7 +2834,7 @@ final class $$RefItemsTableReferences
     _$AppDatabase db,
   ) => MultiTypedResultKey.fromTable(
     db.refNotes,
-    aliasName: $_aliasNameGenerator(db.refItems.id, db.refNotes.itemId),
+    aliasName: 'ref_items__id__ref_notes__item_id',
   );
 
   $$RefNotesTableProcessedTableManager get refNotesRefs {
@@ -2745,7 +2852,7 @@ final class $$RefItemsTableReferences
   static MultiTypedResultKey<$RefAnnotationsTable, List<RefAnnotation>>
   _refAnnotationsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.refAnnotations,
-    aliasName: $_aliasNameGenerator(db.refItems.id, db.refAnnotations.itemId),
+    aliasName: 'ref_items__id__ref_annotations__item_id',
   );
 
   $$RefAnnotationsTableProcessedTableManager get refAnnotationsRefs {
@@ -2837,6 +2944,16 @@ class $$RefItemsTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
     column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sourceTimestampMs => $composableBuilder(
+    column: $table.sourceTimestampMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get textContent => $composableBuilder(
+    column: $table.textContent,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2994,6 +3111,16 @@ class $$RefItemsTableOrderingComposer
     column: $table.deletedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get sourceTimestampMs => $composableBuilder(
+    column: $table.sourceTimestampMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get textContent => $composableBuilder(
+    column: $table.textContent,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RefItemsTableAnnotationComposer
@@ -3046,6 +3173,16 @@ class $$RefItemsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get sourceTimestampMs => $composableBuilder(
+    column: $table.sourceTimestampMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get textContent => $composableBuilder(
+    column: $table.textContent,
+    builder: (column) => column,
+  );
 
   Expression<T> refItemTagsRefs<T extends Object>(
     Expression<T> Function($$RefItemTagsTableAnnotationComposer a) f,
@@ -3169,6 +3306,8 @@ class $$RefItemsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> sourceTimestampMs = const Value.absent(),
+                Value<String?> textContent = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RefItemsCompanion(
                 id: id,
@@ -3185,6 +3324,8 @@ class $$RefItemsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                sourceTimestampMs: sourceTimestampMs,
+                textContent: textContent,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -3203,6 +3344,8 @@ class $$RefItemsTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> sourceTimestampMs = const Value.absent(),
+                Value<String?> textContent = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RefItemsCompanion.insert(
                 id: id,
@@ -3219,12 +3362,14 @@ class $$RefItemsTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 deletedAt: deletedAt,
+                sourceTimestampMs: sourceTimestampMs,
+                textContent: textContent,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$RefItemsTable, RefItem>(table),
                   $$RefItemsTableReferences(db, table, e),
                 ),
               )
@@ -3246,10 +3391,11 @@ class $$RefItemsTableTableManager
                   getPrefetchedDataCallback: (items) async {
                     return [
                       if (refItemTagsRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           RefItem,
                           $RefItemsTable,
-                          RefItemTag
+                          RefItemTag,
+                          $RefItemTagsTable
                         >(
                           currentTable: table,
                           referencedTable: $$RefItemsTableReferences
@@ -3260,17 +3406,16 @@ class $$RefItemsTableTableManager
                                 table,
                                 p0,
                               ).refItemTagsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.itemId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'item_id',
                           typedResults: items,
                         ),
                       if (refNotesRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           RefItem,
                           $RefItemsTable,
-                          RefNote
+                          RefNote,
+                          $RefNotesTable
                         >(
                           currentTable: table,
                           referencedTable: $$RefItemsTableReferences
@@ -3281,17 +3426,16 @@ class $$RefItemsTableTableManager
                                 table,
                                 p0,
                               ).refNotesRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.itemId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'item_id',
                           typedResults: items,
                         ),
                       if (refAnnotationsRefs)
-                        await $_getPrefetchedData<
+                        await $_getPrefetchedDataByColumns<
                           RefItem,
                           $RefItemsTable,
-                          RefAnnotation
+                          RefAnnotation,
+                          $RefAnnotationsTable
                         >(
                           currentTable: table,
                           referencedTable: $$RefItemsTableReferences
@@ -3302,10 +3446,8 @@ class $$RefItemsTableTableManager
                                 table,
                                 p0,
                               ).refAnnotationsRefs,
-                          referencedItemsForCurrentItem:
-                              (item, referencedItems) => referencedItems.where(
-                                (e) => e.itemId == item.id,
-                              ),
+                          currentColumn: 'id',
+                          referencedColumn: 'item_id',
                           typedResults: items,
                         ),
                     ];
@@ -3356,7 +3498,7 @@ final class $$RefTagsTableReferences
   static MultiTypedResultKey<$RefItemTagsTable, List<RefItemTag>>
   _refItemTagsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.refItemTags,
-    aliasName: $_aliasNameGenerator(db.refTags.id, db.refItemTags.tagId),
+    aliasName: 'ref_tags__id__ref_item_tags__tag_id',
   );
 
   $$RefItemTagsTableProcessedTableManager get refItemTagsRefs {
@@ -3544,7 +3686,7 @@ class $$RefTagsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$RefTagsTable, RefTag>(table),
                   $$RefTagsTableReferences(db, table, e),
                 ),
               )
@@ -3557,10 +3699,11 @@ class $$RefTagsTableTableManager
               getPrefetchedDataCallback: (items) async {
                 return [
                   if (refItemTagsRefs)
-                    await $_getPrefetchedData<
+                    await $_getPrefetchedDataByColumns<
                       RefTag,
                       $RefTagsTable,
-                      RefItemTag
+                      RefItemTag,
+                      $RefItemTagsTable
                     >(
                       currentTable: table,
                       referencedTable: $$RefTagsTableReferences
@@ -3570,8 +3713,8 @@ class $$RefTagsTableTableManager
                         table,
                         p0,
                       ).refItemTagsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.tagId == item.id),
+                      currentColumn: 'id',
+                      referencedColumn: 'tag_id',
                       typedResults: items,
                     ),
                 ];
@@ -3613,8 +3756,8 @@ final class $$RefItemTagsTableReferences
     extends BaseReferences<_$AppDatabase, $RefItemTagsTable, RefItemTag> {
   $$RefItemTagsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $RefItemsTable _itemIdTable(_$AppDatabase db) => db.refItems
-      .createAlias($_aliasNameGenerator(db.refItemTags.itemId, db.refItems.id));
+  static $RefItemsTable _itemIdTable(_$AppDatabase db) =>
+      db.refItems.createAlias('ref_item_tags__item_id__ref_items__id');
 
   $$RefItemsTableProcessedTableManager get itemId {
     final $_column = $_itemColumn<String>('item_id')!;
@@ -3630,9 +3773,8 @@ final class $$RefItemTagsTableReferences
     );
   }
 
-  static $RefTagsTable _tagIdTable(_$AppDatabase db) => db.refTags.createAlias(
-    $_aliasNameGenerator(db.refItemTags.tagId, db.refTags.id),
-  );
+  static $RefTagsTable _tagIdTable(_$AppDatabase db) =>
+      db.refTags.createAlias('ref_item_tags__tag_id__ref_tags__id');
 
   $$RefTagsTableProcessedTableManager get tagId {
     final $_column = $_itemColumn<String>('tag_id')!;
@@ -3866,7 +4008,7 @@ class $$RefItemTagsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$RefItemTagsTable, RefItemTag>(table),
                   $$RefItemTagsTableReferences(db, table, e),
                 ),
               )
@@ -3962,8 +4104,8 @@ final class $$RefNotesTableReferences
     extends BaseReferences<_$AppDatabase, $RefNotesTable, RefNote> {
   $$RefNotesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $RefItemsTable _itemIdTable(_$AppDatabase db) => db.refItems
-      .createAlias($_aliasNameGenerator(db.refNotes.itemId, db.refItems.id));
+  static $RefItemsTable _itemIdTable(_$AppDatabase db) =>
+      db.refItems.createAlias('ref_notes__item_id__ref_items__id');
 
   $$RefItemsTableProcessedTableManager get itemId {
     final $_column = $_itemColumn<String>('item_id')!;
@@ -4158,7 +4300,7 @@ class $$RefNotesTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$RefNotesTable, RefNote>(table),
                   $$RefNotesTableReferences(db, table, e),
                 ),
               )
@@ -4246,9 +4388,7 @@ final class $$RefAnnotationsTableReferences
   );
 
   static $RefItemsTable _itemIdTable(_$AppDatabase db) =>
-      db.refItems.createAlias(
-        $_aliasNameGenerator(db.refAnnotations.itemId, db.refItems.id),
-      );
+      db.refItems.createAlias('ref_annotations__item_id__ref_items__id');
 
   $$RefItemsTableProcessedTableManager get itemId {
     final $_column = $_itemColumn<String>('item_id')!;
@@ -4447,7 +4587,7 @@ class $$RefAnnotationsTableTableManager
           withReferenceMapper: (p0) => p0
               .map(
                 (e) => (
-                  e.readTable(table),
+                  e.readTable<$RefAnnotationsTable, RefAnnotation>(table),
                   $$RefAnnotationsTableReferences(db, table, e),
                 ),
               )
@@ -4706,7 +4846,16 @@ class $$RefBoardsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable<$RefBoardsTable, RefBoard>(table),
+                  BaseReferences<_$AppDatabase, $RefBoardsTable, RefBoard>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
               .toList(),
           prefetchHooksCallback: null,
         ),

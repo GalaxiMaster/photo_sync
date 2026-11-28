@@ -20,6 +20,8 @@ class RefItems extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get deletedAt => dateTime().nullable()();
+  IntColumn get sourceTimestampMs => integer().nullable()();
+  TextColumn get textContent => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

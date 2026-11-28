@@ -4,6 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/Widgets/snack_bars.dart';
+import 'package:photo_sync/pages/ref_board/insta_frame_capture/capture_screen.dart';
+import 'package:photo_sync/pages/ref_board/insta_frame_capture/frame_saver.dart';
 
 import '../../../provider/ref_providers.dart';
 
@@ -35,7 +37,23 @@ Future<void> showAddItemSheet(BuildContext context, WidgetRef ref) {
           onTap: () async {
             Navigator.pop(sheetContext);
             final url = await _ask(context, 'Add link', 'https://…');
-            if (url != null) await capture.addLink(url);
+            if (url != null) {
+              if (url.contains('instagram.com') && context.mounted) {
+                final saved = await Navigator.push<int>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => CaptureScreen(
+                      url: url.trim(),
+                      onSave: ref.read(frameSaverProvider).save,
+                    ),
+                  ),
+                );
+                if (saved != null && context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Added $saved frames')));
+                }
+              }
+              await capture.addLink(url);
+            }
           },
         ),
         _SheetTile(
