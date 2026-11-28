@@ -2,6 +2,8 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/app_settings_models.dart';
 import 'package:photo_sync/pages/gallary_screen.dart';
+import 'package:photo_sync/provider/body_provider.dart';
+import 'package:photo_sync/provider/selection_provider.dart';
 
 import '../../../provider/ref_providers.dart';
 import '../item/item_page.dart';
@@ -9,20 +11,40 @@ import '../item/item_page.dart';
 const double _kTileSpacing = 2.0;
 const _kTileColor = Color(0xFF1A1A1A);
 
-class RefItemGrid extends StatelessWidget {
-  const RefItemGrid({super.key, required this.items});
-  final List<RefItem> items;
 
+class RefItemGrid extends ConsumerStatefulWidget {
+  const RefItemGrid({super.key, required this.items});
+  final List<RefItem> items;  
+  @override
+  RefItemGridState createState() => RefItemGridState();
+}
+
+class RefItemGridState extends ConsumerState<RefItemGrid> {
   @override
   Widget build(BuildContext context) {
+    final selection = ref.read(selectionProvider(AppBody.photoRefHome));
+
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200,
         crossAxisSpacing: _kTileSpacing,
         mainAxisSpacing: _kTileSpacing,
       ),
-      itemCount: items.length,
-      itemBuilder: (_, i) => RefItemTile(key: ValueKey(items[i].id), item: items[i]),
+      itemCount: widget.items.length,
+      itemBuilder: (_, i)  {
+        final item = widget.items[i];
+        return TileShell(
+          isSelected: selection.contains(item.id),
+          inSelectionMode: selection.isNotEmpty,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => ItemPage(id: item.id)),
+          ),
+          onToggleSelect: (){
+            ref.read(selectionProvider(AppBody.photoRefHome).notifier).toggle(item.id);
+          },
+          child: RefItemTile(key: ValueKey(item.id), item: item)
+        );
+      }
     );
   }
 }
@@ -36,23 +58,14 @@ class RefItemTile extends ConsumerWidget {
     final Widget content;
     if (item.kind == 'image' && item.blobHash != null) {
       final blobs = ref.watch(refBlobStoreProvider);
-      content = TileShell(
-        isSelected: false,
-        inSelectionMode: false,
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => ItemPage(id: item.id)),
-        ),
-        onToggleSelect: (){},
-        badges: [],
-        child: Image.file(
-          blobs.thumbFile(item.blobHash!),
-          fit: BoxFit.cover,
-          cacheWidth: 400,
-          frameBuilder: (_, child, frame, wasSync) =>
-              wasSync || frame != null ? child : const ColoredBox(color: _kTileColor),
-          errorBuilder: (_, _, _) => const Center(
-            child: Icon(Icons.broken_image, color: Colors.white38),
-          ),
+      content = Image.file(
+        blobs.thumbFile(item.blobHash!),
+        fit: BoxFit.cover,
+        cacheWidth: 400,
+        frameBuilder: (_, child, frame, wasSync) =>
+            wasSync || frame != null ? child : const ColoredBox(color: _kTileColor),
+        errorBuilder: (_, _, _) => const Center(
+          child: Icon(Icons.broken_image, color: Colors.white38),
         ),
       );
     } else {

@@ -5,7 +5,7 @@ import 'package:photo_sync/models/app_settings_models.dart';
 import '../../../provider/ref_providers.dart';
 import 'guide_painter.dart';
 
-const _kPanelColor = Color(0xFF1A1A1A);
+const kPanelColor = Color(0xFF1A1A1A);
 
 class ItemPage extends ConsumerStatefulWidget {
   const ItemPage({super.key, required this.id});
@@ -23,7 +23,7 @@ class _ItemPageState extends ConsumerState<ItemPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _kPanelColor,
+        backgroundColor: kPanelColor,
         title: const Text(
           'Delete this item?',
           style: TextStyle(color: Colors.white, fontSize: 18),
@@ -161,7 +161,7 @@ class _ItemPageState extends ConsumerState<ItemPage> {
                     tooltip: 'Composition guide',
                     icon: const Icon(Icons.grid_on, color: Colors.white),
                     initialValue: _guide,
-                    color: _kPanelColor,
+                    color: kPanelColor,
                     onSelected: (guide) => setState(() => _guide = guide),
                     itemBuilder: (_) => [
                       for (final guide in Guide.values)

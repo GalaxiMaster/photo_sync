@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 import 'package:photo_sync/pages/full_screen_view.dart';
+import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/gallary_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
 import 'package:photo_sync/services/api_service.dart';
@@ -259,6 +260,8 @@ class _BucketSliverState extends ConsumerState<_BucketSliver> {
 
     final assets = bucket.assets;
 
+    final currentPage = ref.read(appBodyProvider); // for selection provider context
+
     return SliverMainAxisGroup(
       slivers: [
         SliverPersistentHeader(
@@ -274,7 +277,7 @@ class _BucketSliverState extends ConsumerState<_BucketSliver> {
           delegate: SliverChildBuilderDelegate(
             (_, i) => assets == null
                 ? const _PlaceholderTile()
-                : ImageTile(asset: assets[i]),
+                : ImageTile(asset: assets[i], scope: currentPage,),
             childCount: assets?.length ?? bucket.count,
           ),
         ),
@@ -537,8 +540,7 @@ class _PlaceholderTile extends StatelessWidget {
   const _PlaceholderTile();
 
   @override
-  Widget build(BuildContext context) =>
-      const ColoredBox(color: Color(0xFF1A1A1A));
+  Widget build(BuildContext context) => const ColoredBox(color: Color(0xFF1A1A1A));
 }
 
 class TileShell extends StatefulWidget {
@@ -557,7 +559,7 @@ class TileShell extends StatefulWidget {
   final bool inSelectionMode;
   final VoidCallback onTap;
   final VoidCallback onToggleSelect;
-  final List<Widget> badges; // Positioned widgets
+  final List<Widget>? badges; // Positioned widgets
 
   @override
   State<TileShell> createState() => _TileShellState();
@@ -619,7 +621,7 @@ class _TileShellState extends State<TileShell> {
                 ],
               ),
             ),
-            ...widget.badges,
+            ...?widget.badges,
           ],
         ),
       ),
@@ -628,8 +630,9 @@ class _TileShellState extends State<TileShell> {
 }
 
 class ImageTile extends ConsumerWidget {
-  const ImageTile({super.key, required this.asset});
+  const ImageTile({super.key, required this.asset, required this.scope});
   final GalleryItem asset;
+  final AppBody scope;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -637,12 +640,13 @@ class ImageTile extends ConsumerWidget {
       SingleAsset a => [a.asset],
       StackedAssets a => [a.primary, ...a.children],
     };
-    final isSelected = ref.watch(selectionProvider.select((s) => s.contains(asset.leadAsset)));
-    final inSelectionMode = ref.watch(isSelectionModeProvider);
+    final isSelected = ref.watch(selectionProvider(scope).select((s) => s.contains(asset.leadAsset.id)));
+    final inSelectionMode = ref.watch(isSelectionModeProvider(scope));
 
     void toggle() {
+      final notifier = ref.read(selectionProvider(scope).notifier);
       for (final el in all) {
-        ref.read(selectionProvider.notifier).toggle(el);
+        notifier.toggle(el.id);
       }
     }
 

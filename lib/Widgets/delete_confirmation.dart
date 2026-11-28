@@ -159,6 +159,52 @@ class DeletePopups {
       ),
     );
   }
+  
+  static Future<bool?> deleteRefItem({
+    required BuildContext context,
+    required GlobalKey anchorKey,
+    required int itemCount,
+    bool isTrashed = false,
+  }) {
+    return showPositionedPopup<bool>(
+      context: context,
+      anchorKey: anchorKey,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 12, top: 8, left: 8, right: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            RichText(
+              text: TextSpan(
+                style: const TextStyle(color: Colors.white70, fontSize: 14, height: 1.4),
+                children: [
+                  TextSpan(
+                    text: "Delete $itemCount ${itemCount == 1 ? 'item' : 'items'}?\n\n",
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16),
+                  ),
+                  const TextSpan(text: "All items will be removed from your reference library."),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(isTrashed ? "Delete permanently" : "Move to trash"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 Future<List<ImageAsset>> confirmExternalSourceDelete(

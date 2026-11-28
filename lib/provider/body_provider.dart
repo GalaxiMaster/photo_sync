@@ -2,7 +2,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:photo_sync/models/immich_models.dart';
 
-enum AppBody { gallery, explore, person, tags, photoRefHome, photoRefBoards }
+enum AppBody { 
+  gallery(AppType.pSync), 
+  explore(AppType.pSync), 
+  person(AppType.pSync), 
+  tags(AppType.pSync), 
+  photoRefHome(AppType.pRef), 
+  photoRefBoards(AppType.pRef);
+
+  final AppType bodyType;
+
+  const AppBody(this.bodyType);
+}
+
+enum AppType {
+  pSync,
+  pRef,
+}
 
 
 class AppBodyNotifier extends Notifier<AppBody> {

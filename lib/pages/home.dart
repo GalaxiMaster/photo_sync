@@ -13,7 +13,9 @@ import 'package:photo_sync/pages/ref_board/capture/add_item_sheet.dart';
 import 'package:photo_sync/pages/ref_board/library/library_page.dart';
 import 'package:photo_sync/pages/tags_screen.dart';
 import 'package:photo_sync/provider/body_provider.dart';
+import 'package:photo_sync/provider/ref_providers.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
+import 'package:photo_sync/services/api_service.dart';
 import '../provider/gallary_provider.dart';
 
 class MainApp extends ConsumerStatefulWidget {
@@ -41,9 +43,9 @@ class _MainAppState extends ConsumerState<MainApp> {
 
   @override
   Widget build(BuildContext context) {
-    final inSelectionMode = ref.watch(isSelectionModeProvider);
-    final selection = ref.watch(selectionProvider);
     final current = ref.watch(appBodyProvider);
+    final inSelectionMode = ref.watch(isSelectionModeProvider(current));
+    final selection = ref.watch(selectionProvider(current));
     final previousPage = ref.watch(appBodyProvider.notifier).previousPage;
     final currentSearch = ref.watch(searchOptionsProvider);
 
@@ -100,61 +102,11 @@ class _MainAppState extends ConsumerState<MainApp> {
                               borderRadius: BorderRadius.circular(24),
                               color: const Color(0xFF1A1A1A),
                               child: Container(
-                                width: 800,
                                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      onPressed: () => ref.read(selectionProvider.notifier).clear(),
-                                      padding: EdgeInsets.zero,
-                                      iconSize: iconSize,
-                                      icon: const Icon(Icons.clear, color: Colors.white),
-                                    ),
-                                    Text(
-                                      '${selection.length} selected',
-                                      style: const TextStyle(color: Colors.white70, fontSize: 14),
-                                    ),
-                                    const Spacer(),
-                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.share_outlined, color: Colors.white)),
-                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.photo_album_outlined, color: Colors.white)),
-                                    IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.label_outline, color: Colors.white)),
-                                    IconButton(
-                                      key: deleteKey,
-                                      onPressed: () async {
-                                        try {
-                                          final int totalBytes = selection.fold(0, (sum, asset) {
-                                            final size = asset.exifInfo['fileSizeInByte'] ?? 0;
-                                            return sum + (size as int);
-                                          });
-                                          final bool? confirm = await DeletePopups.delete(
-                                            itemCount: selection.length, 
-                                            spaceSaved: totalBytes/pow(1024, 2),
-                                            context: context, 
-                                            anchorKey: deleteKey,
-                                            sources: selection.expand((asset) => asset.imageSources).toSet(),
-                                            isTrashed: selection.every((a) => a.isTrashed ?? false)
-                                          );
-                                          if (confirm ?? false) {
-                                            ref.read(galleryBucketProvider.notifier).deleteAssets(
-                                              selection,
-                                              isTrashed: selection.every((a) => a.isTrashed ?? false),
-                                              deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
-                                            );
-                                            if (context.mounted) {
-                                              showSuccessSnackbar('Successfully sent selected assets to the trash');
-                                            }
-                                          }
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          showErrorSnackbar('Failed to delete selected assets. Please try again:\n$e');
-                                        }
-                                      },
-                                      visualDensity: VisualDensity.compact,
-                                      iconSize: iconSize,
-                                      icon: const Icon(Icons.delete_outline, color: Colors.white),
-                                    ),
-                                  ],
-                                ),
+                                child: switch (current.bodyType) {
+                                  AppType.pSync => PhotoSyncSelectBar(ref: ref, iconSize: iconSize, selection: selection, deleteKey: deleteKey, selectionScope: current,),
+                                  AppType.pRef => PhotoRefSelectBar(ref: ref, iconSize: iconSize, selection: selection, deleteKey: deleteKey, selectionScope: current,),
+                                }
                               ),
                             ),
                           ),
@@ -240,6 +192,145 @@ class _MainAppState extends ConsumerState<MainApp> {
           }
         ],
       ),
+    );
+  }
+}
+
+class PhotoSyncSelectBar extends StatelessWidget {
+  const PhotoSyncSelectBar({
+    super.key,
+    required this.ref,
+    required this.iconSize,
+    required this.selection,
+    required this.deleteKey, 
+    required this.selectionScope,
+  });
+
+  final WidgetRef ref;
+  final double iconSize;
+  final Set<String> selection;
+  final GlobalKey<State<StatefulWidget>> deleteKey;
+  final AppBody selectionScope;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => ref.read(selectionProvider(selectionScope).notifier).clear(),
+          padding: EdgeInsets.zero,
+          iconSize: iconSize,
+          icon: const Icon(Icons.clear, color: Colors.white),
+        ),
+        Text(
+          '${selection.length} selected',
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const Spacer(),
+        IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.share_outlined, color: Colors.white)),
+        IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.photo_album_outlined, color: Colors.white)),
+        IconButton(onPressed: () {}, visualDensity: VisualDensity.compact, iconSize: iconSize, icon: const Icon(Icons.label_outline, color: Colors.white)),
+        IconButton(
+          key: deleteKey,
+          onPressed: () async {
+            try {
+              final assets = ref.read(flatGalleryProvider).where((asset) => selection.contains(asset.id)).map((el)=>el.leadAsset).toSet();
+              if (assets.isEmpty) throw Exception('Could not find assets to delete');
+
+              final int totalBytes = assets.fold(0, (sum, asset) {
+                final size = asset.exifInfo['fileSizeInByte'] ?? 0;
+                return sum + (size as int);
+              });
+              final bool? confirm = await DeletePopups.delete(
+                itemCount: assets.length, 
+                spaceSaved: totalBytes/pow(1024, 2),
+                context: context, 
+                anchorKey: deleteKey,
+                sources: assets.expand((asset) => asset.imageSources).toSet(),
+                isTrashed: assets.every((a) => a.isTrashed ?? false)
+              );
+              if (confirm ?? false) {
+                ref.read(galleryBucketProvider.notifier).deleteAssets(
+                  assets,
+                  isTrashed: assets.every((a) => a.isTrashed ?? false),
+                  deleteFromExternalSource: (assetsFound) => confirmExternalSourceDelete(context, assetsFound)
+                );
+                if (context.mounted) {
+                  showSuccessSnackbar('Successfully sent selected assets to the trash');
+                }
+              }
+            } catch (e) {
+              if (!context.mounted) return;
+              showErrorSnackbar('Failed to delete selected assets. Please try again:\n$e');
+            }
+          },
+          visualDensity: VisualDensity.compact,
+          iconSize: iconSize,
+          icon: const Icon(Icons.delete_outline, color: Colors.white),
+        ),
+      ],
+    );
+  }
+}
+class PhotoRefSelectBar extends StatelessWidget {
+  const PhotoRefSelectBar({
+    super.key,
+    required this.ref,
+    required this.iconSize,
+    required this.selection,
+    required this.deleteKey, required this.selectionScope,
+  });
+
+  final WidgetRef ref;
+  final double iconSize;
+  final Set<String> selection;
+  final GlobalKey<State<StatefulWidget>> deleteKey;
+  final AppBody selectionScope;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        IconButton(
+          onPressed: () => ref.read(selectionProvider(selectionScope).notifier).clear(),
+          padding: EdgeInsets.zero,
+          iconSize: iconSize,
+          icon: const Icon(Icons.clear, color: Colors.white),
+        ),
+        Text(
+          '${selection.length} selected',
+          style: const TextStyle(color: Colors.white70, fontSize: 14),
+        ),
+        const Spacer(),
+        IconButton(
+          key: deleteKey,
+          onPressed: () async {
+            try {
+              final bool? confirm = await DeletePopups.deleteRefItem(
+                itemCount: selection.length, 
+                context: context, 
+                anchorKey: deleteKey,
+              );
+              if (confirm ?? false) {
+                for (final String itemId in selection) {
+                  await ref.read(refDaoProvider).softDeleteItem(itemId);
+                }
+                ref.read(selectionProvider(selectionScope).notifier).clear();
+                if (context.mounted) Navigator.of(context).maybePop();
+                if (context.mounted) {
+                  showSuccessSnackbar('Successfully deleted items');
+                }
+              }
+            } catch (e) {
+              if (!context.mounted) return;
+              showErrorSnackbar('Failed to delete selected items. Please try again:\n$e');
+            }
+          },
+          visualDensity: VisualDensity.compact,
+          iconSize: iconSize,
+          icon: const Icon(Icons.delete_outline, color: Colors.white),
+        ),
+      ],
     );
   }
 }

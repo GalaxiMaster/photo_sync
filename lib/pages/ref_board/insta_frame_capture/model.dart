@@ -35,8 +35,10 @@ class ServerResolver {
     // free the server's copy
     unawaited(_dio.delete(d['videoPath']).catchError((_) {}));
 
-    return ResolvedVideo(File(path), d['id'],
-        caption: d['caption'], uploader: d['uploader'],
-        duration: (d['duration'] as num?)?.toDouble());
+    return ResolvedVideo(
+      File(path), d['id'],
+      caption: d['caption'], uploader: d['uploader'],
+      duration: (d['duration'] as num?)?.toDouble()
+    );
   }
 }

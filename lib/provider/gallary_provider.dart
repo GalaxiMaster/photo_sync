@@ -8,6 +8,7 @@ import 'package:path/path.dart' as p;
 import 'package:photo_sync/Widgets/progress_popups.dart';
 import 'package:photo_sync/Widgets/search_popup.dart';
 import 'package:photo_sync/models/immich_models.dart';
+import 'package:photo_sync/provider/body_provider.dart';
 import 'package:photo_sync/provider/database_providers.dart';
 import 'package:photo_sync/provider/people_provider.dart';
 import 'package:photo_sync/provider/selection_provider.dart';
@@ -394,7 +395,8 @@ class GalleryBucketNotifier extends Notifier<GalleryBucketState> {
         }
       }
       removeAssets(assets);
-      ref.read(selectionProvider.notifier).clear();
+      final currentPage = ref.read(appBodyProvider);
+      ref.read(selectionProvider(currentPage).notifier).clear();
     } catch (e) {
       throw Exception('Failed to delete assets: $e');
     }
